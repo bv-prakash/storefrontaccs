@@ -2,7 +2,7 @@
   margin-top: var(--spacing-xbig);
 }
 
-.cards > ul {
+.cards>ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -11,7 +11,7 @@
   gap: var(--spacing-medium);
 }
 
-.cards > ul > li {
+.cards>ul>li {
   border: var(--shape-border-width-1) solid var(--color-neutral-500);
   background-color: var(--background-color);
 }
@@ -24,8 +24,26 @@
   line-height: 0;
 }
 
-.cards > ul > li img {
+.cards>ul>li img {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+}
+
+
+main .product-catagories {
+  margin: 0;
+}
+
+.product-catagories .default-content-wrapper h2 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.product-catagories .cards ul {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px 12px;
 }
