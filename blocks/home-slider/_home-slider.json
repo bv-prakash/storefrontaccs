@@ -9,12 +9,30 @@
           "rows": 1,
           "columns": 1,
           "fields": [
-            { "name": "image", "selector": "div>div:nth-child(1)>picture>img[src]" },
-            { "name": "alt", "selector": "div>div:nth-child(1)>picture>img[alt]" },
-            { "name": "title", "selector": "div>div:nth-child(2)>h2" },
-            { "name": "location", "selector": "div>div:nth-child(2)>p:nth-of-type(1)" },
-            { "name": "description", "selector": "div>div:nth-child(2)>p:nth-of-type(2)" },
-            { "name": "cta", "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a" }
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
           ]
         }
       }
