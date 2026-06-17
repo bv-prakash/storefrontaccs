@@ -1,0 +1,151 @@
+.home-slider {
+    position: relative;
+    overflow: hidden;
+}
+
+main .home-slider-container .home-slider-wrapper {
+    max-width: 100%;
+    padding: 0;
+}
+
+.home-slider .slides-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+
+    /* IE and Edge */
+    scrollbar-width: none;
+
+    /* Firefox */
+}
+
+.home-slider .slides-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.home-slider .slide {
+    position: relative;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+}
+
+.home-slider .slide-image picture img {
+    width: 100%;
+    height: 600px;
+    object-fit: cover;
+    display: block;
+}
+
+.home-slider .slide-content {
+    position: absolute;
+    top: 50%;
+    right: 8%;
+    transform: translateY(-50%);
+    width: 400px;
+    padding: 32px;
+    background: rgb(42 67 93 / 85%);
+
+    /* Dark Blue */
+    color: white;
+}
+
+.home-slider .title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-top: 0;
+    color: white;
+}
+
+.home-slider .location {
+    font-weight: 600;
+    margin: 16px 0;
+}
+
+.home-slider .description {
+    margin: 16px 0;
+    line-height: 1.5;
+}
+
+.home-slider .cta a {
+    display: inline-block;
+    margin-top: 24px;
+    padding: 12px 24px;
+    border: 1px solid white;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Navigation Controls */
+.home-slider .slider-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgb(42 67 93 / 60%);
+    color: white;
+    border: none;
+    padding: 16px;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    z-index: 10;
+    transition: background 0.3s;
+}
+
+.home-slider .slider-nav:hover {
+    background: rgb(42 67 93 / 100%);
+}
+
+.home-slider .slider-nav.prev {
+    left: var(--spacing-theme-l);
+}
+
+.home-slider .slider-nav.next {
+    right: var(--spacing-theme-l);
+}
+
+/* Dots */
+.home-slider .slider-dots {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.home-slider .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 50%);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s;
+}
+
+.home-slider .dot.active,
+.home-slider .dot:hover {
+    background: white;
+}
+
+@media (max-width: 899px) {
+    .home-slider .slide-content {
+        position: relative;
+        transform: none;
+        top: auto;
+        right: auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+@media only screen and (min-width: 1440px) {
+    main .home-slider-container {
+        margin-bottom: 80px;
+    }
+}

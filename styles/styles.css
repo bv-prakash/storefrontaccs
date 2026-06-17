@@ -11,7 +11,8 @@
  */
 
 /* stylelint-disable no-empty-source */
-:root, .dropin-design {
+:root,
+.dropin-design {
   /* Adobe Commerce Dropin design tokens */
   --color-brand-300: #6d6d6d;
   --color-brand-500: #454545;
@@ -79,6 +80,7 @@
   --spacing-xsmall: 8px;
   --spacing-small: 16px;
   --spacing-medium: 24px;
+  --spacing-theme-l: 15px;
   --spacing-big: 32px;
   --spacing-xbig: 40px;
   --spacing-xxbig: 48px;
@@ -137,7 +139,8 @@
   src: local("Helvetica");
 }
 
-html, body {
+html,
+body {
   min-height: 100%;
 }
 
@@ -262,7 +265,7 @@ main pre {
   white-space: pre;
 }
 
-main > div {
+main>div {
   margin: var(--spacing-xbig) var(--spacing-small);
 }
 
@@ -456,7 +459,7 @@ main img {
 }
 
 /* sections */
-main > .section {
+main>.section {
   margin: var(--spacing-xbig) 0;
 }
 
@@ -464,18 +467,18 @@ main > .section {
   display: none;
 }
 
-main > .section > div {
-  max-width: 1200px;
+main>.section>div {
+  max-width: 1614px;
   margin: auto;
-  padding: 0 var(--spacing-medium);
+  padding: 0 var(--spacing-theme-l);
 }
 
-main > .section:first-of-type {
+main>.section:first-of-type {
   margin-top: 0;
 }
 
 @media (min-width: 900px) {
-  main > .section > div {
+  main>.section>div {
     padding: 0 var(--spacing-big);
   }
 }
@@ -489,80 +492,80 @@ main .section.highlight {
 }
 
 main .section[data-padding="default"] {
-    padding: var(--spacing-xxsmall) 0;
+  padding: var(--spacing-xxsmall) 0;
 }
 
 main .section[data-padding="small"] {
-    padding: var(--spacing-xsmall) 0;
+  padding: var(--spacing-xsmall) 0;
 }
 
 main .section[data-padding="medium"] {
-    padding: var(--spacing-small) 0;
+  padding: var(--spacing-small) 0;
 }
 
 main .section[data-padding="large"] {
-    padding: var(--spacing-medium) 0;
+  padding: var(--spacing-medium) 0;
 }
 
 main .section[data-padding="big"] {
-    padding: var(--spacing-big) 0;
+  padding: var(--spacing-big) 0;
 }
 
 main .section[data-padding="xbig"] {
-    padding: var(--spacing-xbig) 0;
+  padding: var(--spacing-xbig) 0;
 }
 
 main .section[data-padding="xxbig"] {
-    padding: var(--spacing-xxbig) 0;
+  padding: var(--spacing-xxbig) 0;
 }
 
 main .section[data-padding="huge"] {
-    padding: var(--spacing-huge) 0;
+  padding: var(--spacing-huge) 0;
 }
 
 main .section[data-padding="xhuge"] {
-    padding: var(--spacing-xhuge) 0;
+  padding: var(--spacing-xhuge) 0;
 }
 
 main .section[data-padding="xxhuge"] {
-    padding: var(--spacing-xxhuge) 0;
+  padding: var(--spacing-xxhuge) 0;
 }
 
 
 main .section[data-margin="small"] {
-    margin: var(--spacing-xsmall) 0;
+  margin: var(--spacing-xsmall) 0;
 }
 
 main .section[data-margin="medium"] {
-    margin: var(--spacing-small) 0;
+  margin: var(--spacing-small) 0;
 }
 
 main .section[data-margin="large"] {
-    margin: var(--spacing-medium) 0;
+  margin: var(--spacing-medium) 0;
 }
 
 main .section[data-margin="big"] {
-    margin: var(--spacing-big) 0;
+  margin: var(--spacing-big) 0;
 }
 
 main .section[data-margin="xbig"] {
-    margin: var(--spacing-xbig) 0;
+  margin: var(--spacing-xbig) 0;
 }
 
 main .section[data-margin="xxbig"] {
-    margin: var(--spacing-xxbig) 0;
+  margin: var(--spacing-xxbig) 0;
 }
 
 main .section[data-margin="huge"] {
-    margin: var(--spacing-huge) 0;
+  margin: var(--spacing-huge) 0;
 }
 
 main .section[data-margin="xhuge"] {
-    margin: var(--spacing-xhuge) 0;
+  margin: var(--spacing-xhuge) 0;
 }
 
 main .section[data-margin="xxhuge"] {
-    margin: var(--spacing-xxhuge) 0;
+  margin: var(--spacing-xxhuge) 0;
 }
 
 /* section metadata - styles - end */
@@ -587,7 +590,7 @@ body.columns main {
   box-sizing: border-box;
 }
 
-body.columns main > .section {
+body.columns main>.section {
   flex: 1;
   flex-basis: 100%;
   max-width: unset;
@@ -596,26 +599,26 @@ body.columns main > .section {
   box-sizing: border-box;
 }
 
-body.columns main > .section:first-child {
+body.columns main>.section:first-child {
   padding-inline-start: 0;
   padding-block-start: 0;
 }
 
-body.columns main > .section:last-child {
+body.columns main>.section:last-child {
   padding-inline-end: 0;
   padding-block-end: 0;
 }
 
-body.columns main > .section > div {
+body.columns main>.section>div {
   max-width: unset;
   padding: unset;
 }
 
-body.columns main > .section > div:not(:last-child) {
+body.columns main>.section>div:not(:last-child) {
   margin-bottom: var(--gap, unset);
 }
 
-body.columns main > .section:empty {
+body.columns main>.section:empty {
   display: none;
 }
 
@@ -634,7 +637,7 @@ body.columns main > .section:empty {
     flex-flow: row wrap;
   }
 
-  body.columns main > .section {
+  body.columns main>.section {
     flex: 1;
     flex-basis: var(--column-width, auto);
   }

@@ -448,6 +448,54 @@
     ]
   },
   {
+    "id": "home-slider",
+    "fields": [
+      {
+        "component": "reference",
+        "valueType": "string",
+        "name": "image",
+        "label": "Image",
+        "multi": false
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "alt",
+        "label": "Alt Text",
+        "value": ""
+      },
+      {
+        "component": "text",
+        "name": "title",
+        "value": "",
+        "label": "Title",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "location",
+        "value": "",
+        "label": "Location/Subtitle",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "description",
+        "value": "",
+        "label": "Description",
+        "valueType": "string",
+        "multi": true
+      },
+      {
+        "component": "text",
+        "name": "cta",
+        "value": "",
+        "label": "Button Label",
+        "valueType": "string"
+      }
+    ]
+  },
+  {
     "id": "product-details",
     "fields": [
       {
