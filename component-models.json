@@ -541,6 +541,32 @@
     ]
   },
   {
+    "id": "tabs",
+    "fields": [
+      {
+        "component": "list",
+        "name": "tabs",
+        "label": "Tab Items",
+        "fields": [
+          {
+            "component": "text",
+            "valueType": "string",
+            "name": "title",
+            "label": "Tab Title",
+            "value": ""
+          },
+          {
+            "component": "richtext",
+            "valueType": "string",
+            "name": "content",
+            "label": "Tab Content",
+            "value": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "targeted-block",
     "fields": [
       {
