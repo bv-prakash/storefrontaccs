@@ -89,13 +89,13 @@ export default async function decorate(block) {
   if (showArrows && slides.length > 1) {
     const prevBtn = document.createElement('button');
     prevBtn.classList.add('slider-nav', 'prev');
-    prevBtn.innerHTML = '&#10094;';
+    prevBtn.innerHTML = `<img src="${window.hlx.codeBasePath}/icons/chevron-left-white.svg" alt="chevron-left icon" aria-hidden="true">`;
     prevBtn.setAttribute('aria-label', 'Previous slide');
     prevBtn.addEventListener('click', () => goToSlide(currentSlideIndex - 1));
 
     const nextBtn = document.createElement('button');
     nextBtn.classList.add('slider-nav', 'next');
-    nextBtn.innerHTML = '&#10095;';
+    nextBtn.innerHTML = `<img src="${window.hlx.codeBasePath}/icons/chevron-right-white.svg" alt="chevron-right icon" aria-hidden="true">`;
     nextBtn.setAttribute('aria-label', 'Next slide');
     nextBtn.addEventListener('click', () => goToSlide(currentSlideIndex + 1));
 
