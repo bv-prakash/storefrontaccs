@@ -1,42 +1,78 @@
-export default function decorate(block) {
+import { loadCSS } from '../../scripts/aem.js';
+
+/**
+ * Load slider-specific custom CSS
+ */
+async function loadSliderStyles() {
+  await loadCSS(`${window.hlx.codeBasePath}/styles/font.css`);
+  try {
+    if (!window.location.hostname.includes('localhost')) {
+      sessionStorage.setItem('slider-styles-loaded', 'true');
+    }
+  } catch (e) { /* do nothing */ }
+}
+
+export default async function decorate(block) {
+  const stylesReady = loadSliderStyles(); // fire in parallel, don't await yet
+
   const slides = [...block.children];
-  // Configuration from block classes (e.g., Home Slider (Arrows, Dots, Loop))
+  if (!slides.length) return;
+
   const showArrows = block.classList.contains('arrows') || block.classList.contains('arrow');
   const showDots = block.classList.contains('dots') || block.classList.contains('dot');
   const isInfinite = block.classList.contains('loop') || block.classList.contains('infinite');
 
-  // Create wrapper for slides to separate navigation
+  // Build slides wrapper
   const slidesWrapper = document.createElement('div');
   slidesWrapper.classList.add('slides-wrapper');
+  const fragment = document.createDocumentFragment();
 
   slides.forEach((slide) => {
     slide.classList.add('slide');
-
     const [image, content] = slide.children;
     if (image) image.classList.add('slide-image');
     if (content) {
       content.classList.add('slide-content');
-      const heading = content.querySelector('h1, h2, h3, h4, h5, h6');
-      if (heading) heading.classList.add('title');
+      content.querySelector('h1,h2,h3,h4,h5,h6')?.classList.add('title');
 
-      const paragraphs = content.querySelectorAll('p');
-      if (paragraphs[0]) paragraphs[0].classList.add('location');
-      if (paragraphs[1]) paragraphs[1].classList.add('description');
+      const paragraphs = [...content.querySelectorAll('p')];
 
-      const ctaWrapper = content.querySelector('.button-wrapper') || (paragraphs[2] ? paragraphs[2] : null);
-      if (ctaWrapper) ctaWrapper.classList.add('cta');
+      const [location, ...restParagraphs] = paragraphs;
+
+      let description;
+      let ctaWrapper;
+
+      location?.classList.add('location');
+
+      restParagraphs.forEach((p) => {
+        const isCTA = p.childNodes.length === 1
+          && p.firstElementChild?.tagName === 'A';
+
+        if (isCTA && !ctaWrapper) {
+          ctaWrapper = p;
+        } else if (!description) {
+          description = p;
+        }
+      });
+
+      description?.classList.add('description');
+      ctaWrapper?.classList.add('cta');
     }
-    slidesWrapper.append(slide);
+    fragment.append(slide);
   });
 
-  block.innerHTML = '';
-  block.append(slidesWrapper);
+  slidesWrapper.append(fragment);
+
+  // Batch all DOM writes into one fragment — single reflow
+  const newContent = document.createDocumentFragment();
+  newContent.append(slidesWrapper);
 
   let currentSlideIndex = 0;
 
   // Dots
+  let dotsContainer = null;
   if (showDots && slides.length > 1) {
-    const dotsContainer = document.createElement('div');
+    dotsContainer = document.createElement('div');
     dotsContainer.classList.add('slider-dots');
     slides.forEach((_, idx) => {
       const dot = document.createElement('button');
@@ -46,49 +82,47 @@ export default function decorate(block) {
       dot.addEventListener('click', () => goToSlide(idx));
       dotsContainer.append(dot);
     });
-    block.append(dotsContainer);
+    newContent.append(dotsContainer);
   }
 
   // Arrows
   if (showArrows && slides.length > 1) {
     const prevBtn = document.createElement('button');
     prevBtn.classList.add('slider-nav', 'prev');
-    prevBtn.innerHTML = '&#10094;'; // Left arrow
+    prevBtn.innerHTML = '&#10094;';
     prevBtn.setAttribute('aria-label', 'Previous slide');
     prevBtn.addEventListener('click', () => goToSlide(currentSlideIndex - 1));
 
     const nextBtn = document.createElement('button');
     nextBtn.classList.add('slider-nav', 'next');
-    nextBtn.innerHTML = '&#10095;'; // Right arrow
+    nextBtn.innerHTML = '&#10095;';
     nextBtn.setAttribute('aria-label', 'Next slide');
     nextBtn.addEventListener('click', () => goToSlide(currentSlideIndex + 1));
 
-    block.append(prevBtn, nextBtn);
+    newContent.append(prevBtn, nextBtn);
   }
 
+  block.innerHTML = '';
+  block.append(newContent); // single DOM write
+
+  // Navigation
   function goToSlide(index) {
     let targetIndex = index;
-    if (targetIndex < 0) {
-      targetIndex = isInfinite ? slides.length - 1 : 0;
-    } else if (targetIndex >= slides.length) {
-      targetIndex = isInfinite ? 0 : slides.length - 1;
-    }
-    currentSlideIndex = targetIndex;
-    const scrollLeftPos = currentSlideIndex * slidesWrapper.clientWidth;
-    slidesWrapper.scrollTo({ left: scrollLeftPos, behavior: 'smooth' });
+    if (targetIndex < 0) targetIndex = isInfinite ? slides.length - 1 : 0;
+    else if (targetIndex >= slides.length) targetIndex = isInfinite ? 0 : slides.length - 1;
 
+    currentSlideIndex = targetIndex;
+    slidesWrapper.scrollTo({ left: currentSlideIndex * slidesWrapper.clientWidth, behavior: 'smooth' });
     updateDots();
   }
 
   function updateDots() {
-    const dots = block.querySelectorAll('.dot');
-    if (dots.length) {
-      dots.forEach((d) => d.classList.remove('active'));
-      dots[currentSlideIndex].classList.add('active');
-    }
+    if (!dotsContainer) return;
+    dotsContainer.querySelector('.dot.active')?.classList.remove('active');
+    dotsContainer.children[currentSlideIndex]?.classList.add('active');
   }
 
-  // Intersection observer to update dots and current index on manual scroll
+  // Intersection Observer — tracks manual scroll
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -96,13 +130,18 @@ export default function decorate(block) {
         updateDots();
       }
     });
-  }, { threshold: 0.6 });
+  }, { threshold: 0.6, root: slidesWrapper });
+
   slides.forEach((slide) => observer.observe(slide));
 
-  // Auto-Slider Logic (Infinite Loop)
+  // Auto-play with pause on hover
   if (slides.length > 1 && isInfinite) {
-    setInterval(() => {
-      goToSlide(currentSlideIndex + 1);
-    }, 5000);
+    let autoPlay = setInterval(() => goToSlide(currentSlideIndex + 1), 5000);
+    block.addEventListener('mouseenter', () => clearInterval(autoPlay));
+    block.addEventListener('mouseleave', () => {
+      autoPlay = setInterval(() => goToSlide(currentSlideIndex + 1), 5000);
+    });
   }
+
+  await stylesReady; // CSS awaited last — slider is already rendered by this point
 }

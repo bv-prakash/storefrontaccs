@@ -36,6 +36,265 @@
           ]
         }
       }
+    },
+    {
+      "title": "Home Slider (Arrows)",
+      "id": "home-slider-arrows",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Dots)",
+      "id": "home-slider-dots",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Loop)",
+      "id": "home-slider-loop",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Arrows, Dots)",
+      "id": "home-slider-arrows-dots",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Arrows, Loop)",
+      "id": "home-slider-arrows-loop",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Dots, Loop)",
+      "id": "home-slider-dots-loop",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Home Slider (Arrows, Dots, Loop)",
+      "id": "home-slider-arrows-dots-loop",
+      "model": "home-slider",
+      "plugins": {
+        "da": {
+          "rows": 1,
+          "columns": 1,
+          "fields": [
+            {
+              "name": "image",
+              "selector": "div>div:nth-child(1)>picture>img[src]"
+            },
+            {
+              "name": "alt",
+              "selector": "div>div:nth-child(1)>picture>img[alt]"
+            },
+            {
+              "name": "title",
+              "selector": "div>div:nth-child(2)>h2"
+            },
+            {
+              "name": "location",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(1)"
+            },
+            {
+              "name": "description",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(2)"
+            },
+            {
+              "name": "cta",
+              "selector": "div>div:nth-child(2)>p:nth-of-type(3)>a"
+            }
+          ]
+        }
+      }
     }
   ],
   "models": [

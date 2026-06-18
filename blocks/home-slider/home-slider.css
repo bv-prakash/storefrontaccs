@@ -1,3 +1,12 @@
+:root {
+    --aem-clean-font-family: 'adobe-clean', sans-serif;
+}
+
+.home-slider,
+.home-slider * {
+    font-family: var(--aem-clean-font-family);
+}
+
 .home-slider {
     position: relative;
     overflow: hidden;
@@ -76,6 +85,12 @@ main .home-slider-container .home-slider-wrapper {
     color: white;
     text-decoration: none;
     font-weight: 600;
+}
+
+.home-slider .cta a:hover {
+    background: white;
+    color: rgb(42 67 93);
+    text-decoration: none;
 }
 
 /* Navigation Controls */
