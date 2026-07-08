@@ -18,6 +18,8 @@ import { events } from '@dropins/tools/event-bus.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { fetchPlaceholders, getProductLink } from '../../scripts/commerce.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
+import { getCategory } from './services/category.js';
+import { renderBreadcrumbs } from './components/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/search.js';
@@ -30,25 +32,82 @@ export default async function decorate(block) {
   const pageSize = parseInt(config.pagesize, 10) || 9;
 
   const fragment = document.createRange().createContextualFragment(`
+    <div class="category-header">
+      <div class="plp-breadcrumbs"></div>
+      <div class="category-banner"></div>
+      <div class="category-title-description">
+        <h1 class="category-title"></h1>
+        <div class="category-description"></div>
+      </div>
+    </div>
     <div class="search__wrapper">
-      <div class="search__result-info"></div>
-      <div class="search__view-facets"></div>
       <div class="search__facets"></div>
-      <div class="search__product-sort"></div>
-      <div class="search__product-list"></div>
-      <div class="search__pagination"></div>
+      <div class="search__main">
+        <div class="search__toolbar">
+          <div class="search__view-facets"></div>
+          <div class="search__result-info"></div>
+          <div class="search__toolbar-actions">
+            <div class="search__product-sort"></div>
+            <div class="search__per-page"></div>
+            <div class="search__view-modes">
+              <button class="view-mode view-mode-grid active" aria-label="Grid View">Grid</button>
+              <button class="view-mode view-mode-list" aria-label="List View">List</button>
+            </div>
+          </div>
+        </div>
+        <div class="search__product-list"></div>
+        <div class="search__pagination"></div>
+      </div>
     </div>
   `);
+
+  const $breadcrumbs = fragment.querySelector('.plp-breadcrumbs');
+  const $categoryBanner = fragment.querySelector('.category-banner');
+  const $categoryTitle = fragment.querySelector('.category-title');
+  const $categoryDescription = fragment.querySelector('.category-description');
 
   const $resultInfo = fragment.querySelector('.search__result-info');
   const $viewFacets = fragment.querySelector('.search__view-facets');
   const $facets = fragment.querySelector('.search__facets');
   const $productSort = fragment.querySelector('.search__product-sort');
+  const $perPage = fragment.querySelector('.search__per-page');
   const $productList = fragment.querySelector('.search__product-list');
   const $pagination = fragment.querySelector('.search__pagination');
+  const $viewModes = fragment.querySelectorAll('.view-mode');
 
   block.innerHTML = '';
   block.appendChild(fragment);
+
+  // View modes
+  $viewModes.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      $viewModes.forEach((b) => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      if (e.currentTarget.classList.contains('view-mode-list')) {
+        $productList.classList.add('list-view');
+      } else {
+        $productList.classList.remove('list-view');
+      }
+    });
+  });
+
+  let categoryData = null;
+  if (config.urlpath) {
+    categoryData = await getCategory(config.urlpath);
+    if (categoryData) {
+      $categoryTitle.textContent = categoryData.name;
+      if (categoryData.description) {
+        $categoryDescription.innerHTML = categoryData.description;
+      }
+      if (categoryData.image) {
+        const img = document.createElement('img');
+        img.src = categoryData.image;
+        img.alt = categoryData.name;
+        $categoryBanner.appendChild(img);
+      }
+      renderBreadcrumbs($breadcrumbs, categoryData, labels.Global);
+    }
+  }
 
   // Add url path back to the block for enrichment, incase enrichment block is
   // executed after the plp block and block config is not available
@@ -120,6 +179,30 @@ export default async function decorate(block) {
     return button;
   };
 
+  const renderPerPage = () => {
+    const options = [9, 12, 24, 36];
+    const select = document.createElement('select');
+    select.className = 'per-page-select';
+    options.forEach((opt) => {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = `${opt} per page`;
+      if (opt === pageSize) option.selected = true;
+      select.appendChild(option);
+    });
+    select.addEventListener('change', (e) => {
+      const newPageSize = parseInt(e.target.value, 10);
+      const url = new URL(window.location.href);
+      url.searchParams.set('page_size', newPageSize);
+      window.history.pushState({}, '', url.toString());
+      search({ pageSize: newPageSize }); // re-trigger search
+    });
+    $perPage.innerHTML = '';
+    $perPage.appendChild(select);
+  };
+
+  renderPerPage();
+
   await Promise.all([
     // Sort By
     provider.render(SortBy, {})($productSort),
@@ -152,7 +235,9 @@ export default async function decorate(block) {
           const { product, defaultImageProps } = ctx;
           const anchorWrapper = document.createElement('a');
           anchorWrapper.href = getProductLink(product.urlKey, product.sku);
+          anchorWrapper.className = 'product-discovery-product-image-wrapper';
 
+          // Render primary image
           tryRenderAemAssetsImage(ctx, {
             alias: product.sku,
             imageProps: defaultImageProps,
@@ -178,6 +263,13 @@ export default async function decorate(block) {
           })($wishlistToggle);
           actionsWrapper.appendChild(addToCartBtn);
           actionsWrapper.appendChild($wishlistToggle);
+          
+          // Additional hover elements
+          const compareBtn = document.createElement('button');
+          compareBtn.className = 'product-discovery-product-actions__compare';
+          compareBtn.innerHTML = '<span>Compare</span>';
+          actionsWrapper.appendChild(compareBtn);
+
           ctx.replaceWith(actionsWrapper);
         },
       },
@@ -210,4 +302,18 @@ export default async function decorate(block) {
     applySearchStateToUrl(url, payload.request);
     window.history.pushState({}, '', url.toString());
   }, { eager: false });
+
+  events.on('search/result', (payload) => {
+    console.group('PLP Debug');
+
+    console.log('Payload:', payload);
+    console.log('Request:', payload.request);
+    console.log('Result:', payload.result);
+
+    if (payload.result) {
+      console.log('Result Keys:', Object.keys(payload.result));
+    }
+
+    console.groupEnd();
+  }, { eager: true });
 }
