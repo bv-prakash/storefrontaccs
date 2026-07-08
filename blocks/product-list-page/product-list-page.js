@@ -18,6 +18,8 @@ import { events } from '@dropins/tools/event-bus.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { fetchPlaceholders, getProductLink } from '../../scripts/commerce.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
+import { getCategory } from './services/category.js';
+import { renderBreadcrumbs } from './components/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/search.js';
@@ -30,6 +32,9 @@ export default async function decorate(block) {
   const pageSize = parseInt(config.pagesize, 10) || 9;
 
   const fragment = document.createRange().createContextualFragment(`
+    <div class="category-header">
+      <div class="plp-breadcrumbs"></div>
+    </div>
     <div class="search__wrapper">
       <div class="search__result-info"></div>
       <div class="search__view-facets"></div>
@@ -40,6 +45,7 @@ export default async function decorate(block) {
     </div>
   `);
 
+  const $breadcrumbs = fragment.querySelector('.plp-breadcrumbs');
   const $resultInfo = fragment.querySelector('.search__result-info');
   const $viewFacets = fragment.querySelector('.search__view-facets');
   const $facets = fragment.querySelector('.search__facets');
@@ -69,6 +75,12 @@ export default async function decorate(block) {
 
   // Request search based on the page type on block load
   if (config.urlpath) {
+    // Fetch Category Data and Render Breadcrumbs
+    const categoryData = await getCategory(config.urlpath);
+    if (categoryData) {
+      renderBreadcrumbs($breadcrumbs, categoryData, labels.Global);
+    }
+
     // If it's a category page...
     await search({
       phrase: '', // search all products in the category
