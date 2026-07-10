@@ -18,28 +18,74 @@ import { events } from '@dropins/tools/event-bus.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { fetchPlaceholders, getProductLink } from '../../scripts/commerce.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
+import { getCategory } from './services/category.js';
+import { renderBreadcrumbs } from './components/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/search.js';
 import '../../scripts/initializers/wishlist.js';
 
-export default async function decorate(block) {
-  const labels = await fetchPlaceholders();
+// --- Helper Functions -------------------------------------------------
+function secureBannerPlacement(bannerEl, grid, targetIndex) {
+  if (!bannerEl || !grid) return;
 
+  const items = [...grid.children].filter(
+    (el) => el !== bannerEl && !el.classList.contains('plp-banner-skeleton'),
+  );
+
+  // Absolute guard check: If grid doesn't have enough elements to fulfill the target position,
+  // append it to the end instead of breaking or jumping layout scopes mid-render.
+  if (items.length === 0) return;
+
+  const resolvedIndex = Math.min(targetIndex, items.length - 1);
+  const targetElement = items[resolvedIndex];
+
+  if (targetElement && targetElement.nextSibling !== bannerEl) {
+    bannerEl.classList.remove('plp-inline-banner--hidden');
+    bannerEl.classList.add('plp-inline-banner');
+    targetElement.after(bannerEl);
+  }
+}
+// -----------------------------------------------------------------------
+
+export default async function decorate(block) {
+  // Capture banner immediately from the DOM before any asynchronous processes or wipes
+  const rawBanner = block.querySelector('.plp-banner') || document.querySelector('.plp-banner');
+  const bannerClone = rawBanner ? rawBanner.cloneNode(true) : null;
+
+  if (rawBanner) {
+    rawBanner.remove();
+  }
+
+  if (bannerClone) {
+    bannerClone.classList.add('plp-inline-banner--hidden');
+  }
+
+  const labels = await fetchPlaceholders();
   const config = readBlockConfig(block);
   const pageSize = parseInt(config.pagesize, 10) || 9;
 
+  const bannerAfterIndex = (parseInt(config.bannerposition, 10) || 4) - 1;
+  const bannerFirstPageOnly = (config.bannerscope || 'first-page') === 'first-page';
+  let showBannerCurrentState = true;
+
   const fragment = document.createRange().createContextualFragment(`
+    <div class="category-header">
+      <div class="plp-breadcrumbs"></div>
+    </div>
     <div class="search__wrapper">
       <div class="search__result-info"></div>
       <div class="search__view-facets"></div>
       <div class="search__facets"></div>
       <div class="search__product-sort"></div>
-      <div class="search__product-list"></div>
+      <div class="search__product-list">
+         <div class="plp-banner-skeleton"></div>
+      </div>
       <div class="search__pagination"></div>
     </div>
   `);
 
+  const $breadcrumbs = fragment.querySelector('.plp-breadcrumbs');
   const $resultInfo = fragment.querySelector('.search__result-info');
   const $viewFacets = fragment.querySelector('.search__view-facets');
   const $facets = fragment.querySelector('.search__facets');
@@ -50,34 +96,47 @@ export default async function decorate(block) {
   block.innerHTML = '';
   block.appendChild(fragment);
 
-  // Add url path back to the block for enrichment, incase enrichment block is
-  // executed after the plp block and block config is not available
   if (config.urlpath) {
     block.dataset.urlpath = config.urlpath;
   }
 
-  const searchState = getSearchStateFromUrl(new URL(window.location.href));
+  // --- MutationObserver: Locked Engine Sync ---
+  let activeBannerInstance = bannerClone ? bannerClone.cloneNode(true) : null;
 
-  // Default visibility filter for all of our requests
+  const gridObserver = new MutationObserver(() => {
+    if (!bannerClone || !showBannerCurrentState) return;
+    const grid = $productList.querySelector('.product-discovery-product-list__grid');
+    if (grid) {
+      if (!activeBannerInstance || !document.body.contains(activeBannerInstance)) {
+        activeBannerInstance = bannerClone.cloneNode(true);
+      }
+      secureBannerPlacement(activeBannerInstance, grid, bannerAfterIndex);
+    }
+  });
+
+  gridObserver.observe($productList, { childList: true, subtree: true });
+
+  const searchState = getSearchStateFromUrl(new URL(window.location.href));
   const visibilityFilter = { attribute: 'visibility', in: ['Search', 'Catalog, Search'] };
   const userFilters = searchState.filter.filter((f) => f.attribute !== 'visibility');
 
-  // Normalize URL (e.g. pipe-separated filter values)
   const normalizedUrl = new URL(window.location.href);
   applySearchStateToUrl(normalizedUrl, searchState);
   window.history.replaceState({}, '', normalizedUrl.toString());
 
-  // Request search based on the page type on block load
   if (config.urlpath) {
-    // If it's a category page...
+    const categoryData = await getCategory(config.urlpath);
+    if (categoryData && $breadcrumbs) {
+      renderBreadcrumbs($breadcrumbs, categoryData, labels.Global);
+    }
+
     await search({
-      phrase: '', // search all products in the category
+      phrase: '',
       currentPage: searchState.currentPage,
       pageSize,
       sort: searchState?.sort?.length ? searchState.sort : [{ attribute: 'position', direction: 'DESC' }],
       filter: [
-        { attribute: 'categoryPath', eq: config.urlpath }, // Add category filter
-        // Always add visibility filter to the request
+        { attribute: 'categoryPath', eq: config.urlpath },
         visibilityFilter,
         ...userFilters,
       ],
@@ -85,13 +144,11 @@ export default async function decorate(block) {
       console.error('Error searching for products');
     });
   } else {
-    // Search page: dropin uses only the request (no URL parsing).
     await search({
       phrase: searchState.phrase,
       currentPage: searchState.currentPage,
       pageSize,
       sort: searchState.sort,
-      // Always add visibility filter to the request
       filter: [visibilityFilter, ...userFilters],
     }).catch((e) => {
       console.error('Error searching for products', e);
@@ -121,30 +178,25 @@ export default async function decorate(block) {
   };
 
   await Promise.all([
-    // Sort By
     provider.render(SortBy, {})($productSort),
 
-    // Pagination
     provider.render(Pagination, {
       onPageChange: () => {
-        // scroll to the top of the page
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     })($pagination),
 
-    // View Facets Button
     UI.render(Button, {
       children: labels.Global?.Filters,
       icon: Icon({ source: 'Burger' }),
       variant: 'secondary',
       onClick: () => {
-        $facets.classList.toggle('search__facets--visible');
+        if ($facets) $facets.classList.toggle('search__facets--visible');
       },
     })($viewFacets),
 
-    // Facets
     provider.render(Facets, {})($facets),
-    // Product List
+
     provider.render(SearchResults, {
       routeProduct: (product) => getProductLink(product.urlKey, product.sku),
       slots: {
@@ -166,10 +218,8 @@ export default async function decorate(block) {
         ProductActions: (ctx) => {
           const actionsWrapper = document.createElement('div');
           actionsWrapper.className = 'product-discovery-product-actions';
-          // Add to Cart Button
           const addToCartBtn = getAddToCartButton(ctx.product);
           addToCartBtn.className = 'product-discovery-product-actions__add-to-cart';
-          // Wishlist Button
           const $wishlistToggle = document.createElement('div');
           $wishlistToggle.classList.add('product-discovery-product-actions__wishlist-toggle');
           wishlistRender.render(WishlistToggle, {
@@ -184,27 +234,52 @@ export default async function decorate(block) {
     })($productList),
   ]);
 
-  // Listen for search results (event is fired before the block is rendered; eager: true)
   events.on('search/result', (payload) => {
     const totalCount = payload.result?.totalCount || 0;
 
-    block.classList.toggle('product-list-page--empty', totalCount === 0);
+    if (block) {
+      block.classList.toggle('product-list-page--empty', totalCount === 0);
+    }
 
-    // Results Info
-    $resultInfo.innerHTML = payload.request?.phrase
-      ? `${totalCount} results found for <strong>"${payload.request.phrase}"</strong>.`
-      : `${totalCount} results found.`;
+    if ($resultInfo) {
+      $resultInfo.innerHTML = payload.request?.phrase
+        ? `${totalCount} results found for <strong>"${payload.request.phrase}"</strong>.`
+        : `${totalCount} results found.`;
+    }
 
-    // Update the view facets button with the number of filters
-    if (payload.request.filter.length > 0) {
-      $viewFacets.querySelector('button').setAttribute('data-count', payload.request.filter.length);
+    if ($viewFacets) {
+      const button = $viewFacets.querySelector('button');
+      if (button) {
+        if (payload.request?.filter?.length > 0) {
+          button.setAttribute('data-count', payload.request.filter.length);
+        } else {
+          button.removeAttribute('data-count');
+        }
+      }
+    }
+
+    showBannerCurrentState = (!bannerFirstPageOnly || (payload.request?.currentPage || 1) === 1)
+     && totalCount > 0;
+
+    if (showBannerCurrentState) {
+      const grid = $productList.querySelector('.product-discovery-product-list__grid');
+      if (grid) {
+        // Clear skeleton loader immediately upon receiving data payload
+        const existingSkeleton = grid.querySelector('.plp-banner-skeleton');
+        if (existingSkeleton) existingSkeleton.remove();
+
+        if (!activeBannerInstance || !document.body.contains(activeBannerInstance)) {
+          activeBannerInstance = bannerClone.cloneNode(true);
+        }
+        secureBannerPlacement(activeBannerInstance, grid, bannerAfterIndex);
+      }
     } else {
-      $viewFacets.querySelector('button').removeAttribute('data-count');
+      if (activeBannerInstance) activeBannerInstance.remove();
+      const fallbackSkeleton = $productList.querySelector('.plp-banner-skeleton');
+      if (fallbackSkeleton) fallbackSkeleton.remove();
     }
   }, { eager: true });
 
-  // Listen for search results (event is fired after the block is rendered; eager: false)
-  // URL is owned by this project; update it when search state changes.
   events.on('search/result', (payload) => {
     const url = new URL(window.location.href);
     applySearchStateToUrl(url, payload.request);

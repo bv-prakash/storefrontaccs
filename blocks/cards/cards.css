@@ -47,3 +47,56 @@ main .product-catagories {
   grid-template-columns: repeat(4, 1fr);
   gap: 40px 12px;
 }
+
+
+.smart-light-banners .cards > ul {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.smart-light-banners .cards > ul > li {
+    border: none;
+    background-color: transparent;
+    justify-content: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+.smart-light-banners .cards .cards-card-image picture {
+  overflow: hidden;
+  display: block;
+}
+
+.smart-light-banners .cards .cards-card-image img {
+    display: block;
+    transition: .2s ease-in-out;
+    width: 100%;
+
+}
+
+.smart-light-banners .cards .cards-card-image:hover img {
+    transform: scale(1.08);
+}
+
+.smart-light-banners .cards .cards-card-body {
+    background-color: var(--color-dark-blue);
+    color: var(--color-neutral-50);
+    height: 100%;
+    margin: -1px 0 0;
+    padding: 10px 20px;
+    position: relative;
+}
+
+.smart-light-banners .cards .cards-card-body h3 {
+    margin: 0 0 5px;
+}
+
+.smart-light-banners .cards .cards-card-body p {
+    margin: 0;
+}
+
+@media (min-width: 1200px) {
+  .smart-light-banners .cards .cards-card-body {
+    padding: 30px;
+  }
+}
