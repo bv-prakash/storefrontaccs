@@ -1,13 +1,19 @@
 footer {
-    background-color: var(--color-neutral-100);
+    background-color: var(--color-dark-blue);
     font: var(--type-body-2-default-font);
     letter-spacing: var(--type-body-2-default-letter-spacing);
+    border-top: 2px solid #384c60;
+    color: white;
 }
 
 footer .footer > div {
     margin: auto;
-    max-width: 1200px;
-    padding: 40px 24px 24px;
+    max-width: 1614px;
+    padding: 40px 15px 25px;
+    box-sizing: border-box;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 footer .footer p {
@@ -66,8 +72,89 @@ footer .footer p {
     margin-bottom: var(--spacing-small);
 }
 
-@media (min-width: 900px) {
-    footer .footer > div {
-        padding: 40px 32px 24px;
+
+.footer-logo-address .default-content-wrapper p {
+    margin: 0;
+}
+
+.footer-logo-address .default-content-wrapper picture {
+    max-width: 242px;
+    width: 100%;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.footer-logo-address .default-content-wrapper img {
+   width: 100%;
+   height: auto;
+}
+
+.footer-links {
+    width: 46%;
+}
+
+.footer-links .default-content-wrapper ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.footer-links .default-content-wrapper > ul {
+   display: flex;
+}
+
+.footer-links .default-content-wrapper > ul > li {
+    padding: 0 7px;
+    width: 20%;
+}
+
+.footer-right-container .default-content-wrapper p {
+    padding: 0 5px;
+    width: 50%;
+}
+
+.footer-right-container .default-content-wrapper p,
+.footer-right-container .default-content-wrapper p a {
+     font-size: 12px;
+     line-height: 1.4;
+     color: #fff;
+     font-weight: 700;
+}
+
+.footer-links .default-content-wrapper > ul > li p {
+   font-size: 14px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 15px;
+    margin-top: 0;
+}
+
+.footer-links .default-content-wrapper ul li a {
+    font-size: 14px;
+    color: rgb(255 255 255 / 50%);
+    display: block;
+    margin-bottom: 2px;
+    text-decoration: none;
+}
+
+.footer-links .default-content-wrapper ul li a:hover {
+    color: white;
+}
+
+.footer-wrapper .copyright {
+    flex: 0 0 100%;
+    width: 100%;
+    margin-top: 20px;
+}
+
+
+.footer-right-container .default-content-wrapper {
+    display: flex;
+    margin: 0 -5px;
+}
+
+@media (min-width: 768px) {
+    .footer-links .default-content-wrapper > ul > li p {
+    margin-bottom: 25px;
     }
 }
