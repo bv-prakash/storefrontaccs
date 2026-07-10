@@ -9,6 +9,7 @@ import { fetchPlaceholders, getProductLink, rootLink } from '../../scripts/comme
 import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
 import renderSellerAssistedBuyingBanner from './renderSellerAssistedBuyingBanner.js';
+import { NavigationController } from './navigation/NavigationController.js';
 
 // media query match that indicates mobile/tablet width
 const isDesktop = window.matchMedia('(min-width: 900px)');
@@ -195,6 +196,26 @@ export default async function decorate(block) {
 
   const navSections = nav.querySelector('.nav-sections');
   if (navSections) {
+    // -------------------------------------------------------------------------
+    // MEGA MENU EMBED LAYER EXECUTIONS
+    // -------------------------------------------------------------------------
+    try {
+      const navPlaceholderUrl = `${window.location.origin}${navPath}`;
+
+      // Initialize the engine by passing ONLY the structural DOM elements.
+      // It resolves endpoints on its own via the configuration service now.
+      const navMenuEngine = new NavigationController(
+        navSections,
+        navPlaceholderUrl,
+      );
+
+      // Intercept container nodes to blend GraphQL dynamic loops + da.live custom structures
+      await navMenuEngine.init();
+    } catch (error) {
+      console.error('Unified mega menu processing failed:', error);
+    }
+    // -------------------------------------------------------------------------
+
     navSections
       .querySelectorAll(':scope .default-content-wrapper > ul > li')
       .forEach((navSection) => {

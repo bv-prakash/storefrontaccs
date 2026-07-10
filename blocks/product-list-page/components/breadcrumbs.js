@@ -1,40 +1,40 @@
 export function renderBreadcrumbs(container, categoryData, labels = {}) {
-    container.innerHTML = '';
+  container.innerHTML = '';
 
-    const nav = document.createElement('nav');
-    nav.className = 'plp-breadcrumbs';
+  const nav = document.createElement('nav');
+  nav.className = 'plp-breadcrumbs';
 
-    const ol = document.createElement('ol');
+  const ol = document.createElement('ol');
 
-    // Add Home link
-    const homeLi = document.createElement('li');
-    const homeLink = document.createElement('a');
-    homeLink.href = '/';
-    homeLink.textContent = labels?.Home || 'Home';
-    homeLi.append(homeLink);
-    ol.append(homeLi);
+  // Add Home link
+  const homeLi = document.createElement('li');
+  const homeLink = document.createElement('a');
+  homeLink.href = '/';
+  homeLink.textContent = labels?.Home || 'Home';
+  homeLi.append(homeLink);
+  ol.append(homeLi);
 
-    if (categoryData.breadcrumbs) {
-        categoryData.breadcrumbs.forEach((item) => {
-            const li = document.createElement('li');
+  if (categoryData.breadcrumbs) {
+    categoryData.breadcrumbs.forEach((item) => {
+      const li = document.createElement('li');
 
-            const link = document.createElement('a');
-            link.href = `/${item.category_url_path}`;
-            link.textContent = item.category_name;
+      const link = document.createElement('a');
+      link.href = `/${item.category_url_path}`;
+      link.textContent = item.category_name;
 
-            li.append(link);
-            ol.append(li);
-        });
-    }
+      li.append(link);
+      ol.append(li);
+    });
+  }
 
-    // Add current category
-    if (categoryData.name) {
-        const currentLi = document.createElement('li');
-        currentLi.textContent = categoryData.name;
-        ol.append(currentLi);
-    }
+  // Add current category
+  if (categoryData.name) {
+    const currentLi = document.createElement('li');
+    currentLi.textContent = categoryData.name;
+    ol.append(currentLi);
+  }
 
-    nav.append(ol);
+  nav.append(ol);
 
-    container.append(nav);
+  container.append(nav);
 }

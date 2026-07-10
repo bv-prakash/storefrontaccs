@@ -31,3 +31,141 @@
     order: unset;
   }
 }
+
+.aml-social-catalog .columns {
+  background-color: var(--color-neutral-200);
+  margin-bottom: 40px;
+  margin-top: 15px;
+}
+
+.aml-social-catalog .columns > div {
+  gap: 0;
+}
+
+.aml-social-catalog .columns > div  h2 {
+    color: var(--color-dark-blue);
+    margin-bottom: 13px;
+    margin-top: 0;
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.aml-social-catalog .columns > div p,
+.talk-expert-section .columns > div p {
+   margin-bottom: 30px;
+   margin-top: 0;
+}
+
+.aml-social-catalog .columns > div p:last-child {
+    margin-bottom: 0;
+}
+
+.aml-social-catalog .columns > div p a {
+    background: var(--color-dark-blue);
+    border: 3px solid var(--color-dark-blue);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 8px 20px;
+    font-size: 14px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    text-decoration: none;
+    max-width: 248px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+}
+
+.aml-social-catalog .columns > div p a:hover {
+    background: var(--color-neutral-50);
+    border: 3px solid var(--color-dark-blue);
+    color: var(--color-dark-blue);
+}
+
+
+@media (min-width: 768px) {
+  .aml-social-catalog .columns > div > div {
+    width: 40%;
+    padding: 30px 20px;
+    flex: unset;
+  }
+  
+  .aml-social-catalog .columns > div > .columns-img-col {
+    width: 60%;
+    padding: 0;
+  }
+}
+
+
+@media (min-width: 1200px) {
+  .aml-social-catalog .columns > div > div {
+    padding-left: 50px;
+    padding-right: 50px;
+  }
+
+  .talk-expert-section .columns > div h2,
+  .aml-social-catalog .columns > div  h2 {
+    font-size: 32px;
+    line-height: 40px;
+  }
+
+  .aml-social-catalog .columns {
+    margin-bottom: 90px;
+    margin-top: 60px;
+  }
+
+
+}
+
+
+/* Expert talk */
+
+main >.section.talk-expert-section {
+ margin: 0;
+ background-color: var(--color-neutral-200);
+}
+
+.talk-expert-section .columns-wrapper {
+  max-width: unset;
+  padding: 0;
+  margin-top: 90px;
+  margin-bottom: 0;
+}
+
+.talk-expert-section .columns > div > div {
+  flex: unset;
+}
+
+.talk-expert-section .columns-wrapper .columns > div {
+  gap: 0; 
+}
+
+.talk-expert-section .columns > div  h2 {
+    color: var(--color-dark-blue);
+    margin-bottom: 13px;
+    margin-top: 0;
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.talk-expert-section .columns > div p:last-child {
+    margin-bottom: 0;
+}
+
+@media (min-width: 1440px) {
+.talk-expert-section .columns-wrapper .columns > div > div {
+  max-width: 540px;
+  padding: 70px 100px;
+}
+
+.talk-expert-section .columns-wrapper .columns > div > .columns-img-col {
+  max-width: unset;
+  padding: 0;
+}
+
+}
+
+

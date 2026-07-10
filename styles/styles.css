@@ -40,6 +40,7 @@
   --color-alert-200: #ffebeb;
   --color-alert-500: #db7070;
   --color-alert-800: #c35050;
+  --color-dark-blue: #002941;
   --color-button-active: var(--color-brand-700);
   --color-button-focus: var(--color-neutral-400);
   --color-button-hover: var(--color-brand-600);
@@ -471,16 +472,11 @@ main>.section>div {
   max-width: 1614px;
   margin: auto;
   padding: 0 var(--spacing-theme-l);
+  box-sizing: border-box;
 }
 
 main>.section:first-of-type {
   margin-top: 0;
-}
-
-@media (min-width: 900px) {
-  main>.section>div {
-    padding: 0 var(--spacing-big);
-  }
 }
 
 /* section metadata - styles - start */
