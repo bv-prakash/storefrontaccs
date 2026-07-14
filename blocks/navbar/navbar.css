@@ -1,0 +1,199 @@
+:root {
+  --nav-height: 60px;
+  --submenu-z-index: 10;
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base structural rules */
+.nav-sections {
+  position: relative;
+  width: 100%;
+}
+
+/* =========================================================================
+   🖥️ DESKTOP MEGA MENU LAYOUT (Viewport Width >= 900px)
+   ========================================================================= */
+@media (min-width: 900px) {
+  /* Hide mobile-specific drawers entirely */
+  .nav-sections .mobile-nav {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .navigation-desktop-wrapper {
+    display: block;
+    width: 100%;
+  }
+
+  /* Root level navigation flex layout line */
+  .nav-top-level-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .nav-top-level-list > li.level0 {
+    position: relative;
+    display: inline-block;
+  }
+
+   .submenu li a {
+    display: block;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color-neutral-700, #444);
+    text-decoration: none;
+    transition: background-color var(--transition-smooth), color var(--transition-smooth);
+  }
+
+
+  .nav-top-level-list > li.level0 > a {
+    display: block;
+    padding: 20px 0;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-neutral-900, #111);
+    text-transform: uppercase;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: color var(--transition-smooth);
+  }
+
+  .submenu li a:hover {
+    background-color: var(--color-neutral-100, #f5f5f5);
+    color: var(--color-brand-700, #384c60);
+  }
+
+  .nav-top-level-list > li.level0 > a:hover {
+    color: var(--color-brand-700, #384c60);
+  }
+
+
+  /* Secondary category child option links list */
+  .submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* =========================================================================
+   📱 MOBILE DRAWER ACCORDION LAYOUT (Viewport Width < 900px)
+   ========================================================================= */
+@media (max-width: 899px) {
+  /* Collapse standard horizontal layout rows away */
+  .nav-sections .navigation-desktop-wrapper {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .mobile-nav {
+    display: block;
+    width: 100%;
+    background-color: var(--background-color, #fff);
+  }
+
+  .mobile-nav__body {
+    width: 100%;
+  }
+
+  .mobile-nav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mobile-nav__item {
+    width: 100%;
+    border-bottom: 1px solid var(--color-neutral-200, #e5e5e5);
+    box-sizing: border-box;
+  }
+
+  .mobile-nav__item > a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--color-neutral-900, #111);
+    text-transform: uppercase;
+    text-decoration: none;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
+  /* Chevron expansion arrow indicator signatures */
+  .mobile-nav__item--has-children > a::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--color-neutral-600, #555);
+    border-bottom: 2px solid var(--color-neutral-600, #555);
+    transform: rotate(45deg);
+    transition: transform var(--transition-smooth);
+  }
+
+  /* Spin indicator chevrons backwards on expand event actions */
+  .mobile-nav__item--has-children.is-active > a::after {
+    transform: rotate(-135deg);
+  }
+
+  /* Internal drawer drop panel loops */
+  .mobile-nav__panel {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 12px 16px;
+    background-color: var(--color-neutral-50, #f9f9f9);
+    border-left: 2px solid var(--color-neutral-300, #d5d5d5);
+  }
+
+  .mobile-nav__panel li a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--color-neutral-700, #555);
+    text-decoration: none;
+  }
+}
+
+/* =========================================================================
+   Responsive Viewport Display Switching Toggles
+   ========================================================================= */
+
+/* Mobile view is active by default */
+.navbar-desktop-viewport-view {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.navbar-mobile-viewport-view {
+  display: block;
+  width: 100%;
+}
+
+/* Switch structures cleanly at the standard 900px breakpoint grid rule */
+@media (min-width: 900px) {
+  .navbar-mobile-viewport-view {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  .navbar-desktop-viewport-view {
+    display: block !important;
+    visibility: visible !important;
+    width: 100%;
+  }
+}
