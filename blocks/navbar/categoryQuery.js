@@ -1,4 +1,3 @@
-// header/navigation/categoryQuery.js
 export const CATEGORY_TREE_QUERY = `
   query CategoryNavigation($rootCategoryIds: [String!]!) {
     categories(

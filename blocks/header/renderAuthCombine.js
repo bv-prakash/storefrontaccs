@@ -19,7 +19,6 @@ const signInFormConfig = {
   slots: {
     SuccessNotification: (ctx) => {
       const userName = ctx?.isSuccessful?.userName || '';
-
       const elem = document.createElement('div');
 
       authRenderer.render(SuccessNotification, {
@@ -30,22 +29,18 @@ const signInFormConfig = {
         slots: {
           SuccessNotificationActions: (innerCtx) => {
             const primaryBtn = document.createElement('div');
-
             UI.render(Button, {
               children: 'My Account',
-
               onClick: () => {
                 window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
               },
             })(primaryBtn);
-
             innerCtx.appendChild(primaryBtn);
 
             const secondaryButton = document.createElement('div');
             secondaryButton.style.display = 'flex';
             secondaryButton.style.justifyContent = 'center';
             secondaryButton.style.marginTop = 'var(--spacing-xsmall)';
-
             UI.render(Button, {
               children: 'Logout',
               variant: 'tertiary',
@@ -54,7 +49,6 @@ const signInFormConfig = {
                 window.location.href = rootLink('/');
               },
             })(secondaryButton);
-
             innerCtx.appendChild(secondaryButton);
           },
         },
@@ -81,22 +75,18 @@ const signUpFormConfig = {
         slots: {
           SuccessNotificationActions: (innerCtx) => {
             const primaryBtn = document.createElement('div');
-
             UI.render(Button, {
               children: 'Sign in',
-
               onClick: () => {
                 window.location.href = rootLink(CUSTOMER_LOGIN_PATH);
               },
             })(primaryBtn);
-
             innerCtx.appendChild(primaryBtn);
 
             const secondaryButton = document.createElement('div');
             secondaryButton.style.display = 'flex';
             secondaryButton.style.justifyContent = 'center';
             secondaryButton.style.marginTop = 'var(--spacing-xsmall)';
-
             UI.render(Button, {
               children: 'Home',
               variant: 'tertiary',
@@ -104,7 +94,6 @@ const signUpFormConfig = {
                 window.location.href = rootLink('/');
               },
             })(secondaryButton);
-
             innerCtx.appendChild(secondaryButton);
           },
         },
@@ -129,17 +118,13 @@ const onHeaderLinkClick = (element) => {
   }
   const signInModal = document.createElement('div');
   document.body.style.overflow = 'hidden';
-  viewportMeta.setAttribute(
-    'content',
-    'width=device-width, initial-scale=1.0',
-  );
+  viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
 
   signInModal.setAttribute('id', 'auth-combine-modal');
   signInModal.classList.add('auth-combine-modal-overlay');
 
   const trapFocus = (event) => {
     if (!signInModal) return;
-
     const key = event.key.toLowerCase();
 
     if (key === 'escape') {
@@ -153,7 +138,6 @@ const onHeaderLinkClick = (element) => {
     const focusableElements = signInModal.querySelectorAll(
       'input[name="email"], input, button, textarea, select, a[href], [tabindex]:not([tabindex="-1"])',
     );
-
     if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];
@@ -206,80 +190,82 @@ const onHeaderLinkClick = (element) => {
   })(signInForm);
 };
 
+/**
+ * Decoupled block-friendly variant initialization hook.
+ * Target search criteria scale dynamically inside desktop mega-menus or mobile drawers.
+ */
 const renderAuthCombine = (navSections, toggleMenu) => {
   if (getCookie('auth_dropin_firstname')) return;
 
-  const navListEl = navSections.querySelector('.default-content-wrapper > ul');
+  // Locate pre-compiled tree instances safely across both presentation viewport states
+  const desktopList = navSections.querySelector('.nav-top-level-list');
+  const mobileList = navSections.querySelector('.mobile-accordion-root');
 
-  const listItems = navListEl.querySelectorAll(
-    '.default-content-wrapper > ul > li',
-  );
+  const activeLists = [desktopList, mobileList].filter(Boolean);
 
-  const accountLi = Array.from(listItems).find((li) => li.textContent.includes('Account'));
-
-  if (accountLi) {
-    const accountLiItems = accountLi.querySelectorAll('ul > li');
-    const authCombineLink = accountLiItems[accountLiItems.length - 1];
-
-    authCombineLink.classList.add('authCombineNavElement');
-    const text = authCombineLink.textContent || '';
-    authCombineLink.innerHTML = `<a href="#">${text}</a>`;
-    authCombineLink.addEventListener('click', (event) => {
-      event.preventDefault();
-      onHeaderLinkClick(accountLi);
-
-      function getPopupElements() {
-        const headerBlock = document.querySelector('.header.block');
-        const headerLoginButton = document.querySelector('#header-login-button');
-        const popupElement = document.querySelector('#popup-menu');
-        const popupMenuContainer = document.querySelector('.popupMenuContainer');
-
-        return {
-          headerBlock,
-          headerLoginButton,
-          popupElement,
-          popupMenuContainer,
-        };
-      }
-
-      events.on('authenticated', (isAuthenticated) => {
-        const authCombineNavElement = document.querySelector(
-          '.authCombineNavElement',
-        );
-        if (isAuthenticated) {
-          const { headerLoginButton, popupElement, popupMenuContainer } = getPopupElements();
-
-          if (
-            !authCombineNavElement
-          || !headerLoginButton
-          || !popupElement
-          || !popupMenuContainer
-          ) {
-            return;
-          }
-
-          authCombineNavElement.style.display = 'none';
-          popupMenuContainer.innerHTML = '';
-          popupElement.style.minWidth = '250px';
-          if (headerLoginButton) {
-            const spanElementText = headerLoginButton.querySelector('span');
-            spanElementText.textContent = `Hi, ${getCookie(
-              'auth_dropin_firstname',
-            )}`;
-          }
-          popupMenuContainer.insertAdjacentHTML(
-            'afterend',
-            `<ul class="popupMenuUrlList">
-              <li><a href="${rootLink(CUSTOMER_ACCOUNT_PATH)}">My Account</a></li>
-              <li><a href="${getProductLink('hollister-backyard-sweatshirt', 'MH05')}">Product page</a></li>
-              <li><button class="logoutButton">Logout</button></li>
-            </ul>`,
-          );
-        }
-      });
-      toggleMenu?.();
-    });
+  // Fallback: Check standard block structures if invoked on raw fallback files
+  if (activeLists.length === 0) {
+    const fallbackList = navSections.querySelector('.default-content-wrapper > ul');
+    if (fallbackList) activeLists.push(fallbackList);
   }
+
+  if (activeLists.length === 0) return;
+
+  activeLists.forEach((list) => {
+    const listItems = list.querySelectorAll(':scope > li');
+    const accountLi = Array.from(listItems).find((li) => li.textContent.includes('Account'));
+
+    if (accountLi) {
+      // Find the last list item node dynamically inside our updated structural wrapper options
+      const authCombineLink = accountLi.querySelector('.submenu > li:last-child, .mobile-nav__panel > li:last-child, ul > li:last-child');
+      if (!authCombineLink) return;
+
+      authCombineLink.classList.add('authCombineNavElement');
+      const text = authCombineLink.textContent || '';
+      authCombineLink.innerHTML = `<a href="#">${text}</a>`;
+      
+      authCombineLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        onHeaderLinkClick(accountLi);
+
+        function getPopupElements() {
+          const headerBlock = document.querySelector('.header.block');
+          const headerLoginButton = document.querySelector('#header-login-button');
+          const popupElement = document.querySelector('#popup-menu');
+          const popupMenuContainer = document.querySelector('.popupMenuContainer');
+          return { headerBlock, headerLoginButton, popupElement, popupMenuContainer };
+        }
+
+        events.on('authenticated', (isAuthenticated) => {
+          const authCombineNavElement = document.querySelector('.authCombineNavElement');
+          if (isAuthenticated) {
+            const { headerLoginButton, popupElement, popupMenuContainer } = getPopupElements();
+
+            if (!authCombineNavElement || !headerLoginButton || !popupElement || !popupMenuContainer) {
+              return;
+            }
+
+            authCombineNavElement.style.display = 'none';
+            popupMenuContainer.innerHTML = '';
+            popupElement.style.minWidth = '250px';
+            if (headerLoginButton) {
+              const spanElementText = headerLoginButton.querySelector('span');
+              spanElementText.textContent = `Hi, ${getCookie('auth_dropin_firstname')}`;
+            }
+            popupMenuContainer.insertAdjacentHTML(
+              'afterend',
+              `<ul class="popupMenuUrlList">
+                <li><a href="${rootLink(CUSTOMER_ACCOUNT_PATH)}">My Account</a></li>
+                <li><a href="${getProductLink('hollister-backyard-sweatshirt', 'MH05')}">Product page</a></li>
+                <li><button class="logoutButton">Logout</button></li>
+              </ul>`,
+            );
+          }
+        });
+        toggleMenu?.();
+      });
+    }
+  });
 };
 
 export default renderAuthCombine;
