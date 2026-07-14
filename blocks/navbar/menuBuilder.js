@@ -7,7 +7,7 @@
  */
 export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
   const unifiedMenu = JSON.parse(JSON.stringify(commerceTree));
-  
+
   const rootUl = placeholderBlock.querySelector('ul');
   if (!rootUl) return unifiedMenu;
 
@@ -16,7 +16,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
   authoredItems.forEach((item) => {
     const pEl = item.querySelector(':scope > p');
     const linkEl = pEl ? pEl.querySelector('a') : item.querySelector(':scope > a');
-    
+
     let name = '';
     if (linkEl) {
       name = linkEl.textContent.trim();
@@ -25,7 +25,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
     } else {
       name = item.firstChild?.textContent.trim() || '';
     }
-    
+
     if (!name) return;
 
     // Strict formatting logic to fix url stacking anomalies
@@ -40,7 +40,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
     if (subList) {
       subList.querySelectorAll(':scope > li').forEach((subItem) => {
         const subLink = subItem.querySelector('a');
-        
+
         const childName = subLink ? subLink.textContent.trim() : subItem.textContent.trim();
         let childUrl = subLink ? subLink.getAttribute('href') || '#' : '#';
 
@@ -55,19 +55,21 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
             name: childName,
             url_path: childUrl,
             isCustom: true,
-            children: []
+            children: [],
           });
         }
       });
     }
 
-    const existingIndex = unifiedMenu.findIndex(cat => cat.name.toLowerCase() === name.toLowerCase());
+    const existingIndex = unifiedMenu.findIndex(
+      (cat) => cat.name.toLowerCase() === name.toLowerCase(),
+    );
 
     if (existingIndex !== -1) {
       if (children.length > 0) {
         unifiedMenu[existingIndex].children = [
           ...(unifiedMenu[existingIndex].children || []),
-          ...children
+          ...children,
         ];
       }
     } else {
@@ -76,7 +78,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
         name,
         url_path: urlPath,
         isCustom: true,
-        children
+        children,
       });
     }
   });

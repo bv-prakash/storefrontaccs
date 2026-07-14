@@ -22,7 +22,7 @@ export function renderMobileMenu(unifiedTree, container) {
     li0.className = hasChildren ? 'mobile-nav__item mobile-nav__item--has-children' : 'mobile-nav__item';
 
     const trigger = document.createElement('a');
-    
+
     let targetUrl = level0.url_path || '#';
     if (targetUrl !== '#' && !targetUrl.startsWith('/') && !targetUrl.startsWith('http')) {
       targetUrl = `/${targetUrl}`;
@@ -41,7 +41,7 @@ export function renderMobileMenu(unifiedTree, container) {
       level0.children.forEach((level1) => {
         const li1 = document.createElement('li');
         const a1 = document.createElement('a');
-        
+
         let childUrl = level1.url_path || '#';
         if (childUrl !== '#' && !childUrl.startsWith('/') && !childUrl.startsWith('http')) {
           childUrl = `/${childUrl}`;
@@ -57,7 +57,7 @@ export function renderMobileMenu(unifiedTree, container) {
 
       trigger.addEventListener('click', (event) => {
         const href = trigger.getAttribute('href');
-        if (href && href !== '#') return; 
+        if (href && href !== '#') return;
 
         event.preventDefault();
         event.stopPropagation();

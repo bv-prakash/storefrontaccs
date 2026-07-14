@@ -28,7 +28,7 @@ export default async function decorate(block) {
 
     const desktopContainer = document.createElement('div');
     desktopContainer.className = 'navbar-desktop-viewport-view';
-    
+
     const mobileContainer = document.createElement('div');
     mobileContainer.className = 'navbar-mobile-viewport-view';
 
@@ -43,7 +43,7 @@ export default async function decorate(block) {
     // Dynamic Auth Injection Hook
     const globalNavElement = document.getElementById('nav');
     const isDesktopView = window.matchMedia('(min-width: 900px)');
-    
+
     renderAuthCombine(block, () => {
       if (!isDesktopView.matches && globalNavElement) {
         globalNavElement.setAttribute('aria-expanded', 'false');
@@ -52,7 +52,6 @@ export default async function decorate(block) {
         document.querySelector('.overlay')?.classList.remove('show');
       }
     });
-
   } catch (error) {
     console.error('Critical failure establishing custom modular navbar block:', error);
   }

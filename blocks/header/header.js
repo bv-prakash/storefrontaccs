@@ -71,7 +71,7 @@ export default async function decorate(block) {
   }
 
   const navSections = nav.querySelector('.nav-sections');
-  
+
   // -------------------------------------------------------------------------
   // 🔥 DEFENSIVE SELECTION: Guarantees navTools exists to prevent null exceptions
   // -------------------------------------------------------------------------
@@ -277,14 +277,14 @@ export default async function decorate(block) {
 
   const hamburger = document.createElement('div');
   hamburger.classList.add('nav-hamburger');
-  hamburger.innerHTML = `<button type="button" aria-controls="nav" aria-label="Open navigation"><span class="nav-hamburger-icon"></span></button>`;
+  hamburger.innerHTML = '<button type="button" aria-controls="nav" aria-label="Open navigation"><span class="nav-hamburger-icon"></span></button>';
   hamburger.addEventListener('click', () => {
     navWrapper.classList.toggle('active');
     overlay.classList.toggle('show');
     toggleMenu(nav, navSections);
   });
   nav.prepend(hamburger);
-  
+
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
 

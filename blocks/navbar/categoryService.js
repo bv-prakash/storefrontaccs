@@ -32,7 +32,7 @@ export async function fetchCommerceCategories() {
     const rootCategoryId = await getConfigValue('plugins.picker.rootCategory') || '2';
     const response = await CS_FETCH_GRAPHQL.fetchGraphQl(
       CATEGORY_TREE_QUERY,
-      { variables: { rootCategoryIds: [rootCategoryId] } }
+      { variables: { rootCategoryIds: [rootCategoryId] } },
     );
 
     if (response.errors?.length) {

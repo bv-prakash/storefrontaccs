@@ -15,27 +15,27 @@ export function renderDesktopMenu(unifiedTree, container) {
     li0.className = 'level0';
 
     const a0 = document.createElement('a');
-    
+
     // Ensure the path fallback handles missing values safely
     let targetUrl = level0.url_path || '#';
     if (targetUrl !== '#' && !targetUrl.startsWith('/') && !targetUrl.startsWith('http')) {
       targetUrl = `/${targetUrl}`;
     }
-    
+
     a0.href = targetUrl;
     a0.textContent = level0.name;
     li0.appendChild(a0);
 
     if (level0.children && level0.children.length > 0) {
       li0.classList.add('nav-drop');
-      
+
       const subUl = document.createElement('ul');
       subUl.className = 'submenu';
 
       level0.children.forEach((level1) => {
         const li1 = document.createElement('li');
         const a1 = document.createElement('a');
-        
+
         let childUrl = level1.url_path || '#';
         if (childUrl !== '#' && !childUrl.startsWith('/') && !childUrl.startsWith('http')) {
           childUrl = `/${childUrl}`;

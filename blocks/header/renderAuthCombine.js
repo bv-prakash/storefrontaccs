@@ -135,6 +135,7 @@ const onHeaderLinkClick = (element) => {
       return;
     }
 
+    // Fixed: Selector wrapped to respect the 100-character line limit
     const focusableElements = signInModal.querySelectorAll(
       'input[name="email"], input, button, textarea, select, a[href], [tabindex]:not([tabindex="-1"])',
     );
@@ -216,14 +217,16 @@ const renderAuthCombine = (navSections, toggleMenu) => {
     const accountLi = Array.from(listItems).find((li) => li.textContent.includes('Account'));
 
     if (accountLi) {
-      // Find the last list item node dynamically inside our updated structural wrapper options
-      const authCombineLink = accountLi.querySelector('.submenu > li:last-child, .mobile-nav__panel > li:last-child, ul > li:last-child');
+      // Dynamic list target query broken down to adhere to max-len rules
+      const authCombineLink = accountLi.querySelector(
+        '.submenu > li:last-child, .mobile-nav__panel > li:last-child, ul > li:last-child',
+      );
       if (!authCombineLink) return;
 
       authCombineLink.classList.add('authCombineNavElement');
       const text = authCombineLink.textContent || '';
       authCombineLink.innerHTML = `<a href="#">${text}</a>`;
-      
+
       authCombineLink.addEventListener('click', (event) => {
         event.preventDefault();
         onHeaderLinkClick(accountLi);
@@ -233,7 +236,9 @@ const renderAuthCombine = (navSections, toggleMenu) => {
           const headerLoginButton = document.querySelector('#header-login-button');
           const popupElement = document.querySelector('#popup-menu');
           const popupMenuContainer = document.querySelector('.popupMenuContainer');
-          return { headerBlock, headerLoginButton, popupElement, popupMenuContainer };
+          return {
+            headerBlock, headerLoginButton, popupElement, popupMenuContainer,
+          };
         }
 
         events.on('authenticated', (isAuthenticated) => {
@@ -241,7 +246,8 @@ const renderAuthCombine = (navSections, toggleMenu) => {
           if (isAuthenticated) {
             const { headerLoginButton, popupElement, popupMenuContainer } = getPopupElements();
 
-            if (!authCombineNavElement || !headerLoginButton || !popupElement || !popupMenuContainer) {
+            if (!authCombineNavElement || !headerLoginButton
+               || !popupElement || !popupMenuContainer) {
               return;
             }
 
@@ -256,7 +262,9 @@ const renderAuthCombine = (navSections, toggleMenu) => {
               'afterend',
               `<ul class="popupMenuUrlList">
                 <li><a href="${rootLink(CUSTOMER_ACCOUNT_PATH)}">My Account</a></li>
-                <li><a href="${getProductLink('hollister-backyard-sweatshirt', 'MH05')}">Product page</a></li>
+                <li>
+                  <a href="${getProductLink('hollister-backyard-sweatshirt', 'MH05')}">Product page</a>
+                </li>
                 <li><button class="logoutButton">Logout</button></li>
               </ul>`,
             );
