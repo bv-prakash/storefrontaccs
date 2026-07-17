@@ -31,9 +31,8 @@ function buildHeroBlock(main) {
   const picture = main.querySelector('picture');
   // eslint-disable-next-line no-bitwise
   if (h1 && picture && (h1.compareDocumentPosition(picture) & Node.DOCUMENT_POSITION_PRECEDING)) {
-    // Check if h1 or picture is already inside a hero block or any other block (which have classes)
     if (h1.closest('.hero, .home-slider') || picture.closest('.hero, .home-slider') || h1.closest('div[class]') || picture.closest('div[class]')) {
-      return; // Don't create a duplicate hero block or steal from other blocks
+      return;
     }
     const section = document.createElement('div');
     section.append(buildBlock('hero', { elems: [picture, h1] }));
@@ -45,11 +44,27 @@ function buildHeroBlock(main) {
  * load fonts.css and set a session storage flag
  */
 async function loadFonts() {
-  await loadCSS(`${window.hlx.codeBasePath}/styles/proxima-nova.css`);
+  const styles = [
+    'font.css',
+    'icomoon.css',
+  ];
+
+  const results = await Promise.allSettled(
+    styles.map((file) => loadCSS(`${window.hlx.codeBasePath}/styles/${file}`)),
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.warn(`Failed to load ${styles[index]}`, result.reason);
+    }
+  });
+
   try {
-    if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
+    if (!window.location.hostname.includes('localhost')) {
+      sessionStorage.setItem('styles-loaded', 'true');
+    }
   } catch (e) {
-    // do nothing
+    // Ignore storage errors
   }
 }
 
@@ -200,6 +215,23 @@ function loadDelayed() {
 }
 
 async function loadPage() {
+  const { pathname, search } = window.location;
+
+  // If we are on a natural category path that is not default, redirect to default template
+  if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
+    window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
+    return;
+  }
+
+  // If we are on the default template with a cp parameter, clean the URL visually
+  if (pathname === '/categories/default' && search.includes('cp=')) {
+    const urlParams = new URLSearchParams(search);
+    const cp = urlParams.get('cp');
+    if (cp) {
+      window.history.replaceState({}, '', decodeURIComponent(cp));
+    }
+  }
+
   await loadEager(document);
   await loadLazy(document);
   loadDelayed();

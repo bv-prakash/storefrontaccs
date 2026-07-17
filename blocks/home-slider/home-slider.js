@@ -1,20 +1,4 @@
-import { loadCSS } from '../../scripts/aem.js';
-
-/**
- * Load slider-specific custom CSS
- */
-async function loadSliderStyles() {
-  await loadCSS(`${window.hlx.codeBasePath}/styles/font.css`);
-  try {
-    if (!window.location.hostname.includes('localhost')) {
-      sessionStorage.setItem('slider-styles-loaded', 'true');
-    }
-  } catch (e) { /* do nothing */ }
-}
-
-export default async function decorate(block) {
-  const stylesReady = loadSliderStyles(); // fire in parallel, don't await yet
-
+export default function decorate(block) {
   const slides = [...block.children];
   if (!slides.length) return;
 
@@ -142,6 +126,4 @@ export default async function decorate(block) {
       autoPlay = setInterval(() => goToSlide(currentSlideIndex + 1), 5000);
     });
   }
-
-  await stylesReady; // CSS awaited last — slider is already rendered by this point
 }
