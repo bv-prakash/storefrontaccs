@@ -1,15 +1,13 @@
 
-.block.product-list-page .search__wrapper {
-    display: grid;
-    margin-block: var(--spacing-small);
-    grid-template-areas:
-        "result-info"
-        "view-facets"
-        "facets"
-        "product-sort"
-        "product-list"
-        "pagination";
+.product-list-page {
+    margin-top: 20px;
 }
+
+.block.product-list-page .search__wrapper {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
 
 .block.product-list-page .search__result-info {
     grid-area: result-info;
@@ -52,7 +50,6 @@
 
 .block.product-list-page .search__facets {
     grid-area: facets;
-    margin-block-end: var(--spacing-small);
     display: none;
 }
 
@@ -62,7 +59,7 @@
 
 .block.product-list-page .search__product-sort {
     grid-area: product-sort;
-    margin-block-end: var(--spacing-small);
+    margin-bottom: 20px;
 }
 
 .block.product-list-page .search__product-list {
@@ -81,13 +78,6 @@
     gap: var(--spacing-xxsmall);
 }
 
-/* Empty State */
-
-.block.product-list-page.product-list-page--empty .search__wrapper {
-    grid-template-areas:
-        "product-list";
-    grid-template-columns: 1fr;
-}
 
 .block.product-list-page.product-list-page--empty .search__result-info,
 .block.product-list-page.product-list-page--empty .search__view-facets,
@@ -99,21 +89,12 @@
 
 /* Media Queries */
 @media only screen and (min-width: 768px) {
-    .block.product-list-page .search__wrapper {
-        grid-template-areas:
-            "result-info product-sort"
-            "facets product-list"
-            ". pagination";
-        grid-template-columns: 270px 1fr;
-    }
-
     .block.product-list-page .search__view-facets {
         display: none;
     }
 
     .block.product-list-page .search__facets {
         display: unset;
-        margin-right: var(--spacing-small);
     }
 
     .block.product-list-page .search__product-sort {
@@ -130,33 +111,54 @@
 }
 
 .plp-breadcrumbs ol {
-    display: flex;
-    gap: var(--spacing-xsmall);
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: var(--font-size-small);
-    color: var(--color-neutral-600);
+    color: var(--color-text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.plp-breadcrumbs li::after {
-    content: "/";
-    margin-left: var(--spacing-xsmall);
-    color: var(--color-neutral-400);
+.plp-breadcrumbs li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-weight: 400;
 }
 
-.plp-breadcrumbs li:last-child::after {
-    content: "";
+.plp-breadcrumbs ol li,
+.plp-breadcrumbs ol li a {
+    font-size: 16px;
+    line-height: 1.1;
 }
 
-.plp-breadcrumbs a {
-    color: var(--color-brand-700);
+.plp-breadcrumbs li:not(:last-child)::after {
+    font-size: 18px;
+    line-height: 18px;
+    content: '\e904';
+    font-family: var(--icomoon-font);
+    vertical-align: top;
+    display: inline-block;
+    font-weight: 700;
+    text-align: center;
+    transform: rotate(180deg);
+}
+
+
+.plp-breadcrumbs ol li a {
+    font-weight: 700;
+    color: var(--color-brand-dark-blue);
     text-decoration: none;
 }
 
-.plp-breadcrumbs a:hover {
-    text-decoration: underline;
+
+.plp-breadcrumbs ol li a:hover {
+    color: var(--color-brand-dark-blue);
+    text-decoration: none;
 }
+
 
 .product-discovery-product-list__grid .plp-inline-banner {
   grid-column: 1 / -1;
@@ -176,3 +178,234 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+.search__header {
+    margin-bottom: 25px;
+}
+
+.plp-title {
+    font-size: 20px;
+    line-height: 1.1;
+    margin: 0 0 5px;
+    font-weight: 700;
+    color: var(--color-text-color);
+}
+
+.block.product-list-page .block-subtitle {
+    font-size: 17px;
+    font-weight: 400;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 20px;
+}
+
+
+.block.product-list-page .search__product-sort select {
+    border: 0;
+    border-bottom: solid 1px #000;
+    box-shadow: none;
+    height: 32px;
+    min-width: 180px;
+    padding: 0 30px 0 0;
+    border-radius: 0;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #000;
+    font-weight: 400;
+}
+
+.block.product-list-page .search__product-sort .dropin-picker__selected {
+    flex-direction: row-reverse;
+}
+
+.block.product-list-page .search__product-sort .dropin-picker__chevronDown {
+    right: 0;
+}
+
+.block.product-list-page .search__product-sort .dropin-picker__floatingLabel {
+    display: inline-block;
+    font-weight: 700;
+    margin-right: 12px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    position: static;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #000;
+    transform: none;
+}
+
+@media (min-width: 768px) {
+    .plp-title {
+        font-size: 26px;
+        margin-bottom: 10px;
+    }
+
+    .block.product-list-page .search__wrapper {
+        gap: 32px;
+        flex-direction: row-reverse;
+    }
+    
+
+    .block.product-list-page .column-main {
+        width: 77%;
+        min-height: 300px;
+    }
+
+    .block.product-list-page .sidebar-main {
+        width: 21%;
+    }
+
+    .block.product-list-page .block-subtitle {
+        font-size: 17px;
+        font-weight: 400;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 20px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .block.product-list-page .block-subtitle {
+        font-size: 22px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .search__header {
+        margin-bottom: 30px;
+    }
+
+    .plp-title {
+        font-size: 32px;
+    }
+
+    .plp-breadcrumbs ol li,
+    .plp-breadcrumbs ol li a {
+        font-size: 18px;
+    }
+
+    .block.product-list-page .block-subtitle {
+        font-size: 24px;
+    }
+
+    .block.product-list-page .search__product-sort select {
+        font-size: 18px;
+        min-width: 240px;
+    }
+
+    .block.product-list-page .search__product-sort .dropin-picker__floatingLabel {
+        font-size: 18px;
+    }
+
+    .block.product-list-page .search__product-sort {
+        margin-bottom: 40px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .block.product-list-page .search__product-sort select {
+        min-width: 300px;
+    }
+}
+
+/* =====================================================
+   Collapsible Facet Groups (Layered Navigation)
+   ===================================================== */
+
+/* Each dropin facet group gets this class via JS */
+.block.product-list-page .plp-facet-group {
+    border-bottom: 1px solid #000;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Header / toggle row */
+.block.product-list-page .plp-facet-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 13px 0;
+    cursor: pointer;   
+    text-align: left;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-color, #000);
+    transition: color 0.2s ease;
+    margin: 0;
+}
+
+.block.product-list-page .dropin-radio-button__label {
+    color: var(--color-text-color);
+}
+
+.block.product-list-page .dropin-radio-button__label .dropin-price--small.dropin-price--bold,
+.block.product-list-page .dropin-checkbox__label--medium {
+    font-weight: 400;
+    color: var(--color-text-color);
+}
+
+.block.product-list-page .plp-facet-toggle:hover {
+    color: var(--color-brand-700, #0a3276);
+}
+
+/* Chevron indicator — two short lines that form a "v" shape */
+.block.product-list-page .plp-facet-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}
+
+.block.product-list-page .plp-facet-chevron::before,
+.block.product-list-page .plp-facet-chevron::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 2px;
+    background-color: currentcolor;
+    border-radius: 1px;
+    transition: transform 0.3s ease;
+}
+
+.block.product-list-page .plp-facet-chevron::before {
+    transform: translateX(-3px) rotate(-45deg);
+}
+
+.block.product-list-page .plp-facet-chevron::after {
+    transform: translateX(3px) rotate(45deg);
+}
+
+/* Collapsed state — chevron flips to point down */
+.block.product-list-page .plp-facet-group--collapsed .plp-facet-chevron::before {
+    transform: translateX(-3px) rotate(45deg);
+}
+
+.block.product-list-page .plp-facet-group--collapsed .plp-facet-chevron::after {
+    transform: translateX(3px) rotate(-45deg);
+}
+
+/* Collapsible content area with smooth height animation */
+.block.product-list-page .plp-facet-content {
+    overflow: hidden;
+    max-height: 600px;
+    opacity: 1;
+    padding-bottom: 12px;
+    transition:
+        max-height 0.35s ease,
+        opacity 0.3s ease,
+        padding-bottom 0.3s ease;
+}
+
+.block.product-list-page .plp-facet-group--collapsed .plp-facet-content {
+    max-height: 0;
+    opacity: 0;
+    padding-bottom: 0;
+}
+

@@ -166,16 +166,19 @@ export default async function decorate(block) {
   }, { eager: true });
 
   /** Dynamic Commerce Search Panel Generation */
+  /* Notice we explicitly apply 'nav-tools-panel--show'
+  directly into the template so the container displays immediately */
+
   const searchFragment = document.createRange().createContextualFragment(`
   <div class="search-wrapper nav-tools-wrapper">
-    <button type="button" class="nav-search-button">Search</button>
-    <div class="nav-search-input nav-search-panel nav-tools-panel">
+    <button type="button" class="nav-search-button" tabindex="-1"><span>Search</span></button>
+    <div class="nav-search-input nav-search-panel nav-tools-panel nav-tools-panel--show">
       <form id="search-bar-form"></form>
       <div class="search-bar-result" style="display: none;"></div>
     </div>
   </div>
   `);
-  navTools.append(searchFragment);
+  navTools.prepend(searchFragment);
 
   const searchPanel = navTools.querySelector('.nav-search-panel');
   const searchButton = navTools.querySelector('.nav-search-button');
@@ -257,11 +260,20 @@ export default async function decorate(block) {
     if (show) searchForm?.querySelector('input')?.focus();
   }
 
+  /* Silently pre-load the functional drop-in components without
+  hiding the panel frame or closing it */
+  toggleSearch(true);
+
   searchButton.addEventListener('click', () => toggleSearch(!searchPanel.classList.contains('nav-tools-panel--show')));
 
   document.addEventListener('click', (e) => {
     if (!minicartPanel.contains(e.target) && !cartButton.contains(e.target)) toggleMiniCart(false);
-    if (!searchPanel.contains(e.target) && !searchButton.contains(e.target)) toggleSearch(false);
+
+    /* Maintain standard drop-in behavior: Close the search results
+     drop-down layer if the user clicks out */
+    if (!searchPanel.contains(e.target) && !searchButton.contains(e.target)) {
+      searchResult.style.display = 'none';
+    }
   });
 
   const navWrapper = document.createElement('div');
@@ -283,7 +295,7 @@ export default async function decorate(block) {
     overlay.classList.toggle('show');
     toggleMenu(nav, navSections);
   });
-  nav.prepend(hamburger);
+  nav.append(hamburger);
 
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));

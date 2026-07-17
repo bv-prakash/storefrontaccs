@@ -125,19 +125,38 @@ export function getSearchStateFromUrl(url) {
  * @param {{ phrase?: string, currentPage?: number, sort?: Array, filter?: Array }} request
  *   Search request from the discovery API; only set params are written to the URL.
  */
+/**
+ * Writes search state from a request object onto the URL's query params.
+ * Cleans out empty parameters to prevent malformed tracking URL structures.
+ */
 export function applySearchStateToUrl(url, request) {
   if (request?.phrase) {
     url.searchParams.set('q', request.phrase);
+  } else {
+    url.searchParams.delete('q');
   }
-  if (request?.currentPage) {
+
+  if (request?.currentPage && request.currentPage > 1) {
     url.searchParams.set('page', String(request.currentPage));
+  } else {
+    url.searchParams.delete('page');
   }
-  if (request?.sort != null) {
+
+  if (request?.sort && request.sort.length > 0) {
     url.searchParams.set('sort', serializeSort(request.sort));
+  } else {
+    url.searchParams.delete('sort');
   }
-  if (request?.filter != null) {
-    // Don't add visibility filter to the URL, since we always add it in product-list-page.js
+
+  if (request?.filter && request.filter.length > 0) {
     const urlFilters = request.filter.filter((f) => f.attribute !== 'visibility');
-    url.searchParams.set('filter', serializeFilter(urlFilters));
+    const serialized = serializeFilter(urlFilters);
+    if (serialized) {
+      url.searchParams.set('filter', serialized);
+    } else {
+      url.searchParams.delete('filter');
+    }
+  } else {
+    url.searchParams.delete('filter');
   }
 }

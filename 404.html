@@ -11,16 +11,27 @@
   <script nonce="aem" type="importmap">
     {
         "imports": {
-            "@dropins/tools/": "/scripts/__dropins__/tools/",
-            "@dropins/storefront-cart/": "/scripts/__dropins__/storefront-cart/",
+            "@dropins/storefront-account/": "/scripts/__dropins__/storefront-account/",
             "@dropins/storefront-auth/": "/scripts/__dropins__/storefront-auth/",
-            "@dropins/storefront-personalization/": "/scripts/__dropins__/storefront-personalization/"
+            "@dropins/storefront-cart/": "/scripts/__dropins__/storefront-cart/",
+            "@dropins/storefront-checkout/": "/scripts/__dropins__/storefront-checkout/",
+            "@dropins/storefront-order/": "/scripts/__dropins__/storefront-order/",
+            "@dropins/storefront-payment-services/": "/scripts/__dropins__/storefront-payment-services/",
+            "@dropins/storefront-pdp/": "/scripts/__dropins__/storefront-pdp/",
+            "@dropins/storefront-recommendations/": "/scripts/__dropins__/storefront-recommendations/",
+            "@dropins/storefront-wishlist/": "/scripts/__dropins__/storefront-wishlist/",
+            "@dropins/storefront-personalization/": "/scripts/__dropins__/storefront-personalization/",
+            "@dropins/storefront-product-discovery/": "/scripts/__dropins__/storefront-product-discovery/",
+            "@dropins/tools/": "/scripts/__dropins__/tools/"
         }
     }
   </script>
   <script nonce="aem" type="text/javascript">
     window.isErrorPage = true;
     window.errorCode = '404';
+    if (window.location.pathname.startsWith('/categories/')) {
+      document.write('<style>main.error { display: none !important; }</style>');
+    }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta property="og:title" content="Page not found">
@@ -72,7 +83,9 @@
           backBtn.textContent = 'Go back';
           backBtn.title = 'Go back';
           const btnContainer = document.querySelector('.button-container');
-          btnContainer.append(backBtn);
+          if (btnContainer) {
+            btnContainer.append(backBtn);
+          }
         }
       }
     });

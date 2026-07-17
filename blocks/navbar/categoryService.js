@@ -18,13 +18,19 @@ function getSortedCategories(categories) {
 function buildCategoryTree(categories, parentId) {
   return getSortedCategories(categories)
     .filter((category) => category.parentId === parentId && shouldShowCategory(category))
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      url_path: category.urlPath,
-      isCustom: false,
-      children: buildCategoryTree(categories, category.id),
-    }));
+    .map((category) => {
+      // Clean up leading/trailing slashes from the original backend data token
+      const cleanUrlPath = category.urlPath.replace(/^\//, '').replace(/\/$/, '');
+
+      return {
+        id: category.id,
+        name: category.name,
+        // Prepend the centralized route layout mapping path
+        url_path: `/categories/${cleanUrlPath}`,
+        isCustom: false,
+        children: buildCategoryTree(categories, category.id),
+      };
+    });
 }
 
 export async function fetchCommerceCategories() {

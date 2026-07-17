@@ -48,11 +48,12 @@
     margin-top: 0;
     font-weight: 600;
     font-size: 20px;
+    line-height: 1.1;
 }
 
 .aml-social-catalog .columns > div p,
 .talk-expert-section .columns > div p {
-   margin-bottom: 30px;
+   margin-bottom: 20px;
    margin-top: 0;
 }
 
@@ -85,9 +86,21 @@
     color: var(--color-dark-blue);
 }
 
+.talk-expert-section .columns > div > div {
+  flex: unset;
+}
+
+.talk-expert-section .columns-wrapper .columns > div {
+  gap: 0;
+}
+
+.aml-social-catalog .columns > div > div:not(.columns-img-col) {
+  padding: 40px 20px 20px;
+}
+
 
 @media (min-width: 768px) {
-  .aml-social-catalog .columns > div > div {
+  .aml-social-catalog .columns > div > div:not(.columns-img-col) {
     width: 40%;
     padding: 30px 20px;
     flex: unset;
@@ -95,13 +108,12 @@
   
   .aml-social-catalog .columns > div > .columns-img-col {
     width: 60%;
-    padding: 0;
   }
 }
 
 
 @media (min-width: 1200px) {
-  .aml-social-catalog .columns > div > div {
+  .aml-social-catalog .columns > div > div:not(.columns-img-col) {
     padding-left: 50px;
     padding-right: 50px;
   }
@@ -116,8 +128,6 @@
     margin-bottom: 90px;
     margin-top: 60px;
   }
-
-
 }
 
 
@@ -131,17 +141,13 @@ main >.section.talk-expert-section {
 .talk-expert-section .columns-wrapper {
   max-width: unset;
   padding: 0;
-  margin-top: 90px;
   margin-bottom: 0;
 }
 
-.talk-expert-section .columns > div > div {
-  flex: unset;
+.talk-expert-section .columns > div > div:not(.columns-img-col) {
+  padding: 20px;
 }
 
-.talk-expert-section .columns-wrapper .columns > div {
-  gap: 0; 
-}
 
 .talk-expert-section .columns > div  h2 {
     color: var(--color-dark-blue);
@@ -149,6 +155,7 @@ main >.section.talk-expert-section {
     margin-top: 0;
     font-weight: 600;
     font-size: 20px;
+    line-height: 1.1;
 }
 
 .talk-expert-section .columns > div p:last-child {
@@ -159,6 +166,10 @@ main >.section.talk-expert-section {
 .talk-expert-section .columns-wrapper .columns > div > div {
   max-width: 540px;
   padding: 70px 100px;
+}
+
+.talk-expert-section .columns-wrapper {
+  margin-top: 90px;
 }
 
 .talk-expert-section .columns-wrapper .columns > div > .columns-img-col {

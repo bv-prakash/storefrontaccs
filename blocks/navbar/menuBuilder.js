@@ -28,10 +28,10 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
 
     if (!name) return;
 
-    // Strict formatting logic to fix url stacking anomalies
+    // Strict formatting logic to fix url stacking anomalies on authored elements
     let urlPath = linkEl ? linkEl.getAttribute('href') || '#' : '#';
     if (urlPath !== '#' && !urlPath.startsWith('/') && !urlPath.startsWith('http')) {
-      urlPath = `/${urlPath}`;
+      urlPath = `/categories/${urlPath}`;
     }
 
     const subList = item.querySelector('ul');
@@ -44,9 +44,9 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
         const childName = subLink ? subLink.textContent.trim() : subItem.textContent.trim();
         let childUrl = subLink ? subLink.getAttribute('href') || '#' : '#';
 
-        // Enforce absolute paths on child nodes
+        // Enforce categories absolute paths on relative manual child nodes
         if (childUrl !== '#' && !childUrl.startsWith('/') && !childUrl.startsWith('http')) {
-          childUrl = `/${childUrl}`;
+          childUrl = `/categories/${childUrl}`;
         }
 
         if (childName) {

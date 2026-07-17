@@ -1,0 +1,183 @@
+
+
+@font-face {
+    font-family: icomoon;
+    src: url('../fonts/icomoon/icomoon.eot');
+    src: url('../fonts/icomoon/icomoon.eot?#iefix') format('embedded-opentype'), url('../fonts/icomoon/icomoon.woff') format('woff'), url('../fonts/icomoon/icomoon.ttf') format('truetype'), url('../fonts/icomoon/icomoon.svg#icomoon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+[data-icon]::before {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    content: attr(data-icon);
+    font-family: icomoon, sans-serif !important;
+    font-variant: normal !important;
+    font-weight: normal !important;
+    line-height: 1;
+    text-transform: none !important;
+}
+
+[class^='icon-']::before {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-family: icomoon, sans-serif !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    font-weight: normal !important;
+    line-height: 1;
+    text-transform: none !important;
+}
+
+[class*=' icon-']::before {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-family: icomoon, sans-serif !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    font-weight: normal !important;
+    line-height: 1;
+    text-transform: none !important;
+}
+
+.icon-cross-icon::before {
+    content: '\e922';
+}
+
+.icon-basket::before {
+    content: '\e920';
+}
+
+.icon-requisition-list::before {
+    content: '\e921';
+}
+
+.icon-user-fill::before {
+    content: '\e91d';
+}
+
+.icon-compare-light::before {
+    content: '\e91e';
+}
+
+.icon-delivery-cart::before {
+    content: '\e91f';
+}
+
+.icon-minus::before {
+    content: '\e91b';
+}
+    
+.icon-plus::before {
+    content: '\e91c';
+}
+
+.icon-sort::before {
+    content: '\e917';
+}
+
+.icon-filter::before {
+    content: '\e918';
+}
+
+.icon-delivery::before {
+    content: '\e913';
+}
+
+.icon-play-circle::before {
+    content: '\e912';
+}
+
+.icon-trash::before {
+    content: '\e911';
+}
+
+.icon-view-order::before {
+    content: '\e910';
+}
+
+.icon-email::before {
+    content: '\e90d';
+}
+
+.icon-password::before {
+    content: '\e90e';
+}
+
+.icon-view::before {
+    content: '\e90f';
+}
+
+.icon-requisition::before {
+    content: '\e90a';
+}
+
+.icon-compare::before {
+    content: '\e90b';
+}
+
+.icon-call2::before {
+    content: '\e90c';
+}
+
+.icon-call::before {
+    content: '\e900';
+}
+
+.icon-edit::before {
+    content: '\e901';
+}
+
+.icon-facebook::before {
+    content: '\e902';
+}
+
+.icon-youtube::before {
+    content: '\e903';
+}
+
+.icon-back-arrow::before {
+    content: '\e904';
+}
+
+.icon-instagram .path1::before {
+    content: '\e905';
+}
+
+.icon-instagram .path2::before {
+    content: '\e906';
+}
+
+.icon-search::before {
+    content: '\e907';
+}
+
+.icon-user::before {
+    content: '\e908';
+}
+
+.icon-cart::before {
+    content: '\e909';
+}
+
+.icon-check::before {
+    content: '\e914';
+}
+
+.icon-password-hide::before {
+    content: '\e915';
+}
+
+.icon-order-summary::before {
+    content: '\e916';
+}
+
+.icon-copy-two-paper::before {
+    content: '\e919';
+}
+
+.icon-location::before {
+    content: '\e91a';
+}

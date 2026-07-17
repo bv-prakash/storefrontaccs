@@ -1,11 +1,3 @@
-:root {
-    --aem-clean-font-family: 'adobe-clean', sans-serif;
-}
-
-.home-slider,
-.home-slider * {
-    font-family: var(--aem-clean-font-family);
-}
 
 .home-slider {
     position: relative;
@@ -50,37 +42,44 @@ main .home-slider-container .home-slider-wrapper {
 .home-slider .slide-content {
     position: absolute;
     top: 50%;
-    right: 8%;
     transform: translateY(-50%);
-    width: 400px;
-    padding: 32px;
-    background: rgb(42 67 93 / 85%);
-
-    /* Dark Blue */
-    color: white;
+    width: 100%;
+    background-image: linear-gradient(to right, rgb(128 128 128 / 60%), rgb(0 0 0 / 60%));
+    padding: 20px 25px;
+    color: #fff;
+    max-width: 260px;
+    right: 0;
 }
 
 .home-slider .title {
-    font-size: 42px;
+    font-size: 20px;
     font-weight: 700;
     margin-top: 0;
+    line-height: 1.1;
     color: white;
 }
 
 .home-slider .location {
     font-weight: 600;
     margin: 16px 0;
+    font-size: 1.5rem;
+    line-height: 1.1;
 }
 
 .home-slider .description {
     margin: 16px 0;
     line-height: 1.5;
+     font-size: 1.5rem;
+}
+
+.home-slider .cta {
+    margin: 0;
 }
 
 .home-slider .cta a {
     display: inline-block;
-    margin-top: 24px;
-    padding: 12px 24px;
+    margin-top: 20px;
+    padding: 8px 20px;
     border: 1px solid white;
     color: white;
     text-decoration: none;
@@ -148,19 +147,28 @@ main .home-slider-container .home-slider-wrapper {
     background: white;
 }
 
-@media (max-width: 899px) {
-    .home-slider .slide-content {
-        position: relative;
-        transform: none;
-        top: auto;
-        right: auto;
-        width: 100%;
-        box-sizing: border-box;
-    }
-}
 
 @media only screen and (min-width: 1440px) {
     main .home-slider-container {
         margin-bottom: 80px;
+    }
+}
+
+@media (min-width: 768px) {
+    .home-slider .slide-content {
+        max-width: 480px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .home-slider .slide-content {
+        right: 8%;
+    }
+}
+
+
+@media (max-width: 767px) {
+    .home-slider .slider-nav {
+        display: none;
     }
 }
