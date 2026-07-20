@@ -56,23 +56,13 @@ export function renderMobileMenu(unifiedTree, container) {
       li0.appendChild(panel);
 
       trigger.addEventListener('click', (event) => {
-        const href = trigger.getAttribute('href');
-        if (href && href !== '#') return;
-
+        // Prevent default navigation so it handles the accordion expansion instead
         event.preventDefault();
         event.stopPropagation();
 
         const expanded = li0.getAttribute('aria-expanded') === 'true';
 
-        Array.from(rootUl.children).forEach((sibling) => {
-          if (sibling !== li0) {
-            sibling.classList.remove('is-active');
-            sibling.setAttribute('aria-expanded', 'false');
-            const p = sibling.querySelector('.mobile-nav__panel');
-            if (p) p.style.display = 'none';
-          }
-        });
-
+        // Toggle the current panel independently (Allows multiple panels to stay open)
         li0.classList.toggle('is-active', !expanded);
         li0.setAttribute('aria-expanded', !expanded ? 'true' : 'false');
         panel.style.display = !expanded ? 'block' : 'none';

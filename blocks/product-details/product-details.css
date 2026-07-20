@@ -31,13 +31,13 @@
   margin-top: var(--spacing-medium);
 }
 
-.product-details__gallery .pdp-carousel {
+/* .product-details__gallery .pdp-carousel {
   max-height: 60vh;
 }
 
 .product-details__gallery .pdp-carousel--thumbnailsRow {
   max-height: 80vh;
-}
+} */
 
 .product-details__gallery .pdp-overlay__content .pdp-carousel,
 .product-details__gallery .pdp-overlay__content .pdp-carousel--thumbnailsRow
