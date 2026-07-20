@@ -100,12 +100,17 @@
 
 
 @media (min-width: 768px) {
+  .aml-social-catalog .columns > div {
+    flex-direction: row;
+    align-items: center;
+  }
+
   .aml-social-catalog .columns > div > div:not(.columns-img-col) {
     width: 40%;
     padding: 30px 20px;
     flex: unset;
   }
-  
+
   .aml-social-catalog .columns > div > .columns-img-col {
     width: 60%;
   }
