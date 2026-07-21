@@ -103,17 +103,7 @@ export function renderAuthDropdown(navTools) {
     } else {
       authDropDownMenuList.style.display = 'none';
       authDropinContainer.style.display = 'block';
-      loginButton.innerHTML = `
-      <svg
-          width="25"
-          height="25"
-          viewBox="0 0 24 24"
-          aria-label="My Account"
-          >
-          <g fill="none" stroke="#000000" stroke-width="1.5">
-          <circle cx="12" cy="6" r="4"></circle>
-          <path d="M20 17.5c0 2.485 0 4.5-8 4.5s-8-2.015-8-4.5S7.582 13 12 13s8 2.015 8 4.5Z"></path></g></svg>
-        `;
+      loginButton.innerHTML = '<span class="sign-in">Sign In</span>';
     }
   };
 

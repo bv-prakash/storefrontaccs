@@ -152,22 +152,38 @@ main .home-slider-container .home-slider-wrapper {
     main .home-slider-container {
         margin-bottom: 80px;
     }
+
+    .home-slider .title {
+        font-size: 32px;
+    }
+
+    .home-slider .location,
+    .home-slider .description {
+        font-size: 1.8rem;
+    }
 }
 
-@media (min-width: 768px) {
+
+@media only screen and (min-width: 1024px) {
+    .home-slider .title {
+        font-size: 26px;
+    }
+}
+
+@media only screen and (min-width: 768px) {
     .home-slider .slide-content {
         max-width: 480px;
     }
 }
 
-@media (min-width: 1200px) {
+@media only screen and (min-width: 1200px) {
     .home-slider .slide-content {
         right: 8%;
     }
 }
 
 
-@media (max-width: 767px) {
+@media only screen and (max-width: 767px) {
     .home-slider .slider-nav {
         display: none;
     }

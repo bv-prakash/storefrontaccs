@@ -9,9 +9,11 @@ import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
 import renderSellerAssistedBuyingBanner from './renderSellerAssistedBuyingBanner.js';
 
-const isDesktop = window.matchMedia('(min-width: 900px)');
-const labels = await fetchPlaceholders();
+// Cleaned up: Only importing CompareService here since events is already declared above
+import { CompareService } from '../../scripts/compare-service.js';
 
+const isDesktop = window.matchMedia('(min-width: 1200px)');
+const labels = await fetchPlaceholders();
 const overlay = document.createElement('div');
 overlay.classList.add('overlay');
 document.querySelector('header').insertAdjacentElement('afterbegin', overlay);
@@ -34,6 +36,32 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
   document.body.style.overflowY = expanded || isDesktop.matches ? '' : 'hidden';
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
   toggleAllNavSections(navSections, expanded || isDesktop.matches ? 'false' : 'true');
+}
+
+function decorateCompareCounter(navToolsPanel) {
+  const counterLink = document.createElement('a');
+  counterLink.href = '/compare';
+  counterLink.className = 'nav-compare-counter-btn';
+  counterLink.innerHTML = `
+    <span class="compare-label">
+     compare products
+    </span>
+    <span class="compare-counter-badge">0</span>
+  `;
+
+  navToolsPanel.appendChild(counterLink);
+
+  const refreshCountBadge = () => {
+    const totalItems = CompareService.getProducts().length;
+    const badge = counterLink.querySelector('.compare-counter-badge');
+    if (badge) {
+      badge.textContent = totalItems;
+      badge.style.display = totalItems > 0 ? 'inline-block' : 'none';
+    }
+  };
+
+  events.on('compare/update', refreshCountBadge);
+  refreshCountBadge();
 }
 
 /**
@@ -72,9 +100,6 @@ export default async function decorate(block) {
 
   const navSections = nav.querySelector('.nav-sections');
 
-  // -------------------------------------------------------------------------
-  // 🔥 DEFENSIVE SELECTION: Guarantees navTools exists to prevent null exceptions
-  // -------------------------------------------------------------------------
   let navTools = nav.querySelector('.nav-tools');
   if (!navTools) {
     navTools = nav.children[2] || nav.querySelector('.default-content-wrapper > p:last-child')?.closest('div');
@@ -86,12 +111,11 @@ export default async function decorate(block) {
       nav.appendChild(navTools);
     }
   }
-  // -------------------------------------------------------------------------
 
   /** Wishlist panel block structure setup initialization logic loops */
   const wishlist = document.createRange().createContextualFragment(`
      <div class="wishlist-wrapper nav-tools-wrapper">
-       <button type="button" class="nav-wishlist-button" aria-label="Wishlist"></button>
+       <button type="button" class="nav-wishlist-button" aria-label="Wishlist"><span>wishlist</span></button>
        <div class="wishlist-panel nav-tools-panel"></div>
      </div>
    `);
@@ -108,11 +132,13 @@ export default async function decorate(block) {
   /** Mini Cart implementation sequence rules checking filters */
   const excludeMiniCartFromPaths = ['/checkout'];
   const minicart = document.createRange().createContextualFragment(`
-     <div class="minicart-wrapper nav-tools-wrapper">
-       <button type="button" class="nav-cart-button" aria-label="Cart"></button>
-       <div class="minicart-panel nav-tools-panel"></div>
-     </div>
-   `);
+    <div class="minicart-wrapper nav-tools-wrapper">
+      <button type="button" class="nav-cart-button" aria-label="Cart">
+        <span class="my-cart-label">My Cart</span>
+      </button>
+      <div class="minicart-panel nav-tools-panel"></div>
+    </div>
+  `);
   navTools.append(minicart);
 
   const minicartPanel = navTools.querySelector('.minicart-panel');
@@ -139,8 +165,19 @@ export default async function decorate(block) {
     await withLoadingState(minicartPanel, cartButton, async () => {
       const miniCartMeta = getMetadata('mini-cart');
       const miniCartPath = miniCartMeta ? new URL(miniCartMeta, window.location).pathname : '/mini-cart';
+
       const miniCartFragment = await loadFragment(miniCartPath);
       minicartPanel.append(miniCartFragment.firstElementChild);
+
+      if (!minicartPanel.querySelector('.minicart-close')) {
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'minicart-close';
+        closeBtn.setAttribute('aria-label', 'Close mini cart');
+        closeBtn.innerHTML = '<span>Close</span>';
+        closeBtn.addEventListener('click', () => toggleMiniCart(false));
+        minicartPanel.prepend(closeBtn);
+      }
     });
   }
 
@@ -158,25 +195,31 @@ export default async function decorate(block) {
 
   events.on('cart/data', (data) => {
     if (data) loadMiniCartFragment();
-    if (data?.totalQuantity) {
-      cartButton.setAttribute('data-count', data.totalQuantity);
+    let qtyBadge = cartButton.querySelector('.my-cart-counter-qty');
+    if (data?.totalQuantity > 0) {
+      if (!qtyBadge) {
+        qtyBadge = document.createElement('span');
+        qtyBadge.className = 'my-cart-counter-qty';
+        cartButton.appendChild(qtyBadge);
+      }
+      qtyBadge.textContent = data.totalQuantity;
     } else {
-      cartButton.removeAttribute('data-count');
+      qtyBadge?.remove();
     }
   }, { eager: true });
 
-  /** Dynamic Commerce Search Panel Generation */
-  /* Notice we explicitly apply 'nav-tools-panel--show'
-  directly into the template so the container displays immediately */
+  /** Mount the Comparison Badge Row directly next to tool elements */
+  decorateCompareCounter(navTools);
 
+  /** Dynamic Commerce Search Panel Generation */
   const searchFragment = document.createRange().createContextualFragment(`
-  <div class="search-wrapper nav-tools-wrapper">
-    <button type="button" class="nav-search-button" tabindex="-1"><span>Search</span></button>
-    <div class="nav-search-input nav-search-panel nav-tools-panel nav-tools-panel--show">
-      <form id="search-bar-form"></form>
-      <div class="search-bar-result" style="display: none;"></div>
+    <div class="search-wrapper nav-tools-wrapper">
+      <button type="button" class="nav-search-button" tabindex="-1"><span>Search</span></button>
+      <div class="nav-search-input nav-search-panel nav-tools-panel nav-tools-panel--show">
+        <form id="search-bar-form"></form>
+        <div class="search-bar-result" style="display: none;"></div>
+      </div>
     </div>
-  </div>
   `);
   navTools.prepend(searchFragment);
 
@@ -191,19 +234,18 @@ export default async function decorate(block) {
       await withLoadingState(searchPanel, searchButton, async () => {
         await import('../../scripts/initializers/search.js');
         const [
-          { search },
-          { render },
-          { SearchResults },
-          { provider: UI, Input, Button },
+          { search: runSearch },
+          { render: dropinRender },
+          { SearchResults: ContainerResults },
+          { provider: UI, Input, Button: ComponentsButton },
         ] = await Promise.all([
           import('@dropins/storefront-product-discovery/api.js'),
           import('@dropins/storefront-product-discovery/render.js'),
           import('@dropins/storefront-product-discovery/containers/SearchResults.js'),
           import('@dropins/tools/components.js'),
-          import('@dropins/tools/lib.js'),
         ]);
 
-        render.render(SearchResults, {
+        dropinRender.render(ContainerResults, {
           skeletonCount: pageSize,
           scope: 'popover',
           routeProduct: ({ urlKey, sku }) => getProductLink(urlKey, sku),
@@ -224,7 +266,7 @@ export default async function decorate(block) {
             },
             Footer: async (ctx) => {
               const viewAllResultsWrapper = document.createElement('div');
-              const viewAllResultsButton = await UI.render(Button, {
+              const viewAllResultsButton = await UI.render(ComponentsButton, {
                 children: labels.Global?.SearchViewAll,
                 variant: 'secondary',
                 href: rootLink('/search'),
@@ -244,9 +286,9 @@ export default async function decorate(block) {
           name: 'search',
           placeholder: labels.Global?.Search,
           onValue: (phrase) => {
-            if (!phrase) { search(null, { scope: 'popover' }); return; }
+            if (!phrase) { runSearch(null, { scope: 'popover' }); return; }
             if (phrase.length < 3) return;
-            search({
+            runSearch({
               phrase,
               pageSize,
               filter: [{ attribute: 'visibility', in: ['Search', 'Catalog, Search'] }],
@@ -260,17 +302,11 @@ export default async function decorate(block) {
     if (show) searchForm?.querySelector('input')?.focus();
   }
 
-  /* Silently pre-load the functional drop-in components without
-  hiding the panel frame or closing it */
   toggleSearch(true);
-
   searchButton.addEventListener('click', () => toggleSearch(!searchPanel.classList.contains('nav-tools-panel--show')));
 
   document.addEventListener('click', (e) => {
     if (!minicartPanel.contains(e.target) && !cartButton.contains(e.target)) toggleMiniCart(false);
-
-    /* Maintain standard drop-in behavior: Close the search results
-     drop-down layer if the user clicks out */
     if (!searchPanel.contains(e.target) && !searchButton.contains(e.target)) {
       searchResult.style.display = 'none';
     }

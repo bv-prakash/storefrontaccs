@@ -497,13 +497,39 @@ export default async function decorate(block) {
         ProductActions: (ctx) => {
           const actionsWrapper = document.createElement('div');
           actionsWrapper.className = 'product-discovery-product-actions';
+
           const addToCartBtn = getAddToCartButton(ctx.product);
           addToCartBtn.className = 'product-discovery-product-actions__add-to-cart';
+
           const $wishlistToggle = document.createElement('div');
           $wishlistToggle.classList.add('product-discovery-product-actions__wishlist-toggle');
           wishlistRender.render(WishlistToggle, { product: ctx.product, variant: 'tertiary' })($wishlistToggle);
+
+          // Custom Compare Button Appending Configuration Sequence
+          const $compareBtnContainer = document.createElement('div');
+          $compareBtnContainer.classList.add('product-discovery-product-actions__compare');
+
+          UI.render(Button, {
+            children: labels.Global?.Compare || 'Compare',
+            variant: 'secondary',
+            onClick: () => {
+              import('../../scripts/compare-service.js').then(({ CompareService }) => {
+                CompareService.addProduct({
+                  sku: ctx.product.sku,
+                  name: ctx.product.name,
+                  image: ctx.product.images?.[0]?.url || '',
+                  urlKey: ctx.product.urlKey,
+                  price: ctx.product.priceRange?.minimum?.final?.amount?.value
+                  || ctx.product.price?.final?.amount?.value,
+                });
+                events.emit('compare/update');
+              });
+            },
+          })($compareBtnContainer);
+
           actionsWrapper.appendChild(addToCartBtn);
           actionsWrapper.appendChild($wishlistToggle);
+          actionsWrapper.appendChild($compareBtnContainer);
           ctx.replaceWith(actionsWrapper);
         },
       },
