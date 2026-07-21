@@ -1,0 +1,73 @@
+.compare-matrix-container {
+  overflow-x: auto;
+  margin: 24px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.compare-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.compare-matrix-table th, 
+.compare-matrix-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  min-width: 260px;
+}
+
+.matrix-sticky-header {
+  position: sticky;
+  left: 0;
+  background: #f8fafc;
+  z-index: 10;
+  font-weight: 600;
+  min-width: 165px !important;
+}
+
+.matrix-product-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.matrix-remove-trigger {
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.matrix-thumb {
+  max-height: 140px;
+  object-fit: contain;
+  margin: 8px 0;
+}
+
+.matrix-cart-action-wrapper {
+  margin-top: 12px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.matrix-add-to-cart-btn {
+  width: 100%;
+  max-width: 180px;
+  font-size: 14px;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.matrix-add-to-cart-btn[disabled] {
+  background-color: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+}
