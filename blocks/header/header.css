@@ -442,6 +442,29 @@ header nav .nav-tools button.nav-wishlist-button {
  position: relative;
 }
 
+header nav .nav-tools button.nav-wishlist-button .wishlist-counter-qty {
+    background: var(--color-brand-dark-blue);
+    border-radius: 2px;
+    color: #fff;
+    display: inline-block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    height: 18px;
+    left: 12px;
+    line-height: 18px;
+    margin: 0;
+    max-width: 29px;
+    min-width: 18px;
+    overflow: hidden;
+    padding: 0 2px;
+    position: absolute;
+    text-align: center;
+    text-indent: 0;
+    text-overflow: ellipsis;
+    top: -8px;
+    white-space: normal;
+}
+
 header nav .nav-tools button.nav-wishlist-button::before {
   -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;

@@ -11,7 +11,7 @@ import { WishlistToggle } from '@dropins/storefront-wishlist/containers/Wishlist
 import { render as wishlistRender } from '@dropins/storefront-wishlist/render.js';
 // Cart Dropin
 import * as cartApi from '@dropins/storefront-cart/api.js';
-import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
+import { isAemAssetsEnabled, isAemAssetsUrl, generateAemAssetsOptimizedUrl } from '@dropins/tools/lib/aem/assets.js';
 // Event Bus
 import { events } from '@dropins/tools/event-bus.js';
 // AEM
@@ -24,6 +24,7 @@ import {
   IS_DA,
   IS_UE,
   CS_FETCH_GRAPHQL,
+  CORE_FETCH_GRAPHQL,
   setJsonLd,
 } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
@@ -41,10 +42,34 @@ const FACET_OPTIONS = {
 };
 
 /**
- * Builds ItemList + BreadcrumbList JSON-LD from PLP search results when the
- * server-rendered category overlay did not provide schema.
- * @param {object} payload search/result event payload
- * @param {string} categoryPath catalog urlPath
+ * Fetches store config for PLP view modes and pagination count managed by admin.
+ */
+async function fetchStoreConfigPLP() {
+  const query = `
+    query StoreConfigPLP {
+      storeConfig {
+        grid_per_page
+        grid_per_page_values
+        list_mode
+        list_per_page
+        list_per_page_values
+      }
+    }
+  `;
+  try {
+    const { data } = await CORE_FETCH_GRAPHQL.fetchGraphQl(query, {
+      method: 'GET',
+      cache: 'force-cache',
+    });
+    return data?.storeConfig || null;
+  } catch (e) {
+    console.warn('Failed to fetch storeConfig for PLP', e);
+    return null;
+  }
+}
+
+/**
+ * Builds ItemList + BreadcrumbList JSON-LD from PLP search results
  */
 function setCategoryJsonLd(payload, categoryPath) {
   const items = payload?.result?.items || [];
@@ -119,17 +144,11 @@ function setCategoryJsonLd(payload, categoryPath) {
     ],
   }, 'category-list');
 
-  // Prefer category name in the document title when server metadata did not set one
   if (!isCategoryPrerendered() && !document.querySelector('meta[name="title"]')?.content) {
     document.title = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
   }
 }
 
-/**
- * Resolves catalog urlPath for template preview in DA/UE when only defaultCateId is authored.
- * @param {string} categoryId Catalog category ID from block config
- * @returns {Promise<string|null>} Category urlPath or null
- */
 async function resolveUrlPathFromCategoryId(categoryId) {
   if (!categoryId) return null;
 
@@ -153,12 +172,6 @@ async function resolveUrlPathFromCategoryId(categoryId) {
   }
 }
 
-/**
- * Derives category name and breadcrumbs from the URL path segments when no
- * category ID is available — no API call needed.
- * e.g. "office/pens" → { name: "Pens",
- *   breadcrumbs: [{ name: "Office", path: "/categories/office" }] }
- */
 function getCategoryMetadataFromUrl(urlPath) {
   if (!urlPath) return null;
   const clean = urlPath.replace(/^\//, '').replace(/\/$/, '');
@@ -173,16 +186,7 @@ function getCategoryMetadataFromUrl(urlPath) {
   return { name, breadcrumbs };
 }
 
-/**
- * Fetches category name and ancestor chain using the Catalog Service GraphQL
- * (same mesh used by the navbar block) when a categoryId is known.
- *
- * @param {string|null} categoryId  Catalog category UID
- * @param {string|null} urlPath     Category urlPath fallback (e.g. "office/pens")
- * @returns {Promise<{name:string, breadcrumbs: Array}|null>}
- */
 async function getCategoryMetadata(categoryId, urlPath) {
-  // When we have no ID, derive everything from the URL — avoids any API call
   if (!categoryId) return getCategoryMetadataFromUrl(urlPath);
 
   const CATEGORY_METADATA_QUERY = `
@@ -209,11 +213,9 @@ async function getCategoryMetadata(categoryId, urlPath) {
     const current = allCategories.find((c) => c.id === categoryId);
 
     if (!current) {
-      // Graceful fallback: derive from urlPath
       return getCategoryMetadataFromUrl(urlPath);
     }
 
-    // Build breadcrumbs by walking up the parentId chain
     const breadcrumbs = [];
     const visited = new Set();
     let pid = current.parentId;
@@ -230,17 +232,13 @@ async function getCategoryMetadata(categoryId, urlPath) {
 
     return { name: current.name, breadcrumbs };
   } catch (e) {
-    console.warn('Failed to fetch category metadata via Catalog Service, falling back to URL parsing', e);
+    console.warn('Failed to fetch category metadata via Catalog Service', e);
     return getCategoryMetadataFromUrl(urlPath);
   }
 }
 
 /**
- * Transforms each `div.product-discovery-facet` group rendered by the
- * Facets dropin into a collapsible accordion panel.
- *
- * @param {HTMLElement} $facets  The facets container element
- * @returns {MutationObserver}   The active observer (call .disconnect() if needed)
+ * Decorates rendered facets into collapsible accordions
  */
 function initCollapsibleFacets($facets) {
   const processedGroups = new WeakSet();
@@ -248,19 +246,16 @@ function initCollapsibleFacets($facets) {
   function makeFacetGroupCollapsible(group) {
     if (processedGroups.has(group)) return;
 
-    // The title element is always span.product-discovery-facet__header
     const headerEl = group.querySelector('.product-discovery-facet__header');
     if (!headerEl) return;
 
     processedGroups.add(group);
     group.classList.add('plp-facet-group');
 
-    // Style the header span as the toggle trigger
     headerEl.classList.add('plp-facet-toggle');
     headerEl.setAttribute('role', 'button');
     headerEl.setAttribute('tabindex', '0');
 
-    // Set initial state based on FACET_OPTIONS option setting
     if (FACET_OPTIONS.defaultCollapsed) {
       group.classList.add('plp-facet-group--collapsed');
       headerEl.setAttribute('aria-expanded', 'false');
@@ -268,7 +263,6 @@ function initCollapsibleFacets($facets) {
       headerEl.setAttribute('aria-expanded', 'true');
     }
 
-    // Append chevron icon inside the header
     if (!headerEl.querySelector('.plp-facet-chevron')) {
       const chevron = document.createElement('span');
       chevron.className = 'plp-facet-chevron';
@@ -276,10 +270,8 @@ function initCollapsibleFacets($facets) {
       headerEl.appendChild(chevron);
     }
 
-    // Collect every sibling AFTER the header and wrap in a content div
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'plp-facet-content';
-    // headerEl.nextSibling loop so we don't touch the header itself
     let node = headerEl.nextElementSibling;
     while (node) {
       const next = node.nextElementSibling;
@@ -288,7 +280,6 @@ function initCollapsibleFacets($facets) {
     }
     group.appendChild(contentWrapper);
 
-    // Toggle collapse on click / keyboard
     const toggle = () => {
       const collapsed = group.classList.toggle('plp-facet-group--collapsed');
       headerEl.setAttribute('aria-expanded', String(!collapsed));
@@ -304,30 +295,144 @@ function initCollapsibleFacets($facets) {
   }
 
   function decorateRenderedFacets() {
-    // Target each rendered facet group by the exact dropin class name
     $facets
       .querySelectorAll('.product-discovery-facet')
       .forEach(makeFacetGroupCollapsible);
   }
 
-  // Run once for any groups already in the DOM
   decorateRenderedFacets();
 
-  // Keep watching for async dropin renders
   const observer = new MutationObserver(decorateRenderedFacets);
   observer.observe($facets, { childList: true, subtree: true });
 
   return observer;
 }
 
+/**
+ * Renders the Applied Active Filter Chips widget dynamically below the filter toolbar
+ */
+function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onResetAll) {
+  $container.innerHTML = '';
+
+  const userVisibleFilters = (activeFilters || []).filter(
+    (f) => f.attribute !== 'visibility'
+      && f.attribute !== 'category_uid'
+      && f.attribute !== 'categoryPath',
+  );
+
+  if (userVisibleFilters.length === 0) {
+    $container.style.display = 'none';
+    return;
+  }
+
+  $container.style.display = 'block';
+
+  // Section Header
+  const header = document.createElement('div');
+  header.className = 'plp-active-filters-header';
+
+  const titleToggle = document.createElement('div');
+  titleToggle.className = 'plp-active-filters-title-toggle';
+  titleToggle.innerHTML = `
+    <span class="plp-active-filters-title">FILTER OPTIONS (${userVisibleFilters.length})</span>
+  `;
+
+  const resetLink = document.createElement('button');
+  resetLink.type = 'button';
+  resetLink.className = 'plp-active-filters-reset';
+  resetLink.textContent = 'Reset';
+
+  // Prevent event bubbling to avoid expanding/collapsing header
+  resetLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onResetAll();
+  });
+
+  header.appendChild(titleToggle);
+
+  // Chips List Container
+  const list = document.createElement('div');
+  list.className = 'plp-active-filters-list';
+
+  userVisibleFilters.forEach((filter) => {
+    const attrName = filter.attribute.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    let filterValues = [];
+
+    if (Array.isArray(filter.in)) {
+      filterValues = filter.in;
+    } else if (filter.eq) {
+      filterValues = [filter.eq];
+    } else if (filter.range) {
+      filterValues = [`${filter.range.from || '0'} - ${filter.range.to || ''}`];
+    }
+
+    filterValues.forEach((val) => {
+      const chip = document.createElement('div');
+      chip.className = 'plp-active-filter-chip';
+      chip.innerHTML = `
+        <div class="plp-chip-contianer"><button type="button" class="plp-chip-remove" aria-label="Remove filter"><span></span></button>
+        <span class="plp-chip-label">${attrName}:</span> <span class="plp-chip-valye">${val}</span></div>
+      `;
+
+      chip.querySelector('.plp-chip-remove').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onRemoveFilter(filter.attribute, val);
+      });
+
+      list.appendChild(chip);
+    });
+  });
+
+  // Toggle Collapse on Header Click
+  header.addEventListener('click', (e) => {
+    if (e.target.classList.contains('plp-active-filters-reset')) return;
+    $container.classList.toggle('is-collapsed');
+  });
+
+  $container.appendChild(header);
+  $container.appendChild(list);
+  $container.appendChild(resetLink);
+}
+
 export default async function decorate(block) {
   const labels = await fetchPlaceholders();
+  const storeConfig = await fetchStoreConfigPLP();
 
   const config = readBlockConfig(block);
-  const pageSize = parseInt(config.pagesize, 10) || 9;
   const categoryMeta = getCategoryFromUrl();
   const hasPrerenderedMarkup = block.dataset.prerendered === 'true';
   const hasServerCategoryJsonLd = isCategoryPrerendered();
+
+  // Admin Config options for view mode and page sizes
+  const gridDefaultSize = storeConfig?.grid_per_page || 12;
+  const gridAllowedValues = storeConfig?.grid_per_page_values
+    ? storeConfig.grid_per_page_values.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean)
+    : [12, 24, 36];
+
+  const listDefaultSize = storeConfig?.list_per_page || 10;
+  const listAllowedValues = storeConfig?.list_per_page_values
+    ? storeConfig.list_per_page_values.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean)
+    : [5, 10, 15, 20, 25];
+
+  const listModeConfig = storeConfig?.list_mode || 'grid-list';
+  const defaultMode = listModeConfig.startsWith('list') ? 'list' : 'grid';
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let currentMode = urlParams.get('mode') || localStorage.getItem('plp_view_mode') || defaultMode;
+  if (!['grid', 'list'].includes(currentMode)) {
+    currentMode = defaultMode;
+  }
+
+  let allowedPageSizes = currentMode === 'list' ? listAllowedValues : gridAllowedValues;
+  let defaultPageSize = currentMode === 'list' ? listDefaultSize : gridDefaultSize;
+
+  const rawPageSize = urlParams.get('limit') || urlParams.get('pageSize') || config.pagesize;
+  const urlPageSize = parseInt(rawPageSize, 10);
+  let pageSize = (urlPageSize && allowedPageSizes.includes(urlPageSize))
+    ? urlPageSize
+    : defaultPageSize;
 
   const urlCategoryPath = categoryMeta?.urlPath
     || block.dataset.categoryUrlPath
@@ -348,16 +453,46 @@ export default async function decorate(block) {
     </div>
     <div class="search__wrapper">
      <div class="column-main">
-      <div class="search__product-sort"></div>
-        <div class="search__product-list"></div>
-        <div class="search__pagination"></div>
+       <div class="plp-toolbar">
+         <div class="plp-filter-trigger-wrapper">
+           <div class="search__view-facets"></div>
+         </div>
+         <div class="plp-toolbar-controls">
+           <div class="plp-view-mode-toggle" aria-label="View Mode Toggle">
+             <button type="button" class="plp-view-btn plp-view-btn--grid" data-mode="grid" aria-label="Grid View" title="Grid View">
+               <span class="plp-view-icon grid-icon"></span>
+             </button>
+             <button type="button" class="plp-view-btn plp-view-btn--list" data-mode="list" aria-label="List View" title="List View">
+               <span class="plp-view-icon list-icon"></span>
+             </button>
+           </div>
+           <div class="plp-page-size-selector">
+             <label for="plp-page-size-select" class="plp-page-size-label">Show</label>
+             <select id="plp-page-size-select" class="plp-page-size-select" aria-label="Products Per Page"></select>
+           </div>
+         </div>
+         <div class="search__product-sort"></div>
+       </div>
+
+       <!-- Applied Active Filters Section -->
+       <div class="plp-active-filters-widget"></div>
+
+       <div class="search__product-list"></div>
+       <div class="search__pagination"></div>
      </div>
-     <div class="sidebar-main">
-        <div class="block-subtitle">FILTER OPTIONS</div>
-        <div class="search__view-facets"></div>
-        <div class="search__facets"></div>
+     <div class="sidebar-main plp-filter-drawer">
+        <div class="plp-drawer-header">
+          <span class="plp-drawer-title">FILTER OPTIONS</span>
+          <div class="plp-drawer-actions">
+            <button type="button" class="plp-reset-filters-btn" style="display: none;">Reset All</button>
+            <button type="button" class="plp-close-drawer-btn" aria-label="Close Filter Drawer">&times;</button>
+          </div>
+        </div>
+        <div class="plp-drawer-body">
+          <div class="search__facets"></div>
+        </div>
      </div>
-      
+     <div class="plp-filter-overlay"></div>
     </div>
   `);
 
@@ -369,6 +504,13 @@ export default async function decorate(block) {
   const $productList = fragment.querySelector('.search__product-list');
   const $pagination = fragment.querySelector('.search__pagination');
   const $searchWrapper = fragment.querySelector('.search__wrapper');
+  const $pageSizeSelect = fragment.querySelector('#plp-page-size-select');
+  const $drawer = fragment.querySelector('.plp-filter-drawer');
+  const $overlay = fragment.querySelector('.plp-filter-overlay');
+  const $closeBtn = fragment.querySelector('.plp-close-drawer-btn');
+  const $resetBtn = fragment.querySelector('.plp-reset-filters-btn');
+  const $activeFiltersWidget = fragment.querySelector('.plp-active-filters-widget');
+
   const fallbackNodes = hasPrerenderedMarkup ? [...block.childNodes] : [];
 
   if (hasPrerenderedMarkup) {
@@ -378,15 +520,113 @@ export default async function decorate(block) {
   }
   block.appendChild(fragment);
 
+  // Smooth Drawer Functions
+  const openFilterDrawer = () => {
+    $drawer.classList.add('is-open');
+    $overlay.classList.add('is-visible');
+    document.body.classList.add('plp-drawer-active');
+  };
+
+  const closeFilterDrawer = () => {
+    $drawer.classList.remove('is-open');
+    $overlay.classList.remove('is-visible');
+
+    // Smooth transition delay before removing scroll lock
+    setTimeout(() => {
+      document.body.classList.remove('plp-drawer-active');
+    }, 300);
+  };
+
+  $overlay.addEventListener('click', closeFilterDrawer);
+  $closeBtn.addEventListener('click', closeFilterDrawer);
+
+  const searchState = getSearchStateFromUrl(new URL(window.location.href));
+  const visibilityFilter = { attribute: 'visibility', in: ['Search', 'Catalog, Search'] };
+  let userFilters = searchState.filter.filter((f) => f.attribute !== 'visibility');
+
+  const categoryId = categoryMeta?.cateId || block.dataset.categoryId
+    || getCategoryFromUrl()?.cateId || config.defaultcateid;
+
+  let searchSucceeded = true;
+  const executeSearch = async (targetPage = searchState.currentPage) => {
+    const categoryFilter = categoryId
+      ? { attribute: 'category_uid', eq: categoryId }
+      : { attribute: 'categoryPath', eq: config.urlpath };
+
+    const filterList = (config.urlpath || categoryId)
+      ? [categoryFilter, visibilityFilter, ...userFilters]
+      : [visibilityFilter, ...userFilters];
+
+    await search({
+      phrase: (config.urlpath || categoryId) ? '' : searchState.phrase,
+      currentPage: targetPage,
+      pageSize,
+      sort: searchState?.sort?.length ? searchState.sort : [{ attribute: 'position', direction: 'DESC' }],
+      filter: filterList,
+    }).catch((e) => {
+      searchSucceeded = false;
+      console.error('Error searching for products', e);
+    });
+  };
+
+  // Global Reset All Handler
+  const resetAllFilters = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('filter');
+    window.history.pushState({}, '', url.toString());
+
+    userFilters = [];
+    searchState.filter = [];
+
+    if (window.innerWidth < 1024) {
+      closeFilterDrawer();
+    }
+
+    await executeSearch(1);
+  };
+
+  $resetBtn.addEventListener('click', resetAllFilters);
+
+  // Apply View Mode
+  const applyViewMode = (mode) => {
+    currentMode = mode;
+    localStorage.setItem('plp_view_mode', mode);
+    block.classList.remove('product-list-page--mode-grid', 'product-list-page--mode-list');
+    block.classList.add(`product-list-page--mode-${mode}`);
+
+    block.querySelectorAll('.plp-view-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+  };
+  applyViewMode(currentMode);
+
+  const updatePageSizeOptions = () => {
+    allowedPageSizes = currentMode === 'list' ? listAllowedValues : gridAllowedValues;
+    defaultPageSize = currentMode === 'list' ? listDefaultSize : gridDefaultSize;
+
+    if (!allowedPageSizes.includes(pageSize)) {
+      pageSize = defaultPageSize;
+    }
+
+    if ($pageSizeSelect) {
+      $pageSizeSelect.innerHTML = '';
+      allowedPageSizes.forEach((size) => {
+        const option = document.createElement('option');
+        option.value = size;
+        option.textContent = size;
+        if (size === pageSize) option.selected = true;
+        $pageSizeSelect.appendChild(option);
+      });
+    }
+  };
+  updatePageSizeOptions();
+
   if (config.urlpath) {
     block.dataset.urlpath = config.urlpath;
   }
   if (categoryMeta?.cateId) {
     block.dataset.categoryId = categoryMeta.cateId;
   }
-
-  const categoryId = categoryMeta?.cateId || block.dataset.categoryId
-    || getCategoryFromUrl()?.cateId || config.defaultcateid;
 
   if (config.urlpath || categoryId) {
     getCategoryMetadata(categoryId, config.urlpath).then((categoryData) => {
@@ -400,45 +640,34 @@ export default async function decorate(block) {
     });
   }
 
-  const searchState = getSearchStateFromUrl(new URL(window.location.href));
-
-  const visibilityFilter = { attribute: 'visibility', in: ['Search', 'Catalog, Search'] };
-  const userFilters = searchState.filter.filter((f) => f.attribute !== 'visibility');
-
   const normalizedUrl = new URL(window.location.href);
   applySearchStateToUrl(normalizedUrl, searchState);
   window.history.replaceState({}, '', normalizedUrl.toString());
 
-  let searchSucceeded = true;
-  if (config.urlpath || categoryId) {
-    const categoryFilter = categoryId
-      ? { attribute: 'category_uid', eq: categoryId }
-      : { attribute: 'categoryPath', eq: config.urlpath };
+  await executeSearch();
 
-    await search({
-      phrase: '',
-      currentPage: searchState.currentPage,
-      pageSize,
-      sort: searchState?.sort?.length ? searchState.sort : [{ attribute: 'position', direction: 'DESC' }],
-      filter: [
-        categoryFilter,
-        visibilityFilter,
-        ...userFilters,
-      ],
-    }).catch(() => {
-      searchSucceeded = false;
-      console.error('Error searching for products');
+  // Mode Button Click Handlers
+  block.querySelectorAll('.plp-view-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const newMode = btn.dataset.mode;
+      if (newMode === currentMode) return;
+      applyViewMode(newMode);
+      const prevPageSize = pageSize;
+      updatePageSizeOptions();
+
+      if (pageSize !== prevPageSize) {
+        await executeSearch(1);
+      }
     });
-  } else {
-    await search({
-      phrase: searchState.phrase,
-      currentPage: searchState.currentPage,
-      pageSize,
-      sort: searchState.sort,
-      filter: [visibilityFilter, ...userFilters],
-    }).catch((e) => {
-      searchSucceeded = false;
-      console.error('Error searching for products', e);
+  });
+
+  if ($pageSizeSelect) {
+    $pageSizeSelect.addEventListener('change', async (e) => {
+      const newSize = parseInt(e.target.value, 10);
+      if (newSize && newSize !== pageSize) {
+        pageSize = newSize;
+        await executeSearch(1);
+      }
     });
   }
 
@@ -463,36 +692,102 @@ export default async function decorate(block) {
     return button;
   };
 
+  /**
+ * Observes the Drop-in's selected facets list:
+ * 1. Checks if any active filter chips exist.
+ * 2. Adds/removes 'is-empty' class and toggles display.
+ * 3. Applies the 'reset' class and changes text to 'Reset'.
+ */
+  function observeSelectedFacets($container) {
+    const observer = new MutationObserver(() => {
+      const selectedFiltersList = $container.querySelector('.product-discovery-facet-list__selected-filters');
+      if (!selectedFiltersList) return;
+
+      // Count filter chips excluding the reset button
+      const buttons = Array.from(selectedFiltersList.querySelectorAll('button'));
+      const filterChips = buttons.filter(
+        (btn) => !btn.textContent.trim().toLowerCase().includes('clear all') && !btn.classList.contains('reset'),
+      );
+
+      // If no active filter chips exist, add 'is-empty' and hide the container
+      if (filterChips.length === 0) {
+        selectedFiltersList.classList.add('is-empty');
+        return;
+      }
+
+      // Otherwise, show the container and remove 'is-empty'
+      selectedFiltersList.classList.remove('is-empty');
+
+      // Enhance the Clear All / Reset button
+      buttons.forEach((btn) => {
+        const isClearAll = btn.textContent.trim().toLowerCase().includes('clear all') || btn.classList.contains('reset');
+
+        if (isClearAll) {
+          if (!btn.classList.contains('reset-all')) {
+            btn.classList.add('reset-all');
+          }
+
+          // Update button text to "Reset"
+          const textSpan = btn.querySelector('span');
+          if (textSpan && textSpan.textContent.trim() === 'Clear All') {
+            textSpan.textContent = 'Reset';
+          } else if (btn.textContent.trim() === 'Clear All') {
+            btn.textContent = 'Reset';
+          }
+        }
+      });
+    });
+
+    observer.observe($container, { childList: true, subtree: true });
+  }
+
   await Promise.all([
     provider.render(SortBy, {})($productSort),
     provider.render(Pagination, {
       onPageChange: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
     })($pagination),
     UI.render(Button, {
-      children: labels.Global?.Filters,
+      children: labels.Global?.Filters || 'Filters',
       icon: Icon({ source: 'Burger' }),
       variant: 'secondary',
-      onClick: () => $facets.classList.toggle('search__facets--visible'),
+      onClick: openFilterDrawer,
     })($viewFacets),
-    // Render Facets passing the filter display config option to retain the Category block layout
     provider.render(Facets, {
       categoriesFilterType: FACET_OPTIONS.categoriesFilterType,
     })($facets).then(() => {
       initCollapsibleFacets($facets);
+      observeSelectedFacets($facets);
     }),
     provider.render(SearchResults, {
       routeProduct: (product) => getProductLink(product.urlKey, product.sku),
       slots: {
         ProductImage: (ctx) => {
           const { product, defaultImageProps } = ctx;
+          const imgWidth = Number(defaultImageProps?.width) || 400;
+          const imgHeight = Number(defaultImageProps?.height) || 450;
+
           const anchorWrapper = document.createElement('a');
           anchorWrapper.href = getProductLink(product.urlKey, product.sku);
-          tryRenderAemAssetsImage(ctx, {
-            alias: product.sku,
-            imageProps: defaultImageProps,
-            wrapper: anchorWrapper,
-            params: { width: defaultImageProps.width, height: defaultImageProps.height },
-          });
+          anchorWrapper.className = 'product-discovery-product-item__image-link';
+
+          let imgSrc = defaultImageProps?.src || '';
+          if (imgSrc && isAemAssetsEnabled() && isAemAssetsUrl(imgSrc)) {
+            imgSrc = generateAemAssetsOptimizedUrl(imgSrc, product.sku, {
+              width: imgWidth,
+              height: imgHeight,
+            });
+          }
+
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.alt = defaultImageProps?.alt || product.name || '';
+          img.width = imgWidth;
+          img.height = imgHeight;
+          img.loading = defaultImageProps?.loading || 'lazy';
+          img.className = 'dropin-image product-discovery-product-item__image';
+          anchorWrapper.appendChild(img);
+
+          ctx.replaceWith(anchorWrapper);
         },
         ProductActions: (ctx) => {
           const actionsWrapper = document.createElement('div');
@@ -505,7 +800,6 @@ export default async function decorate(block) {
           $wishlistToggle.classList.add('product-discovery-product-actions__wishlist-toggle');
           wishlistRender.render(WishlistToggle, { product: ctx.product, variant: 'tertiary' })($wishlistToggle);
 
-          // Custom Compare Button Appending Configuration Sequence
           const $compareBtnContainer = document.createElement('div');
           $compareBtnContainer.classList.add('product-discovery-product-actions__compare');
 
@@ -520,7 +814,7 @@ export default async function decorate(block) {
                   image: ctx.product.images?.[0]?.url || '',
                   urlKey: ctx.product.urlKey,
                   price: ctx.product.priceRange?.minimum?.final?.amount?.value
-                  || ctx.product.price?.final?.amount?.value,
+                    || ctx.product.price?.final?.amount?.value,
                 });
                 events.emit('compare/update');
               });
@@ -542,14 +836,61 @@ export default async function decorate(block) {
     block.dataset.enhanced = 'true';
   }
 
+  // Sync Search Result & Filter Updates
   events.on('search/result', (payload) => {
     const totalCount = payload.result?.totalCount || 0;
     block.classList.toggle('product-list-page--empty', totalCount === 0);
 
-    if (payload.request.filter.length > 0) {
-      $viewFacets.querySelector('button').setAttribute('data-count', payload.request.filter.length);
+    const activeUserFilters = (payload.request.filter || []).filter(
+      (f) => f.attribute !== 'visibility'
+        && f.attribute !== 'category_uid'
+        && f.attribute !== 'categoryPath',
+    );
+    userFilters = activeUserFilters;
+
+    // Toggle drawer Reset All button visibility
+    if ($resetBtn) {
+      $resetBtn.style.display = activeUserFilters.length > 0 ? 'inline-block' : 'none';
+    }
+
+    // Render active filter chips below toolbar
+    renderActiveFilterChips(
+      $activeFiltersWidget,
+      activeUserFilters,
+      async (attribute, valueToRemove) => {
+        userFilters = userFilters.reduce((acc, f) => {
+          if (f.attribute !== attribute) {
+            acc.push(f);
+            return acc;
+          }
+
+          if (Array.isArray(f.in)) {
+            const updatedIn = f.in.filter((v) => String(v) !== String(valueToRemove));
+            if (updatedIn.length > 0) {
+              acc.push({ ...f, in: updatedIn });
+            }
+          } else if (f.eq && String(f.eq) !== String(valueToRemove)) {
+            acc.push(f);
+          }
+          return acc;
+        }, []);
+
+        searchState.filter = userFilters;
+        const currentUrl = new URL(window.location.href);
+        applySearchStateToUrl(currentUrl, { ...payload.request, filter: userFilters });
+        window.history.pushState({}, '', currentUrl.toString());
+
+        await executeSearch(1);
+      },
+      resetAllFilters,
+    );
+
+    // Update Filter Trigger Button Badge Count
+    const filterBtn = $viewFacets.querySelector('button');
+    if (activeUserFilters.length > 0) {
+      filterBtn?.setAttribute('data-count', activeUserFilters.length);
     } else {
-      $viewFacets.querySelector('button').removeAttribute('data-count');
+      filterBtn?.removeAttribute('data-count');
     }
 
     if (config.urlpath && !hasServerCategoryJsonLd) {

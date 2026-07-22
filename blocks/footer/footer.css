@@ -170,6 +170,10 @@ footer .footer p {
         padding-top: 22px;
         text-align: center;
     }
+
+    footer {
+        margin-bottom: 50px;
+    }
 }
 
 @media (max-width: 639px) {
