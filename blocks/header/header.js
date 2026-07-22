@@ -9,7 +9,6 @@ import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
 import renderSellerAssistedBuyingBanner from './renderSellerAssistedBuyingBanner.js';
 
-// Cleaned up: Only importing CompareService here since events is already declared above
 import { CompareService } from '../../scripts/compare-service.js';
 
 const isDesktop = window.matchMedia('(min-width: 1200px)');
@@ -116,7 +115,6 @@ export default async function decorate(block) {
   const wishlist = document.createRange().createContextualFragment(`
      <div class="wishlist-wrapper nav-tools-wrapper">
        <button type="button" class="nav-wishlist-button" aria-label="Wishlist"><span>wishlist</span></button>
-       <div class="wishlist-panel nav-tools-panel"></div>
      </div>
    `);
   navTools.append(wishlist);
@@ -127,6 +125,37 @@ export default async function decorate(block) {
 
   wishlistButton.addEventListener('click', () => {
     window.location.href = rootLink(wishlistPath);
+  });
+
+  const updateWishlistBadge = (data) => {
+    let qtyBadge = wishlistButton.querySelector('.wishlist-counter-qty');
+    const count = data?.totalQuantity
+      ?? data?.items_count
+      ?? data?.itemsCount
+      ?? data?.items?.length
+      ?? 0;
+
+    if (count > 0) {
+      if (!qtyBadge) {
+        qtyBadge = document.createElement('p');
+        qtyBadge.className = 'wishlist-counter-qty';
+        wishlistButton.appendChild(qtyBadge);
+      }
+      qtyBadge.textContent = count;
+    } else {
+      qtyBadge?.remove();
+    }
+  };
+
+  events.on('wishlist/data', (data) => {
+    updateWishlistBadge(data);
+  }, { eager: true });
+
+  import('@dropins/storefront-wishlist/api.js').then(({ getPersistedWishlistData }) => {
+    const initialWishlist = getPersistedWishlistData();
+    if (initialWishlist) updateWishlistBadge(initialWishlist);
+  }).catch((err) => {
+    console.warn('Failed to load initial wishlist state', err);
   });
 
   /** Mini Cart implementation sequence rules checking filters */
