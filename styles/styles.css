@@ -463,6 +463,8 @@ main img {
 main>.section {
   margin: var(--spacing-xbig) 0;
   overflow: hidden;
+  position: relative;
+  z-index: 0;
 }
 
 .section:empty {

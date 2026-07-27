@@ -1,30 +1,39 @@
 import { render as provider } from '@dropins/storefront-cart/render.js';
 import MiniCart from '@dropins/storefront-cart/containers/MiniCart.js';
 import { events } from '@dropins/tools/event-bus.js';
-import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
-import {
-  InLineAlert,
-  Icon,
-  provider as UI,
-  Button,
-} from '@dropins/tools/components.js';
-import { h } from '@dropins/tools/preact.js';
 
-import createModal from '../modal/modal.js';
-import createMiniPDP from '../../scripts/components/commerce-mini-pdp/commerce-mini-pdp.js';
-
-// Initializers
 import '../../scripts/initializers/cart.js';
 
 import { readBlockConfig } from '../../scripts/aem.js';
 import { fetchPlaceholders, rootLink, getProductLink } from '../../scripts/commerce.js';
+
+// Debounce helper to prevent spamming API requests during rapid clicks
+function debounce(func, delay = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Lazy-loaded and debounced API call for quantity updates
+const updateCartQuantity = debounce(async (itemUid, newQuantity, showMessage, MESSAGES) => {
+  try {
+    const { updateProductsFromCart } = await import('@dropins/storefront-cart/api.js');
+    await updateProductsFromCart([{ uid: itemUid, quantity: newQuantity }]);
+    if (showMessage && MESSAGES?.UPDATED) {
+      showMessage(MESSAGES.UPDATED);
+    }
+  } catch (error) {
+    console.error('Failed to update product quantity:', error);
+  }
+}, 300);
 
 export default async function decorate(block) {
   const {
     'start-shopping-url': startShoppingURL = '',
     'cart-url': cartURL = '',
     'checkout-url': checkoutURL = '',
-    'enable-updating-product': enableUpdatingProduct = 'false',
     'undo-remove-item': undo = 'false',
   } = readBlockConfig(block);
 
@@ -35,10 +44,6 @@ export default async function decorate(block) {
     ADDED: placeholders?.Global?.MiniCartAddedMessage,
     UPDATED: placeholders?.Global?.MiniCartUpdatedMessage,
   };
-
-  // Modal state
-  let currentModal = null;
-  let currentCartNotification = null;
 
   // Create a container for the update message
   const updateMessage = document.createElement('div');
@@ -63,75 +68,6 @@ export default async function decorate(block) {
     }, 3000);
   };
 
-  // Handle Edit Button Click
-  async function handleEditButtonClick(cartItem) {
-    try {
-      // Create mini PDP content
-      const miniPDPContent = await createMiniPDP(
-        cartItem,
-        async (_updateData) => {
-          const productName = cartItem.name
-            || cartItem.product?.name
-            || placeholders?.Global?.CartUpdatedProductName;
-          const message = placeholders?.Global?.CartUpdatedProductMessage?.replace(
-            '{product}',
-            productName,
-          );
-
-          // Show message in the main cart page
-          const cartNotification = document.querySelector(
-            '.cart__notification',
-          );
-          if (cartNotification) {
-            // Clear any existing cart notifications
-            currentCartNotification?.remove();
-
-            currentCartNotification = await UI.render(InLineAlert, {
-              heading: message,
-              type: 'success',
-              variant: 'primary',
-              icon: h(Icon, { source: 'CheckWithCircle' }),
-              'aria-live': 'assertive',
-              role: 'alert',
-              onDismiss: () => {
-                currentCartNotification?.remove();
-              },
-            })(cartNotification);
-
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-              currentCartNotification?.remove();
-            }, 5000);
-          }
-
-          // Also trigger message in the mini-cart
-          showMessage(message);
-        },
-        () => {
-          if (currentModal) {
-            currentModal.removeModal();
-            currentModal = null;
-          }
-        },
-      );
-
-      currentModal = await createModal([miniPDPContent]);
-
-      if (currentModal.block) {
-        currentModal.block.setAttribute('id', 'mini-pdp-modal');
-      }
-
-      currentModal.showModal();
-    } catch (error) {
-      console.error('Error opening mini PDP modal:', error);
-
-      // Show error message using mini-cart's message system
-      showMessage(
-        placeholders?.Global?.ProductLoadError,
-      );
-    }
-  }
-
   // Add event listeners for cart updates
   events.on('cart/product/added', () => showMessage(MESSAGES.ADDED), {
     eager: true,
@@ -140,18 +76,52 @@ export default async function decorate(block) {
     eager: true,
   });
 
+  // Single Delegated Click Listener for + / - Quantity Stepper
+  block.addEventListener('click', (e) => {
+    const btn = e.target.closest('.minicart-qty-btn');
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const itemEl = btn.closest('.dropin-cart-item');
+    if (!itemEl) return;
+
+    // Extract item UID from testid (e.g., cart-list-item-entry-Mjg2)
+    const entryTestId = itemEl.getAttribute('data-testid') || '';
+    const itemUid = entryTestId.replace('cart-list-item-entry-', '');
+    if (!itemUid) return;
+
+    const qtyValEl = itemEl.querySelector('.minicart-qty-val');
+    let currentQty = parseInt(qtyValEl?.textContent || '1', 10);
+
+    const action = btn.getAttribute('data-action');
+    if (action === 'dec') {
+      if (currentQty <= 1) return;
+      currentQty -= 1;
+    } else if (action === 'inc') {
+      currentQty += 1;
+    }
+
+    // Instant UI Update to prevent perceived lag
+    if (qtyValEl) qtyValEl.textContent = currentQty;
+
+    const decBtn = itemEl.querySelector('.minicart-qty-btn[data-action="dec"]');
+    if (decBtn) decBtn.disabled = currentQty <= 1;
+
+    // Trigger debounced network update
+    updateCartQuantity(itemUid, currentQty, showMessage, MESSAGES);
+  });
+
   // Prevent mini cart from closing when undo is enabled
   if (undo === 'true') {
-    // Add event listener to prevent event bubbling from remove buttons
     block.addEventListener('click', (e) => {
-      // Check if click is on a remove button or within an undo-related element
       const isRemoveButton = e.target.closest('[class*="remove"]')
         || e.target.closest('[data-testid*="remove"]')
         || e.target.closest('[class*="undo"]')
         || e.target.closest('[data-testid*="undo"]');
 
       if (isRemoveButton) {
-        // Stop the event from bubbling up to document level
         e.stopPropagation();
       }
     });
@@ -167,44 +137,6 @@ export default async function decorate(block) {
     routeCheckout: checkoutURL ? () => rootLink(checkoutURL) : undefined,
     routeProduct: createProductLink,
     undo: undo === 'true',
-
-    slots: {
-      Thumbnail: (ctx) => {
-        const { item, defaultImageProps } = ctx;
-        const anchorWrapper = document.createElement('a');
-        anchorWrapper.href = createProductLink(item);
-
-        tryRenderAemAssetsImage(ctx, {
-          alias: item.sku,
-          imageProps: defaultImageProps,
-          wrapper: anchorWrapper,
-
-          params: {
-            width: defaultImageProps.width,
-            height: defaultImageProps.height,
-          },
-        });
-
-        if (item?.itemType === 'ConfigurableCartItem' && enableUpdatingProduct === 'true') {
-          const editLinkContainer = document.createElement('div');
-          editLinkContainer.className = 'cart-item-edit-container';
-
-          const editLink = document.createElement('div');
-          editLink.className = 'cart-item-edit-link';
-
-          UI.render(Button, {
-            children: placeholders?.Global?.CartEditButton,
-            variant: 'tertiary',
-            size: 'medium',
-            icon: h(Icon, { source: 'Edit' }),
-            onClick: () => handleEditButtonClick(item),
-          })(editLink);
-
-          editLinkContainer.appendChild(editLink);
-          ctx.appendChild(editLinkContainer);
-        }
-      },
-    },
   })(block);
 
   // Find the products container and add the message div at the top

@@ -187,42 +187,64 @@ export default async function decorate(block) {
         </div>
       </div>
     </div>
+
+    <!-- Responsive Tab/Accordion Wrapper -->
     <div class="product-details__tabs-wrapper">
-        <div class="pdp-tabs-nav" role="tablist">
-          <button 
-            class="pdp-tab-btn active" 
-            data-tab="description" 
-            role="tab" 
-            aria-selected="true" 
-            aria-controls="pdp-tab-panel-description">
-            Description
-          </button>
-          <button 
-            class="pdp-tab-btn" 
-            data-tab="attributes" 
-            role="tab" 
-            aria-selected="false" 
-            aria-controls="pdp-tab-panel-attributes">
-            Specifications
-          </button>
+      <!-- Desktop Tab Nav Header -->
+      <div class="pdp-tabs-nav" role="tablist">
+        <button 
+          class="pdp-tab-btn active" 
+          data-tab="description" 
+          role="tab" 
+          aria-selected="true" 
+          aria-controls="pdp-tab-panel-description">
+          Description
+        </button>
+        <button 
+          class="pdp-tab-btn" 
+          data-tab="attributes" 
+          role="tab" 
+          aria-selected="false" 
+          aria-controls="pdp-tab-panel-attributes">
+          Specifications
+        </button>
+      </div>
+
+      <!-- Accordion & Tab Content Panels -->
+      <div class="pdp-tabs-content">
+        <!-- Section 1: Description -->
+        <button 
+          class="pdp-accordion-header active" 
+          data-tab="description" 
+          aria-expanded="true" 
+          aria-controls="pdp-tab-panel-description">
+          Description
+        </button>
+        <div 
+          id="pdp-tab-panel-description" 
+          class="pdp-tab-panel active" 
+          role="tabpanel" 
+          data-panel="description">
+          <div class="product-details__description"></div>
         </div>
-        <div class="pdp-tabs-content">
-          <div 
-            id="pdp-tab-panel-description" 
-            class="pdp-tab-panel active" 
-            role="tabpanel" 
-            data-panel="description">
-            <div class="product-details__description"></div>
-          </div>
-          <div 
-            id="pdp-tab-panel-attributes" 
-            class="pdp-tab-panel" 
-            role="tabpanel" 
-            data-panel="attributes">
-            <div class="product-details__attributes"></div>
-          </div>
+
+        <!-- Section 2: Specifications -->
+        <button 
+          class="pdp-accordion-header" 
+          data-tab="attributes" 
+          aria-expanded="false" 
+          aria-controls="pdp-tab-panel-attributes">
+          Specifications
+        </button>
+        <div 
+          id="pdp-tab-panel-attributes" 
+          class="pdp-tab-panel" 
+          role="tabpanel" 
+          data-panel="attributes">
+          <div class="product-details__attributes"></div>
         </div>
       </div>
+    </div>
   `);
 
   const $breadcrumbs = fragment.querySelector('.product-details__breadcrumbs');
@@ -246,29 +268,45 @@ export default async function decorate(block) {
   block.replaceChildren(fragment);
 
   block.addEventListener('click', (e) => {
-    const btn = e.target.closest('.pdp-tab-btn');
-    if (!btn) return;
+    const tabBtn = e.target.closest('.pdp-tab-btn');
+    const accordionHeader = e.target.closest('.pdp-accordion-header');
 
-    const targetTab = btn.getAttribute('data-tab');
+    if (!tabBtn && !accordionHeader) return;
+
+    const isDesktopView = window.matchMedia('(min-width: 768px)').matches;
     const tabsWrapper = block.querySelector('.product-details__tabs-wrapper');
+    if (!tabsWrapper) return;
 
-    if (tabsWrapper) {
+    if (isDesktopView && tabBtn) {
+      // --- DESKTOP TAB BEHAVIOR ---
+      const targetTab = tabBtn.getAttribute('data-tab');
+
       tabsWrapper.querySelectorAll('.pdp-tab-btn').forEach((b) => {
-        b.classList.remove('active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      tabsWrapper.querySelectorAll('.pdp-tab-panel').forEach((p) => {
-        p.classList.remove('active');
+        const isActive = b.getAttribute('data-tab') === targetTab;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
 
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      tabsWrapper
-        .querySelector(`.pdp-tab-panel[data-panel="${targetTab}"]`)
-        ?.classList.add('active');
+      tabsWrapper.querySelectorAll('.pdp-tab-panel').forEach((panel) => {
+        const isActive = panel.getAttribute('data-panel') === targetTab;
+        panel.classList.toggle('active', isActive);
+      });
+    } else if (!isDesktopView && accordionHeader) {
+      // --- MOBILE ACCORDION BEHAVIOR ---
+      const targetTab = accordionHeader.getAttribute('data-tab');
+      const targetPanel = tabsWrapper.querySelector(`.pdp-tab-panel[data-panel="${targetTab}"]`);
+
+      const isCurrentlyExpanded = accordionHeader.classList.contains('active');
+
+      // Toggle clicked accordion header & panel
+      accordionHeader.classList.toggle('active', !isCurrentlyExpanded);
+      accordionHeader.setAttribute('aria-expanded', !isCurrentlyExpanded ? 'true' : 'false');
+
+      if (targetPanel) {
+        targetPanel.classList.toggle('active', !isCurrentlyExpanded);
+      }
     }
   });
-
   if (product) {
     const categoryData = {
       name: product.name,
