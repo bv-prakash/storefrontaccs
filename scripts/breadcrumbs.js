@@ -27,7 +27,7 @@ export function renderBreadcrumbs(container, data = {}, labels = {}) {
   homeLink.className = 'breadcrumbs-link';
   homeLink.textContent = labels?.Home || 'Home';
   homeLi.appendChild(homeLink);
-  ol.appendChild(homeLi); 
+  ol.appendChild(homeLi);
 
   // 2. Ancestor/Parent Links
   if (Array.isArray(data.breadcrumbs)) {
