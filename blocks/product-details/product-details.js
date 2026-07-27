@@ -32,16 +32,13 @@ import {
   fetchPlaceholders,
   getProductLink,
 } from '../../scripts/commerce.js';
+import { CompareService } from '../../scripts/compare-service.js';
+import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
-// Initializers
-import { IMAGES_SIZES } from '../../scripts/initializers/pdp.js';
+import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
 import '../../scripts/initializers/wishlist.js';
 
-/**
- * Checks if the page has prerendered product JSON-LD data
- * @returns {boolean} True if product JSON-LD exists and contains @type=Product
- */
 function isProductPrerendered() {
   const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
 
@@ -58,7 +55,6 @@ function isProductPrerendered() {
   }
 }
 
-// Function to update the Add to Cart button text
 function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
   const buttonText = inCart
     ? labels.Global?.UpdateProductInCart
@@ -71,96 +67,222 @@ function updateAddToCartButtonText(addToCartInstance, inCart, labels) {
   }
 }
 
-/**
- * Formats numeric attribute values for display (e.g., "10.000000" → "10").
- * Non-numeric values are returned as-is.
- */
 function formatNumericAttributeValue(value) {
   const trimmed = value.trim();
   if (!/^[+-]?\d+(\.\d+)?$/.test(trimmed)) return value;
   return new Intl.NumberFormat(document.documentElement.lang).format(Number(trimmed));
 }
 
+function renderSkuDetails(product, targetContainer) {
+  targetContainer.innerHTML = '';
+  const skuContainer = document.createElement('div');
+  skuContainer.className = 'pdp-sku-info';
+
+  const rawSku = product?.sku || '';
+  const seriesName = product?.series || 'SERIES';
+
+  skuContainer.innerHTML = `
+    <strong class="pdp-sku-label">${seriesName}:</strong>
+    <span class="pdp-sku-value">${rawSku}</span>
+  `;
+
+  targetContainer.appendChild(skuContainer);
+}
+
+function renderStockStatus(product, targetContainer) {
+  targetContainer.innerHTML = '';
+  const statusContainer = document.createElement('div');
+
+  const inStock = product?.inStock ?? (product?.stockStatus === 'IN_STOCK');
+  statusContainer.className = `pdp-stock-status ${inStock ? 'is-in-stock' : 'is-out-of-stock'}`;
+
+  statusContainer.innerHTML = `
+    <span class="pdp-stock-text">${inStock ? 'In Stock' : 'Out of Stock'}</span>
+  `;
+
+  targetContainer.appendChild(statusContainer);
+}
+
+function renderCompareButton(product, targetContainer) {
+  targetContainer.innerHTML = '';
+  const compareBtnContainer = document.createElement('div');
+  compareBtnContainer.className = 'pdp-compare-wrapper';
+
+  UI.render(Button, {
+    children: 'Compare',
+    variant: 'secondary',
+    onClick: () => {
+      const currentProduct = product || pdpApi.getProductConfigurationValues();
+      const finalPrice = currentProduct?.priceRange?.minimum?.final?.amount?.value
+        || currentProduct?.price?.final?.amount?.value
+        || 0;
+
+      CompareService.addProduct({
+        sku: currentProduct?.sku,
+        name: currentProduct?.name,
+        image: currentProduct?.images?.[0]?.url || currentProduct?.image?.url || '',
+        urlKey: currentProduct?.urlKey,
+        price: finalPrice,
+      });
+
+      events.emit('compare/update');
+    },
+  })(compareBtnContainer);
+
+  targetContainer.appendChild(compareBtnContainer);
+}
+
+function imageSlotConfig(ctx) {
+  const { data, defaultImageProps } = ctx;
+  return {
+    alias: data.sku,
+    imageProps: defaultImageProps,
+
+    params: {
+      width: defaultImageProps.width,
+      height: defaultImageProps.height,
+    },
+  };
+}
+
 export default async function decorate(block) {
   const eventProduct = events.lastPayload('pdp/data') ?? null;
-  // bug: the pdp sends an object with event data even if product is not found.
   const product = eventProduct?.sku ? eventProduct : null;
 
   const labels = await fetchPlaceholders();
 
-  // Read itemUid from URL
   const urlParams = new URLSearchParams(window.location.search);
   const itemUidFromUrl = urlParams.get('itemUid');
 
-  // State to track if we are in update mode
   let isUpdateMode = false;
-
-  // State to track if the current product/variant is out of stock
   let isOutOfStock = false;
 
-  // Layout
   const fragment = document.createRange().createContextualFragment(`
+    <div class="product-details__breadcrumbs"></div>
     <div class="product-details__alert"></div>
     <div class="product-details__wrapper">
       <div class="product-details__left-column">
-        <div class="product-details__gallery"></div>
+        <div class="product-details__gallery desktop-gallery"></div>
+        <div class="product-details__gallery mobile-gallery"></div>
       </div>
       <div class="product-details__right-column">
         <div class="product-details__header"></div>
+        <div class="product-details__meta-info">
+          <div class="product-details__sku"></div>
+          <div class="product-details__stock"></div>
+        </div>
         <div class="product-details__price"></div>
-        <div class="product-details__gallery"></div>
         <div class="product-details__short-description"></div>
         <div class="product-details__gift-card-options"></div>
         <div class="product-details__configuration">
           <div class="product-details__options"></div>
-          <div class="product-details__quantity"></div>
           <div class="product-details__buttons">
+            <div class="product-details__quantity"></div>
             <div class="product-details__buttons__add-to-cart"></div>
-            <div class="product-details__buttons__add-to-wishlist"></div>
+            <div class="product-details__button__action-buttons">
+               <div class="product-details__buttons__compare"></div>
+                <div class="product-details__buttons__add-to-wishlist"></div>
+            </div>
           </div>
         </div>
-        <div class="product-details__description"></div>
-        <div class="product-details__attributes"></div>
       </div>
     </div>
+    <div class="product-details__tabs-wrapper">
+        <div class="pdp-tabs-nav" role="tablist">
+          <button 
+            class="pdp-tab-btn active" 
+            data-tab="description" 
+            role="tab" 
+            aria-selected="true" 
+            aria-controls="pdp-tab-panel-description">
+            Description
+          </button>
+          <button 
+            class="pdp-tab-btn" 
+            data-tab="attributes" 
+            role="tab" 
+            aria-selected="false" 
+            aria-controls="pdp-tab-panel-attributes">
+            Specifications
+          </button>
+        </div>
+        <div class="pdp-tabs-content">
+          <div 
+            id="pdp-tab-panel-description" 
+            class="pdp-tab-panel active" 
+            role="tabpanel" 
+            data-panel="description">
+            <div class="product-details__description"></div>
+          </div>
+          <div 
+            id="pdp-tab-panel-attributes" 
+            class="pdp-tab-panel" 
+            role="tabpanel" 
+            data-panel="attributes">
+            <div class="product-details__attributes"></div>
+          </div>
+        </div>
+      </div>
   `);
 
+  const $breadcrumbs = fragment.querySelector('.product-details__breadcrumbs');
   const $alert = fragment.querySelector('.product-details__alert');
-  const $gallery = fragment.querySelector('.product-details__gallery');
+  const $gallery = fragment.querySelector('.product-details__gallery.desktop-gallery');
+  const $galleryMobile = fragment.querySelector('.product-details__gallery.mobile-gallery');
   const $header = fragment.querySelector('.product-details__header');
+  const $sku = fragment.querySelector('.product-details__sku');
+  const $stock = fragment.querySelector('.product-details__stock');
   const $price = fragment.querySelector('.product-details__price');
-  const $galleryMobile = fragment.querySelector('.product-details__right-column .product-details__gallery');
   const $shortDescription = fragment.querySelector('.product-details__short-description');
   const $options = fragment.querySelector('.product-details__options');
   const $quantity = fragment.querySelector('.product-details__quantity');
   const $giftCardOptions = fragment.querySelector('.product-details__gift-card-options');
   const $addToCart = fragment.querySelector('.product-details__buttons__add-to-cart');
+  const $compareBtn = fragment.querySelector('.product-details__buttons__compare');
   const $wishlistToggleBtn = fragment.querySelector('.product-details__buttons__add-to-wishlist');
   const $description = fragment.querySelector('.product-details__description');
   const $attributes = fragment.querySelector('.product-details__attributes');
 
   block.replaceChildren(fragment);
 
-  const gallerySlots = {
-    CarouselThumbnail: (ctx) => {
-      if (ctx.mediaType === 'image') {
-        tryRenderAemAssetsImage(ctx, {
-          ...imageSlotConfig(ctx),
-          wrapper: document.createElement('span'),
-        });
-      }
-    },
+  block.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pdp-tab-btn');
+    if (!btn) return;
 
-    CarouselMainImage: (ctx) => {
-      if (ctx.mediaType === 'image') {
-        tryRenderAemAssetsImage(ctx, {
-          ...imageSlotConfig(ctx),
-        });
-      }
-    },
-  };
+    const targetTab = btn.getAttribute('data-tab');
+    const tabsWrapper = block.querySelector('.product-details__tabs-wrapper');
 
-  // Alert
+    if (tabsWrapper) {
+      tabsWrapper.querySelectorAll('.pdp-tab-btn').forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      tabsWrapper.querySelectorAll('.pdp-tab-panel').forEach((p) => {
+        p.classList.remove('active');
+      });
+
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      tabsWrapper
+        .querySelector(`.pdp-tab-panel[data-panel="${targetTab}"]`)
+        ?.classList.add('active');
+    }
+  });
+
+  if (product) {
+    const categoryData = {
+      name: product.name,
+      breadcrumbs: product.categories?.map((cat) => ({
+        category_name: cat.name,
+        category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
+      })) || [],
+    };
+    renderBreadcrumbs($breadcrumbs, categoryData, labels);
+    renderSkuDetails(product, $sku);
+    renderStockStatus(product, $stock);
+    renderCompareButton(product, $compareBtn);
+  }
+
   let inlineAlert = null;
   const routeToWishlist = rootLink('/wishlist');
 
@@ -177,46 +299,33 @@ export default async function decorate(block) {
     _attributes,
     wishlistToggleBtn,
   ] = await Promise.all([
-    // Gallery (Mobile)
     pdpRendered.render(ProductGallery, {
       controls: 'dots',
       arrows: true,
       peak: false,
       gap: 'small',
       loop: false,
-      videos: true, // Display videos if available
-      imageParams: {
-        ...IMAGES_SIZES,
-      },
-
-      slots: gallerySlots,
+      videos: true,
+      imageParams: { ...IMAGES_SIZES },
+      thumbnailParams: { ...THUMBNAIL_SIZES },
     })($galleryMobile),
 
-    // Gallery (Desktop)
+    // Updated control configuration to 'thumbnailsRow' for bottom horizontal layout
     pdpRendered.render(ProductGallery, {
-      controls: 'thumbnailsColumn',
-      arrows: true,
-      peak: true,
+      controls: 'thumbnailsRow',
+      arrows: false,
+      peak: false,
       gap: 'small',
       loop: false,
-      videos: true, // Display videos if available
-      imageParams: {
-        ...IMAGES_SIZES,
-      },
-
-      slots: gallerySlots,
+      videos: true,
+      imageParams: { ...IMAGES_SIZES },
+      thumbnailParams: { ...THUMBNAIL_SIZES },
     })($gallery),
 
-    // Header
     pdpRendered.render(ProductHeader, {})($header),
-
-    // Price
     pdpRendered.render(ProductPrice, {})($price),
-
-    // Short Description
     pdpRendered.render(ProductShortDescription, {})($shortDescription),
 
-    // Configuration - Swatches
     pdpRendered.render(ProductOptions, {
       hideSelectedValue: false,
       slots: {
@@ -229,27 +338,18 @@ export default async function decorate(block) {
       },
     })($options),
 
-    // Configuration  Quantity
     pdpRendered.render(ProductQuantity, {})($quantity),
-
-    // Configuration  Gift Card Options
     pdpRendered.render(ProductGiftCardOptions, {})($giftCardOptions),
-
-    // Description
     pdpRendered.render(ProductDescription, {})($description),
-
-    // Attributes
     pdpRendered.render(ProductAttributes, {
       formatValue: formatNumericAttributeValue,
     })($attributes),
 
-    // Wishlist button - WishlistToggle Container
     wishlistRender.render(WishlistToggle, {
       product,
     })($wishlistToggleBtn),
   ]);
 
-  // Configuration – Button - Add to Cart
   const addToCart = await UI.render(Button, {
     children: labels.Global?.AddProductToCart,
     icon: h(Icon, { source: 'Cart' }),
@@ -264,21 +364,17 @@ export default async function decorate(block) {
           disabled: true,
         }));
 
-        // get the current selection values
         const values = pdpApi.getProductConfigurationValues();
         const valid = pdpApi.isProductConfigurationValid();
 
-        // add or update the product in the cart
         if (valid) {
           if (isUpdateMode) {
-            // --- Update existing item ---
             const { updateProductsFromCart } = await import(
               '@dropins/storefront-cart/api.js'
             );
 
             await updateProductsFromCart([{ ...values, uid: itemUidFromUrl }]);
 
-            // --- START REDIRECT ON UPDATE ---
             const updatedSku = values?.sku;
             if (updatedSku) {
               const cartRedirectUrl = new URL(
@@ -288,25 +384,18 @@ export default async function decorate(block) {
               cartRedirectUrl.searchParams.set('itemUid', itemUidFromUrl);
               window.location.href = cartRedirectUrl.toString();
             } else {
-              // Fallback if SKU is somehow missing (shouldn't happen in normal flow)
-              console.warn(
-                'Could not retrieve SKU for updated item. Redirecting to cart without parameter.',
-              );
               window.location.href = rootLink('/cart');
             }
             return;
           }
-          // --- Add new item ---
           const { addProductsToCart } = await import(
             '@dropins/storefront-cart/api.js'
           );
           await addProductsToCart([{ ...values }]);
         }
 
-        // reset any previous alerts if successful
         inlineAlert?.remove();
       } catch (error) {
-        // add alert message
         inlineAlert = await UI.render(InLineAlert, {
           heading: 'Error',
           description: error.message,
@@ -318,15 +407,12 @@ export default async function decorate(block) {
           },
         })($alert);
 
-        // Scroll the alertWrapper into view
         $alert.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
         });
       } finally {
-        // Reset button text using the helper function which respects the current mode
         updateAddToCartButtonText(addToCart, isUpdateMode, labels);
-        // Re-enable button, unless the current variant is out of stock
         addToCart.setProps((prev) => ({
           ...prev,
           disabled: isOutOfStock,
@@ -337,24 +423,31 @@ export default async function decorate(block) {
 
   // Lifecycle Events
   events.on('pdp/data', (data) => {
+    if (!data) return;
     isOutOfStock = data?.inStock === false;
     addToCart.setProps((prev) => ({ ...prev, disabled: isOutOfStock }));
+
+    const categoryData = {
+      name: data.name,
+      breadcrumbs: data.categories?.map((cat) => ({
+        category_name: cat.name,
+        category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
+      })) || [],
+    };
+    renderBreadcrumbs($breadcrumbs, categoryData, labels);
+    renderSkuDetails(data, $sku);
+    renderStockStatus(data, $stock);
+    renderCompareButton(data, $compareBtn);
   }, { eager: true });
 
   events.on('pdp/valid', (valid) => {
-    // update add to cart button disabled state based on product selection validity and stock status
     addToCart.setProps((prev) => ({ ...prev, disabled: isOutOfStock || !valid }));
   }, { eager: true });
 
-  // Handle option changes
   events.on('pdp/values', () => {
     if (wishlistToggleBtn) {
       const configValues = pdpApi.getProductConfigurationValues();
-
-      // Check URL parameter for empty optionsUIDs
       const urlOptionsUIDs = urlParams.get('optionsUIDs');
-
-      // If URL has empty optionsUIDs parameter, treat as base product (no options)
       const optionUIDs = urlOptionsUIDs === '' ? undefined : (configValues?.optionsUIDs || undefined);
 
       wishlistToggleBtn.setProps((prev) => ({
@@ -386,7 +479,6 @@ export default async function decorate(block) {
     }, 0);
   });
 
-  // --- Add new event listener for cart/data ---
   events.on(
     'cart/data',
     (cartData) => {
@@ -396,16 +488,12 @@ export default async function decorate(block) {
           (item) => item.uid === itemUidFromUrl,
         );
       }
-      // Set the update mode state
       isUpdateMode = itemIsInCart;
-
-      // Update button text based on whether the item is in the cart
       updateAddToCartButtonText(addToCart, itemIsInCart, labels);
     },
     { eager: true },
   );
 
-  // Set JSON-LD and Meta Tags
   events.on('aem/lcp', () => {
     const isPrerendered = isProductPrerendered();
     if (product && !isPrerendered) {
@@ -433,7 +521,6 @@ async function setJsonLdProduct(product) {
   const amount = priceRange?.minimum?.final?.amount || price?.final?.amount;
   const brand = attributes?.find((attr) => attr.name === 'brand');
 
-  // get variants
   const { data } = await pdpApi.fetchGraphQl(`
     query GET_PRODUCT_VARIANTS($sku: String!) {
       variants(sku: $sku) {
@@ -544,22 +631,4 @@ function setMetaTags(product) {
   createMetaTag('og:image:secure_url', metaImage, 'property');
   createMetaTag('product:price:amount', price.value, 'property');
   createMetaTag('product:price:currency', price.currency, 'property');
-}
-
-/**
- * Returns the configuration for an image slot.
- * @param ctx - The context of the slot.
- * @returns The configuration for the image slot.
- */
-function imageSlotConfig(ctx) {
-  const { data, defaultImageProps } = ctx;
-  return {
-    alias: data.sku,
-    imageProps: defaultImageProps,
-
-    params: {
-      width: defaultImageProps.width,
-      height: defaultImageProps.height,
-    },
-  };
 }

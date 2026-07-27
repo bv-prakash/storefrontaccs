@@ -1,4 +1,5 @@
 import { getRootPath, isMultistore } from '@dropins/tools/lib/aem/configs.js';
+import { events } from '@dropins/tools/event-bus.js';
 // Dropin Components
 import {
   Button,
@@ -9,6 +10,56 @@ import {
 import createModal from '../modal/modal.js';
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
+import { checkIsAuthenticated, rootLink } from '../../scripts/commerce.js';
+
+/**
+ * Renders mobile links block in footer
+ * @param {Element} container The footer container element
+ */
+function renderMobileLinks(container) {
+  const mobileLinks = document.createElement('ul');
+  mobileLinks.className = 'mobile-links';
+
+  const updateLinks = () => {
+    const isAuthenticated = checkIsAuthenticated();
+
+    const authLink = isAuthenticated
+      ? `<li class="link send-requisition">
+          <a class="icon-requisition-list" href="${rootLink('/requisition_list/requisition/')}">
+            <span>My Requisition Lists</span>
+          </a>
+        </li>`
+      : `<li class="link authorization-link">
+          <a class="icon-user-fill" href="${rootLink('/customer/account/login/')}">
+            <span>Sign In</span>
+          </a>
+        </li>`;
+
+    mobileLinks.innerHTML = `
+      ${authLink}
+      <li class="link track-order-link">
+        <a class="icon-delivery-cart" href="${rootLink('/trackorder/guest/form/')}">
+          <span>Track Your Order</span>
+        </a>
+      </li>
+      <li class="link compare">
+        <a class="icon-compare-light" href="${rootLink('/catalog/product_compare/')}">
+          <span>Compare Products</span>
+        </a>
+      </li>
+      <li class="link call">
+        <a class="icon-call2" href="${rootLink('/contact-us/')}">
+          <span>Call</span>
+        </a>
+      </li>
+    `;
+  };
+
+  updateLinks();
+  events.on('authenticated', updateLinks);
+
+  container.append(mobileLinks);
+}
 
 /**
  * Toggles all storeSelector sections
@@ -167,6 +218,8 @@ export default async function decorate(block) {
     }
   }
   while (fragment.firstElementChild) footer.append(fragment.firstElementChild);
+
+  renderMobileLinks(footer);
 
   block.append(footer);
 }
