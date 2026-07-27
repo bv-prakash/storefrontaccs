@@ -308,6 +308,65 @@
   }
 }
 
+@media only screen and (max-width: 767px) {
+  .pdp-tab-btn {
+    display: none;
+  }
+
+  .pdp-accordion-header {
+    background: #002941;
+    border: 0;
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 700;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 20px;
+    position: relative;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .pdp-accordion-header::after {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-size: 1.8rem;
+    color: #fff;
+    content: '\e904';
+    display: inline-block;
+    font-family: var(--icomoon-font);
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 700;
+    line-height: 1;
+    position: absolute;
+    right: 15px;
+    text-transform: none;
+    top: 10px;
+    transform: rotate(-90deg);
+  }
+
+  .pdp-accordion-header.active {
+    background: #f0f0f0;
+    color: #384c60;
+    margin-bottom: 0;
+  }
+
+  .pdp-accordion-header.active::after {
+    transform: rotate(90deg);
+    color: #384c60;
+  }
+
+  .pdp-tab-panel {
+    padding: 20px;
+  }
+
+  .pdp-tab-panel.active {
+    margin-bottom: 15px;
+  }
+}
+
 @media only screen and (min-width: 768px) {
   .product-details__wrapper {
     flex-direction: row;
@@ -340,6 +399,10 @@
 
   .product-details__buttons .product-details__buttons__add-to-cart button {
   font-size: 1.6rem;
+}
+
+.pdp-accordion-header {
+  display: none;
 }
 }
 
@@ -458,28 +521,21 @@
   text-decoration: none;
 }
 
-/* Hide non-active tab panels */
-.pdp-tab-panel {
-  display: none !important;
-  background: #f0f0f0;
-  padding: 50px 0;
-  border: 0;
-  border-top: none;
-}
-
 /* Show active tab panel */
 .pdp-tab-panel.active {
-  display: block !important;
+  display: block;
 }
+
+.pdp-tab-panel {
+  display: none;
+  background: #f0f0f0;
+  position: relative;
+}
+
 
 @media only screen and (min-width: 768px) {
   .pdp-tab-panel {
-    display: none !important;
-    background: #f0f0f0;
     padding: 50px 0;
-    border: 0;
-    border-top: none;
-    position: relative;
   }
 
   .pdp-tab-panel::before,

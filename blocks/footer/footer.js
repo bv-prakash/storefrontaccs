@@ -25,7 +25,7 @@ function renderMobileLinks(container) {
 
     const authLink = isAuthenticated
       ? `<li class="link send-requisition">
-          <a class="icon-requisition-list" href="${rootLink('/requisition_list/requisition/')}">
+          <a class="icon-requisition-list" href="${rootLink('/#/')}">
             <span>My Requisition Lists</span>
           </a>
         </li>`
@@ -38,12 +38,12 @@ function renderMobileLinks(container) {
     mobileLinks.innerHTML = `
       ${authLink}
       <li class="link track-order-link">
-        <a class="icon-delivery-cart" href="${rootLink('/trackorder/guest/form/')}">
+        <a class="icon-delivery-cart" href="${rootLink('/#/')}">
           <span>Track Your Order</span>
         </a>
       </li>
       <li class="link compare">
-        <a class="icon-compare-light" href="${rootLink('/catalog/product_compare/')}">
+        <a class="icon-compare-light" href="${rootLink('/compare')}">
           <span>Compare Products</span>
         </a>
       </li>

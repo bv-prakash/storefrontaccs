@@ -92,6 +92,12 @@ footer .footer p {
     height: 29px;
 }
 
+.mobile-links li a:hover,
+.mobile-links li a:active {
+     color: #fff;
+     text-decoration: none;
+}
+
 .mobile-links li a span {
     position: absolute;
     width: 1px;

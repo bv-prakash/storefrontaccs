@@ -63,6 +63,93 @@ function decorateCompareCounter(navToolsPanel) {
   refreshCountBadge();
 }
 
+// Debounce helper to prevent spamming API requests when typing in quantity field
+function debounce(func, delay = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Lazy-loaded update function
+const triggerQuantityUpdate = debounce(async (itemUid, newQty) => {
+  try {
+    const { updateProductsFromCart } = await import('@dropins/storefront-cart/api.js');
+    await updateProductsFromCart([{ uid: itemUid, quantity: newQty }]);
+  } catch (error) {
+    console.error('Failed to update cart item quantity:', error);
+  }
+}, 300);
+
+// Scans and replaces static quantity markup with interactive +/- controls & EDITABLE input field
+function initializeMiniCartSteppers(panel) {
+  const items = panel.querySelectorAll('.dropin-cart-item');
+
+  items.forEach((itemEl) => {
+    const qtyContainer = itemEl.querySelector('.dropin-cart-item__quantity');
+    if (!qtyContainer || qtyContainer.dataset.stepperInit === 'true') return;
+
+    qtyContainer.dataset.stepperInit = 'true';
+
+    // Extract item UID from testid
+    const entryTestId = itemEl.getAttribute('data-testid') || '';
+    const itemUid = entryTestId.replace('cart-list-item-entry-', '');
+
+    const qtyNumberEl = qtyContainer.querySelector('.dropin-cart-item__quantity__number');
+    const currentQty = parseInt(qtyNumberEl?.textContent?.trim() || '1', 10);
+
+    // Replace static text with an editable input stepper
+    qtyContainer.innerHTML = `
+      <div class="minicart-quantity-stepper">
+        <button type="button" class="minicart-qty-btn decrease-quantity" data-action="dec" ${currentQty <= 1 ? 'disabled' : ''} aria-label="Decrease quantity"><span>Decrease quantity</span></button>
+        <input type="number" name="quantity" aria-label="Item Quantity" class="minicart-qty-input" value="${currentQty}" min="1" aria-label="Quantity" />
+        <button type="button" class="minicart-qty-btn increase-quantity" data-action="inc" aria-label="Increase quantity"><span>Increase quantity</span></button>
+      </div>
+    `;
+
+    const input = qtyContainer.querySelector('.minicart-qty-input');
+    const decBtn = qtyContainer.querySelector('.minicart-qty-btn[data-action="dec"]');
+    const incBtn = qtyContainer.querySelector('.minicart-qty-btn[data-action="inc"]');
+
+    const handleQtyChange = (newVal) => {
+      let qty = parseInt(newVal, 10);
+      if (Number.isNaN(qty) || qty < 1) qty = 1;
+
+      input.value = qty;
+      if (decBtn) decBtn.disabled = qty <= 1;
+
+      if (itemUid) {
+        triggerQuantityUpdate(itemUid, qty);
+      }
+    };
+
+    // Button Click Events
+    decBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const qty = parseInt(input.value || '1', 10);
+      if (qty > 1) handleQtyChange(qty - 1);
+    });
+
+    incBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const qty = parseInt(input.value || '1', 10);
+      handleQtyChange(qty + 1);
+    });
+
+    // Direct Input Edit Events
+    input?.addEventListener('change', (e) => {
+      handleQtyChange(e.target.value);
+    });
+
+    input?.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        input.blur();
+      }
+    });
+  });
+}
+
 /**
  * Loads and decorates the header framework layers shell
  * @param {Element} block The header block element context window node placement
@@ -207,6 +294,14 @@ export default async function decorate(block) {
         closeBtn.addEventListener('click', () => toggleMiniCart(false));
         minicartPanel.prepend(closeBtn);
       }
+
+      // Observe DOM updates on minicartPanel to initialize quantity steppers with inputs
+      const observer = new MutationObserver(() => {
+        initializeMiniCartSteppers(minicartPanel);
+      });
+      observer.observe(minicartPanel, { childList: true, subtree: true });
+
+      initializeMiniCartSteppers(minicartPanel);
     });
   }
 
