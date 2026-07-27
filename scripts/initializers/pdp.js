@@ -29,7 +29,6 @@ export const THUMBNAIL_SIZES = {
  * @returns {string|null} The image URL or null if not found
  */
 function extractMainImageUrl() {
-  // Cache DOM query to avoid repeated lookups
   const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
 
   if (!jsonLdScript?.textContent) {
@@ -39,7 +38,6 @@ function extractMainImageUrl() {
   try {
     const jsonLd = JSON.parse(jsonLdScript.textContent);
 
-    // Verify this is product structured data before extracting image
     if (jsonLd?.['@type'] === 'Product' && jsonLd?.image) {
       return jsonLd.image;
     }
@@ -55,7 +53,6 @@ function extractMainImageUrl() {
  * Preloads PDP Dropins assets for optimal performance
  */
 function preloadPDPAssets() {
-  // Preload PDP Dropins assets
   preloadFile('/scripts/__dropins__/storefront-pdp/api.js', 'script');
   preloadFile('/scripts/__dropins__/storefront-pdp/render.js', 'script');
   preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductHeader.js', 'script');
@@ -67,7 +64,6 @@ function preloadPDPAssets() {
   preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductAttributes.js', 'script');
   preloadFile('/scripts/__dropins__/storefront-pdp/containers/ProductGallery.js', 'script');
 
-  // Extract and preload main product image
   const imageUrl = extractMainImageUrl();
 
   if (imageUrl) {
@@ -78,17 +74,12 @@ function preloadPDPAssets() {
 }
 
 await initializeDropin(async () => {
-  // Inherit Fetch GraphQL Instance (Catalog Service)
   setEndpoint(CS_FETCH_GRAPHQL);
-
-  // Preload PDP assets immediately when this module is imported
   preloadPDPAssets();
 
-  // Fetch product data
   const sku = getProductSku();
   const optionsUIDs = getOptionsUIDsFromUrl();
 
-  // If we cannot find a sku, and we are not in UE, there's a problem.
   if (!sku && !IS_UE) {
     return loadErrorPage();
   }
@@ -110,7 +101,6 @@ await initializeDropin(async () => {
     },
   };
 
-  // Initialize Dropins
   return initializers.mountImmediately(initialize, {
     sku,
     optionsUIDs,
