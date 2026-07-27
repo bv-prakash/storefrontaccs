@@ -34,6 +34,10 @@ header nav .nav-hamburger {
   height: 22px;
   display: flex;
   align-items: center;
+  z-index: 2;
+}
+
+.nav-wrapper.active .nav-hamburger {
   z-index: 99;
 }
 
@@ -122,6 +126,14 @@ header nav .nav-sections ul>li>a {
   cursor: pointer;
 }
 
+.minicart-panel .cart-mini-cart__footer__ctas a {
+    font-size: 1.3rem;
+    color: #384c60;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0;
+}
+
 header .nav-search-panel .dropin-design a {
   text-decoration: none;
   display: flex;
@@ -149,35 +161,6 @@ header nav .nav-sections ul>li:empty {
   display: none;
 }
 
-@media (min-width: 1200px) {
-   header .nav-wrapper {
-    position: relative;
-  }
-
-  header nav .nav-brand img {
-    width: 220px;
-  }
-
-  header nav {
-    justify-content: space-between;
-    gap: 0 15px;
-    padding: 35px 15px
-  }
-
-  header nav .nav-hamburger {
-    display: none;
-    visibility: hidden;
-  }
-
-  header nav .nav-sections {
-    align-items: center;
-    display: flex;
-    flex-direction: row-reverse;
-    gap: 24px;
-    visibility: visible;
-    white-space: nowrap;
-  }
-}
 
 /* tools */
 header nav .nav-tools-panel {
@@ -195,7 +178,7 @@ header nav .nav-tools-panel {
 header nav .minicart-panel {
     background-color: #fff;
     display: none;
-    height: calc(100% - 60px);
+    height: calc(100% - 50px);
     margin: 0;
     max-width: 440px;
     padding: 60px 20px 20px;
@@ -234,6 +217,7 @@ header nav .minicart-panel .minicart-close {
     top: 8px;
     width: 40px;
     z-index: 2;
+    cursor: pointer;
 }
 
 header nav .minicart-panel .minicart-close span {
@@ -281,7 +265,8 @@ header nav .minicart-panel .cart-cart-summary-list__heading-text {
 
 
 .minicart-panel  .commerce-mini-cart-container,
-.minicart-panel .commerce-mini-cart {
+.minicart-panel .commerce-mini-cart,
+.minicart-panel .commerce-mini-cart-wrapper {
   height: 100%;
 }
 
@@ -291,9 +276,54 @@ header nav .minicart-panel .cart-cart-summary-list__heading-text {
     padding: 20px 20px 0;
 }
 
+.cart-mini-cart__footer__ctas {
+  padding: 0;
+  gap: 0;
+}
+
+.minicart-panel .cart-mini-cart__footer__ctas .dropin-button--primary {
+    align-items: center;
+    background: var(--color-dark-blue);
+    border-radius: 0;
+    border: 3px solid var(--color-dark-blue);
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    font-size: 1.6rem;
+    font-weight: 700;
+    justify-content: center;
+    line-height: 1.8rem;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    padding: 10px 20px;
+    text-decoration: none;
+    text-transform: uppercase;
+    vertical-align: middle;
+    width: 100%;
+}
+
 header nav .minicart-panel .cart-cart-summary-list__heading-text + .cart-cart-summary-list__heading-divider {
   display: none;
 }
+
+
+.cart-mini-cart__footer__estimated-total {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    justify-content: space-between;
+    font-size: 1.6rem;
+    line-height: 1.3;
+    color: #000;
+}
+
+.cart-mini-cart__footer__estimated-total .dropin-price {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+
 
 .nav-compare-counter-btn {
   position: relative;
@@ -354,7 +384,35 @@ header nav .minicart-panel .cart-cart-summary-list__heading-text + .cart-cart-su
 }
 
 @media (min-width: 1200px) {
-  header nav .minicart-panel {
+   header .nav-wrapper {
+    position: relative;
+  }
+
+  header nav .nav-brand img {
+    width: 220px;
+  }
+
+  header nav {
+    justify-content: space-between;
+    gap: 0 15px;
+    padding: 35px 15px
+  }
+
+  header nav .nav-hamburger {
+    display: none;
+    visibility: hidden;
+  }
+
+  header nav .nav-sections {
+    align-items: center;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 24px;
+    visibility: visible;
+    white-space: nowrap;
+  }
+
+   header nav .minicart-panel {
     padding-top: 72px;
   }
 
@@ -363,6 +421,7 @@ header nav .minicart-panel .cart-cart-summary-list__heading-text + .cart-cart-su
     font-size: 18px;
   }
 }
+
 
 header nav .nav-tools-panel--show {
   display: block;
@@ -481,7 +540,6 @@ header nav .nav-tools button.nav-wishlist-button::before {
     vertical-align: top;
     width: 26px;
 }
-
 
 
 header nav .nav-tools button.nav-search-button {

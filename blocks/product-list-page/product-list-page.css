@@ -49,31 +49,6 @@
     gap: 10px;
 }
 
-.plp-breadcrumbs li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    font-weight: 400;
-}
-
-.plp-breadcrumbs ol li,
-.plp-breadcrumbs ol li a {
-    font-size: 16px;
-    line-height: 1.1;
-}
-
-.plp-breadcrumbs ol li a {
-    font-weight: 700;
-    color: var(--color-brand-dark-blue);
-    text-decoration: none;
-}
-
-.plp-breadcrumbs ol li a:hover {
-    color: var(--color-brand-dark-blue);
-    text-decoration: none;
-}
-
 
 .block.product-list-page .dropin-product-item-card__price a {
     display: block;
@@ -98,7 +73,7 @@
     color: #fff;
     cursor: pointer;
     font-weight: 700;
-    padding: 6px 20px;
+    padding: 6px 12px;
     font-size: 14px;
     box-sizing: border-box;
     vertical-align: middle;
@@ -174,7 +149,6 @@
     clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
-
 }
 
 .block.product-list-page.product-list-page--empty .search__result-info,
@@ -212,29 +186,6 @@
     flex-direction: column;
     margin-bottom: var(--spacing-small);
 }
-
-.plp-breadcrumbs ol {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    color: var(--color-text-color);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.plp-breadcrumbs li:not(:last-child)::after {
-    font-size: 18px;
-    line-height: 18px;
-    content: '\e904';
-    font-family: var(--icomoon-font);
-    vertical-align: top;
-    display: inline-block;
-    font-weight: 700;
-    text-align: center;
-    transform: rotate(180deg);
-}
-
 
 .product-discovery-product-list__grid .plp-inline-banner {
     grid-column: 1 / -1;
@@ -484,11 +435,6 @@
 
     .plp-title {
         font-size: 32px;
-    }
-
-    .plp-breadcrumbs ol li,
-    .plp-breadcrumbs ol li a {
-        font-size: 18px;
     }
 
     .block.product-list-page .block-subtitle {
@@ -919,7 +865,7 @@
 
     .plp-filter-trigger-wrapper {
         background-color: #fff;
-        bottom: 0;
+        bottom: 50px;
         box-shadow: 0 0 10px rgb(0 0 0 / 10%);
         left: 0;
         padding: 7px 0;
@@ -968,7 +914,7 @@
     }
 
     .block.product-list-page .search__product-sort {
-        bottom: 0;
+        bottom: 50px;
         min-height: 50px;
         position: fixed;
         right: 0;
@@ -985,6 +931,10 @@
         height: auto;
         padding: 0 10px;
         width: auto;
+    }
+
+    body.plp {
+        padding-bottom: 50px;
     }
 
     .block.product-list-page .search__product-sort .dropin-picker__floatingLabel {

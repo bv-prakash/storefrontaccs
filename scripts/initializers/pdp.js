@@ -15,8 +15,13 @@ import {
 import { getMetadata } from '../aem.js';
 
 export const IMAGES_SIZES = {
-  width: 960,
-  height: 1191,
+  width: 800,
+  height: 800,
+};
+
+export const THUMBNAIL_SIZES = {
+  width: 100,
+  height: 100,
 };
 
 /**

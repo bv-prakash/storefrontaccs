@@ -4,7 +4,7 @@ footer {
     color: white;
 }
 
-footer .footer > div {
+footer .footer>div {
     margin: auto;
     max-width: 1614px;
     padding: 40px 15px 25px;
@@ -39,29 +39,80 @@ footer .footer p {
     list-style-position: inside;
 }
 
-.storeview-selection > li {
+.storeview-selection>li {
     margin-bottom: var(--spacing-small);
 }
 
-.storeview-multiple-stores > ul {
+.storeview-multiple-stores>ul {
     position: relative;
     width: 100%;
 }
 
-.storeview-multiple-stores > ul > li {
+/* Mobile Links Bar */
+.mobile-links {
+    align-items: center;
+    background-color: var(--color-dark-blue);
+    border-top: 1px solid #384c60;
+    bottom: 0;
+    display: flex;
+    height: 50px;
+    justify-content: space-around;
+    left: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: fixed;
+    right: 0;
+    width: 100%;
+    z-index: 99;
+}
+
+.mobile-links li {
+    border-right: 1px solid #fff;
+    margin-bottom: 0;
+    text-align: center;
+    width: calc(100% / 3);
+}
+
+.storeview-multiple-stores>ul>li {
     list-style: none;
     display: none;
+}
+
+.mobile-links li:last-child {
+    border-right: none;
+}
+
+.mobile-links li a {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    font-size: 3.2rem;
+    color: #fff;
+    height: 29px;
+}
+
+.mobile-links li a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }
 
 .storeview-multiple-stores[aria-expanded="true"] {
     list-style-image: url("../../icons/chevron-down.svg");
 }
 
-.storeview-multiple-stores[aria-expanded="true"] > ul {
+.storeview-multiple-stores[aria-expanded="true"]>ul {
     padding-left: 0;
 }
 
-.storeview-multiple-stores[aria-expanded="true"] > ul > li {
+.storeview-multiple-stores[aria-expanded="true"]>ul>li {
     display: block;
     list-style-type: none;
     margin-bottom: var(--spacing-small);
@@ -91,8 +142,8 @@ footer .footer p {
 }
 
 .footer-logo-address .default-content-wrapper img {
-   width: 100%;
-   height: auto;
+    width: 100%;
+    height: auto;
 }
 
 .footer-links .default-content-wrapper ul {
@@ -101,11 +152,11 @@ footer .footer p {
     list-style: none;
 }
 
-.footer-links .default-content-wrapper > ul {
-   display: flex;
+.footer-links .default-content-wrapper>ul {
+    display: flex;
 }
 
-.footer-links .default-content-wrapper > ul > li {
+.footer-links .default-content-wrapper>ul>li {
     padding: 0 7px;
     width: 20%;
     margin-bottom: 30px;
@@ -118,14 +169,14 @@ footer .footer p {
 
 .footer-right-container .default-content-wrapper p,
 .footer-right-container .default-content-wrapper p a {
-     font-size: 12px;
-     line-height: 1.4;
-     color: #fff;
-     font-weight: 700;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #fff;
+    font-weight: 700;
 }
 
-.footer-links .default-content-wrapper > ul > li p {
-   font-size: 14px;
+.footer-links .default-content-wrapper>ul>li p {
+    font-size: 14px;
     font-weight: 700;
     line-height: 1.1;
     margin-bottom: 15px;
@@ -177,7 +228,7 @@ footer .footer p {
 }
 
 @media (max-width: 639px) {
-   .footer-logo-address .default-content-wrapper p {
+    .footer-logo-address .default-content-wrapper p {
         font-size: .8rem;
     }
 
@@ -188,16 +239,16 @@ footer .footer p {
 }
 
 @media (min-width: 768px) {
-    .footer-logo-address .default-content-wrapper p{
+    .footer-logo-address .default-content-wrapper p {
         font-size: 1.2rem;
         text-align: left;
     }
 
-    .footer-links .default-content-wrapper > ul > li p {
+    .footer-links .default-content-wrapper>ul>li p {
         margin-bottom: 25px;
     }
 
-    .footer-right-container  {
+    .footer-right-container {
         display: flex;
     }
 
@@ -205,9 +256,11 @@ footer .footer p {
         padding-left: 30px;
         width: 61%;
     }
-    
-}
 
+    .mobile-links {
+        display: none;
+    }
+}
 
 @media (min-width: 1024px) {
     .footer-logo-address .default-content-wrapper {
@@ -216,11 +269,11 @@ footer .footer p {
         width: 250px;
     }
 
-    .footer-logo-address .default-content-wrapper p{
+    .footer-logo-address .default-content-wrapper p {
         text-align: left;
     }
 
-    footer .footer > div {
+    footer .footer>div {
         display: flex;
         gap: 20px;
         flex-wrap: wrap;

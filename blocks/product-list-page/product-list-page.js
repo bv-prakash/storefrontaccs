@@ -29,7 +29,7 @@ import {
 } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
-import { renderBreadcrumbs } from './components/breadcrumbs.js';
+import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/search.js';
