@@ -25,7 +25,7 @@ import ProductAttributes from '@dropins/storefront-pdp/containers/ProductAttribu
 import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
 import ProductGiftCardOptions from '@dropins/storefront-pdp/containers/ProductGiftCardOptions.js';
 
-// Libs
+// Relative Lib Imports (2 levels up)
 import {
   rootLink,
   setJsonLd,
@@ -35,10 +35,14 @@ import {
 import { CompareService } from '../../scripts/compare-service.js';
 import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
+// Initializers
 import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
 import '../../scripts/initializers/wishlist.js';
 
+/**
+ * Safely renders breadcrumbs without breaking the block execution if an error occurs.
+ */
 function safeRenderBreadcrumbs(container, categoryData, labels) {
   try {
     if (typeof renderBreadcrumbs === 'function' && container) {
@@ -200,6 +204,7 @@ export default async function decorate(block) {
 
     <!-- Responsive Tab/Accordion Wrapper -->
     <div class="product-details__tabs-wrapper">
+      <!-- Desktop Tab Nav Header -->
       <div class="pdp-tabs-nav" role="tablist">
         <button 
           class="pdp-tab-btn active" 
@@ -219,7 +224,9 @@ export default async function decorate(block) {
         </button>
       </div>
 
+      <!-- Accordion & Tab Content Panels -->
       <div class="pdp-tabs-content">
+        <!-- Section 1: Description -->
         <button 
           class="pdp-accordion-header active" 
           data-tab="description" 
@@ -235,6 +242,7 @@ export default async function decorate(block) {
           <div class="product-details__description"></div>
         </div>
 
+        <!-- Section 2: Specifications -->
         <button 
           class="pdp-accordion-header" 
           data-tab="attributes" 
@@ -462,6 +470,7 @@ export default async function decorate(block) {
     },
   })($addToCart);
 
+  // Lifecycle Events
   events.on('pdp/data', (data) => {
     if (!data) return;
     isOutOfStock = data?.inStock === false;
