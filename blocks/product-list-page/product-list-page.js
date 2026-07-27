@@ -14,7 +14,8 @@ import * as cartApi from '@dropins/storefront-cart/api.js';
 import { isAemAssetsEnabled, isAemAssetsUrl, generateAemAssetsOptimizedUrl } from '@dropins/tools/lib/aem/assets.js';
 // Event Bus
 import { events } from '@dropins/tools/event-bus.js';
-// AEM
+
+// Relative Lib Imports (2 levels up to project root)
 import {
   fetchPlaceholders,
   getProductLink,
@@ -37,13 +38,20 @@ import '../../scripts/initializers/wishlist.js';
 
 // Configuration Options
 const FACET_OPTIONS = {
-  defaultCollapsed: true, // Controls whether facets load collapsed by default
-  categoriesFilterType: 'multi', // Configuration option for multi-select categories
+  defaultCollapsed: true,
+  categoriesFilterType: 'multi',
 };
 
-/**
- * Fetches store config for PLP view modes and pagination count managed by admin.
- */
+function safeRenderBreadcrumbs(container, categoryData, labels) {
+  try {
+    if (typeof renderBreadcrumbs === 'function' && container) {
+      renderBreadcrumbs(container, categoryData, labels);
+    }
+  } catch (error) {
+    console.error('Breadcrumb rendering failed on PLP:', error);
+  }
+}
+
 async function fetchStoreConfigPLP() {
   const query = `
     query StoreConfigPLP {
@@ -68,9 +76,6 @@ async function fetchStoreConfigPLP() {
   }
 }
 
-/**
- * Builds ItemList + BreadcrumbList JSON-LD from PLP search results
- */
 function setCategoryJsonLd(payload, categoryPath) {
   const items = payload?.result?.items || [];
   if (!categoryPath || items.length === 0) return;
@@ -237,9 +242,6 @@ async function getCategoryMetadata(categoryId, urlPath) {
   }
 }
 
-/**
- * Decorates rendered facets into collapsible accordions
- */
 function initCollapsibleFacets($facets) {
   const processedGroups = new WeakSet();
 
@@ -308,9 +310,6 @@ function initCollapsibleFacets($facets) {
   return observer;
 }
 
-/**
- * Renders the Applied Active Filter Chips widget dynamically below the filter toolbar
- */
 function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onResetAll) {
   $container.innerHTML = '';
 
@@ -327,7 +326,6 @@ function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onRe
 
   $container.style.display = 'block';
 
-  // Section Header
   const header = document.createElement('div');
   header.className = 'plp-active-filters-header';
 
@@ -342,7 +340,6 @@ function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onRe
   resetLink.className = 'plp-active-filters-reset';
   resetLink.textContent = 'Reset';
 
-  // Prevent event bubbling to avoid expanding/collapsing header
   resetLink.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -351,7 +348,6 @@ function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onRe
 
   header.appendChild(titleToggle);
 
-  // Chips List Container
   const list = document.createElement('div');
   list.className = 'plp-active-filters-list';
 
@@ -385,7 +381,6 @@ function renderActiveFilterChips($container, activeFilters, onRemoveFilter, onRe
     });
   });
 
-  // Toggle Collapse on Header Click
   header.addEventListener('click', (e) => {
     if (e.target.classList.contains('plp-active-filters-reset')) return;
     $container.classList.toggle('is-collapsed');
@@ -405,7 +400,6 @@ export default async function decorate(block) {
   const hasPrerenderedMarkup = block.dataset.prerendered === 'true';
   const hasServerCategoryJsonLd = isCategoryPrerendered();
 
-  // Admin Config options for view mode and page sizes
   const gridDefaultSize = storeConfig?.grid_per_page || 12;
   const gridAllowedValues = storeConfig?.grid_per_page_values
     ? storeConfig.grid_per_page_values.split(',').map((v) => parseInt(v.trim(), 10)).filter(Boolean)
@@ -474,7 +468,6 @@ export default async function decorate(block) {
          <div class="search__product-sort"></div>
        </div>
 
-       <!-- Applied Active Filters Section -->
        <div class="plp-active-filters-widget"></div>
 
        <div class="search__product-list"></div>
@@ -520,7 +513,6 @@ export default async function decorate(block) {
   }
   block.appendChild(fragment);
 
-  // Smooth Drawer Functions
   const openFilterDrawer = () => {
     $drawer.classList.add('is-open');
     $overlay.classList.add('is-visible');
@@ -531,7 +523,6 @@ export default async function decorate(block) {
     $drawer.classList.remove('is-open');
     $overlay.classList.remove('is-visible');
 
-    // Smooth transition delay before removing scroll lock
     setTimeout(() => {
       document.body.classList.remove('plp-drawer-active');
     }, 300);
@@ -569,7 +560,6 @@ export default async function decorate(block) {
     });
   };
 
-  // Global Reset All Handler
   const resetAllFilters = async () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('filter');
@@ -587,7 +577,6 @@ export default async function decorate(block) {
 
   $resetBtn.addEventListener('click', resetAllFilters);
 
-  // Apply View Mode
   const applyViewMode = (mode) => {
     currentMode = mode;
     localStorage.setItem('plp_view_mode', mode);
@@ -632,11 +621,13 @@ export default async function decorate(block) {
     getCategoryMetadata(categoryId, config.urlpath).then((categoryData) => {
       if (categoryData) {
         $plpTitle.textContent = categoryData.name;
-        renderBreadcrumbs($breadcrumbsContainer, categoryData, labels);
+        safeRenderBreadcrumbs($breadcrumbsContainer, categoryData, labels);
         if (!document.querySelector('meta[name="title"]')?.content) {
           document.title = categoryData.name;
         }
       }
+    }).catch((err) => {
+      console.error('Failed to resolve category metadata for breadcrumbs:', err);
     });
   }
 
@@ -646,7 +637,6 @@ export default async function decorate(block) {
 
   await executeSearch();
 
-  // Mode Button Click Handlers
   block.querySelectorAll('.plp-view-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const newMode = btn.dataset.mode;
@@ -692,33 +682,23 @@ export default async function decorate(block) {
     return button;
   };
 
-  /**
- * Observes the Drop-in's selected facets list:
- * 1. Checks if any active filter chips exist.
- * 2. Adds/removes 'is-empty' class and toggles display.
- * 3. Applies the 'reset' class and changes text to 'Reset'.
- */
   function observeSelectedFacets($container) {
     const observer = new MutationObserver(() => {
       const selectedFiltersList = $container.querySelector('.product-discovery-facet-list__selected-filters');
       if (!selectedFiltersList) return;
 
-      // Count filter chips excluding the reset button
       const buttons = Array.from(selectedFiltersList.querySelectorAll('button'));
       const filterChips = buttons.filter(
         (btn) => !btn.textContent.trim().toLowerCase().includes('clear all') && !btn.classList.contains('reset'),
       );
 
-      // If no active filter chips exist, add 'is-empty' and hide the container
       if (filterChips.length === 0) {
         selectedFiltersList.classList.add('is-empty');
         return;
       }
 
-      // Otherwise, show the container and remove 'is-empty'
       selectedFiltersList.classList.remove('is-empty');
 
-      // Enhance the Clear All / Reset button
       buttons.forEach((btn) => {
         const isClearAll = btn.textContent.trim().toLowerCase().includes('clear all') || btn.classList.contains('reset');
 
@@ -727,7 +707,6 @@ export default async function decorate(block) {
             btn.classList.add('reset-all');
           }
 
-          // Update button text to "Reset"
           const textSpan = btn.querySelector('span');
           if (textSpan && textSpan.textContent.trim() === 'Clear All') {
             textSpan.textContent = 'Reset';
@@ -836,7 +815,6 @@ export default async function decorate(block) {
     block.dataset.enhanced = 'true';
   }
 
-  // Sync Search Result & Filter Updates
   events.on('search/result', (payload) => {
     const totalCount = payload.result?.totalCount || 0;
     block.classList.toggle('product-list-page--empty', totalCount === 0);
@@ -848,12 +826,10 @@ export default async function decorate(block) {
     );
     userFilters = activeUserFilters;
 
-    // Toggle drawer Reset All button visibility
     if ($resetBtn) {
       $resetBtn.style.display = activeUserFilters.length > 0 ? 'inline-block' : 'none';
     }
 
-    // Render active filter chips below toolbar
     renderActiveFilterChips(
       $activeFiltersWidget,
       activeUserFilters,
@@ -885,7 +861,6 @@ export default async function decorate(block) {
       resetAllFilters,
     );
 
-    // Update Filter Trigger Button Badge Count
     const filterBtn = $viewFacets.querySelector('button');
     if (activeUserFilters.length > 0) {
       filterBtn?.setAttribute('data-count', activeUserFilters.length);

@@ -39,6 +39,16 @@ import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js
 import '../../scripts/initializers/cart.js';
 import '../../scripts/initializers/wishlist.js';
 
+function safeRenderBreadcrumbs(container, categoryData, labels) {
+  try {
+    if (typeof renderBreadcrumbs === 'function' && container) {
+      renderBreadcrumbs(container, categoryData, labels);
+    }
+  } catch (error) {
+    console.error('Breadcrumb rendering failed on PDP:', error);
+  }
+}
+
 function isProductPrerendered() {
   const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
 
@@ -190,7 +200,6 @@ export default async function decorate(block) {
 
     <!-- Responsive Tab/Accordion Wrapper -->
     <div class="product-details__tabs-wrapper">
-      <!-- Desktop Tab Nav Header -->
       <div class="pdp-tabs-nav" role="tablist">
         <button 
           class="pdp-tab-btn active" 
@@ -210,9 +219,7 @@ export default async function decorate(block) {
         </button>
       </div>
 
-      <!-- Accordion & Tab Content Panels -->
       <div class="pdp-tabs-content">
-        <!-- Section 1: Description -->
         <button 
           class="pdp-accordion-header active" 
           data-tab="description" 
@@ -228,7 +235,6 @@ export default async function decorate(block) {
           <div class="product-details__description"></div>
         </div>
 
-        <!-- Section 2: Specifications -->
         <button 
           class="pdp-accordion-header" 
           data-tab="attributes" 
@@ -278,7 +284,6 @@ export default async function decorate(block) {
     if (!tabsWrapper) return;
 
     if (isDesktopView && tabBtn) {
-      // --- DESKTOP TAB BEHAVIOR ---
       const targetTab = tabBtn.getAttribute('data-tab');
 
       tabsWrapper.querySelectorAll('.pdp-tab-btn').forEach((b) => {
@@ -292,13 +297,11 @@ export default async function decorate(block) {
         panel.classList.toggle('active', isActive);
       });
     } else if (!isDesktopView && accordionHeader) {
-      // --- MOBILE ACCORDION BEHAVIOR ---
       const targetTab = accordionHeader.getAttribute('data-tab');
       const targetPanel = tabsWrapper.querySelector(`.pdp-tab-panel[data-panel="${targetTab}"]`);
 
       const isCurrentlyExpanded = accordionHeader.classList.contains('active');
 
-      // Toggle clicked accordion header & panel
       accordionHeader.classList.toggle('active', !isCurrentlyExpanded);
       accordionHeader.setAttribute('aria-expanded', !isCurrentlyExpanded ? 'true' : 'false');
 
@@ -307,6 +310,7 @@ export default async function decorate(block) {
       }
     }
   });
+
   if (product) {
     const categoryData = {
       name: product.name,
@@ -315,7 +319,7 @@ export default async function decorate(block) {
         category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
       })) || [],
     };
-    renderBreadcrumbs($breadcrumbs, categoryData, labels);
+    safeRenderBreadcrumbs($breadcrumbs, categoryData, labels);
     renderSkuDetails(product, $sku);
     renderStockStatus(product, $stock);
     renderCompareButton(product, $compareBtn);
@@ -348,7 +352,6 @@ export default async function decorate(block) {
       thumbnailParams: { ...THUMBNAIL_SIZES },
     })($galleryMobile),
 
-    // Updated control configuration to 'thumbnailsRow' for bottom horizontal layout
     pdpRendered.render(ProductGallery, {
       controls: 'thumbnailsRow',
       arrows: false,
@@ -459,7 +462,6 @@ export default async function decorate(block) {
     },
   })($addToCart);
 
-  // Lifecycle Events
   events.on('pdp/data', (data) => {
     if (!data) return;
     isOutOfStock = data?.inStock === false;
@@ -472,7 +474,7 @@ export default async function decorate(block) {
         category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
       })) || [],
     };
-    renderBreadcrumbs($breadcrumbs, categoryData, labels);
+    safeRenderBreadcrumbs($breadcrumbs, categoryData, labels);
     renderSkuDetails(data, $sku);
     renderStockStatus(data, $stock);
     renderCompareButton(data, $compareBtn);
