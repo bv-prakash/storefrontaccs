@@ -119,6 +119,7 @@ header nav .nav-brand {
 header nav .nav-brand img {
   max-width: 291px;
   height: auto;
+  width: 100%;
 }
 
 header nav .nav-sections ul>li>a {
@@ -783,7 +784,7 @@ header .nav-search-input .search_autocomplete .popover-container {
   -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
     color: #000;
-    content: '\e908';
+    content: '\e91d';
     display: inline-block;
     font-family: var(--icomoon-font);
     font-size: 2.6rem;
@@ -982,10 +983,6 @@ header nav .search-wrapper .nav-search-panel {
     display: inline-block;
   }
 
-  header nav .nav-brand img {
-    width: 100%;
-  }
-
   header nav {
     padding-bottom: 60px;
   }
@@ -1036,6 +1033,11 @@ header nav .search-wrapper .nav-search-panel {
   header nav .nav-tools button.nav-search-button {
     right: 30px;
   }
+
+  header .nav-search-panel .search-bar-result {
+    right: 20px;
+    width: calc(100% - 20px);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -1062,6 +1064,11 @@ header nav .search-wrapper .nav-search-panel {
 
   header nav .nav-tools button.nav-search-button {
     right: 35px;
+  }
+
+   header .nav-search-panel .search-bar-result {
+    right: 25px;
+    width: calc(100% - 25px);
   }
 }
 

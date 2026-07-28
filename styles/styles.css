@@ -133,7 +133,7 @@
   --type-fixed-font-family: proxima-nova, "Roboto Mono", menlo, consolas, "Liberation Mono", monospace, system-ui, sans-serif;
   --background-color: var(--color-neutral-50);
   --nav-height: 6.4rem;
-  --icomoon-font:  "icomoon", sans-serif;
+  --icomoon-font: "icomoon", sans-serif;
 }
 
 /* fallback font */
@@ -153,17 +153,26 @@ html {
 }
 
 body {
-  font-size:  1.6rem;
+  font-size: 1.6rem;
   line-height: 1.3;
   font-family: var(--type-fixed-font-family);
   letter-spacing: var(--type-body-1-default-letter-spacing);
   margin: 0;
   color: #000;
   background-color: var(--background-color);
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: 100%;
   -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+main {
+  grid-row: 2;
+}
+
+body main {
+  flex-grow: 1;
 }
 
 @media (min-width: 1200px) {
@@ -180,9 +189,7 @@ header {
   grid-row: 1;
 }
 
-main {
-  grid-row: 2;
-}
+
 
 footer {
   grid-row: 3;
@@ -462,9 +469,6 @@ main img {
 /* sections */
 main>.section {
   margin: var(--spacing-xbig) 0;
-  overflow: hidden;
-  position: relative;
-  z-index: 0;
 }
 
 .section:empty {
@@ -651,15 +655,15 @@ main[hidden] {
 }
 
 .dropin-pagination .dropin-pagination-arrow svg {
-   position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .dropin-pagination .dropin-pagination-arrow,
@@ -672,7 +676,7 @@ main[hidden] {
 
 .dropin-pagination .dropin-pagination-arrow--backward::before,
 .dropin-pagination .dropin-pagination-arrow--forward::before {
- -moz-osx-font-smoothing: grayscale;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   color: #000;
   content: '\e904';
@@ -697,11 +701,11 @@ main[hidden] {
 }
 
 .dropin-pagination .dropin-pagination_list-item button {
-    font-size: 16px;
-    font-weight: 400;
-    color: #000;
-    line-height: 1.3;
-    cursor: pointer;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000;
+  line-height: 1.3;
+  cursor: pointer;
 }
 
 .dropin-pagination .dropin-pagination_list-item--active,
@@ -788,4 +792,34 @@ main[hidden] {
   .product-details__breadcrumbs .breadcrumbs {
     margin-bottom: 50px;
   }
+}
+
+button.dropin-button.dropin-button--primary,
+a.dropin-button.dropin-button--primary,
+.dropin-iconButton--primary {
+   background: var(--color-dark-blue);
+    border: 3px solid var(--color-dark-blue);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 8px 20px;
+    font-size: 1.4rem;
+    box-sizing: border-box;
+    vertical-align: middle;
+    text-decoration: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    border-radius: 0;
+}
+
+
+button.dropin-button.dropin-button--primary:hover,
+a.dropin-button.dropin-button--primary:hover,
+.dropin-iconButton--primary:hover {
+   background: var(--color-neutral-50);
+  border: 3px solid var(--color-dark-blue);
+  color: var(--color-dark-blue);
 }
