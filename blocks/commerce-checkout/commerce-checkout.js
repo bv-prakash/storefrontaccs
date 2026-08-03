@@ -65,7 +65,8 @@ import {
   TERMS_AND_CONDITIONS_FORM_NAME,
 } from './constants.js';
 
-import { rootLink } from '../../scripts/commerce.js';
+import { rootLink, fetchPlaceholders } from '../../scripts/commerce.js';
+import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/account.js';
@@ -109,6 +110,8 @@ export default async function decorate(block) {
     document.title = 'Order Confirmation';
   });
 
+  const placeholders = await fetchPlaceholders();
+
   // Create the checkout layout using fragments
   const checkoutFragment = createCheckoutFragment();
 
@@ -116,6 +119,8 @@ export default async function decorate(block) {
   const getElement = createScopedSelector(checkoutFragment);
 
   // Get all checkout elements using centralized selectors
+  const $breadcrumbs = getElement(selectors.checkout.breadcrumbs);
+  const $pageTitle = getElement(selectors.checkout.pageTitle);
   const $content = getElement(selectors.checkout.content);
   const $loader = getElement(selectors.checkout.loader);
   const $mergedCartBanner = getElement(selectors.checkout.mergedCartBanner);
@@ -133,6 +138,62 @@ export default async function decorate(block) {
   const $placeOrder = getElement(selectors.checkout.placeOrder);
   const $giftOptions = getElement(selectors.checkout.giftOptions);
   const $termsAndConditions = getElement(selectors.checkout.termsAndConditions);
+  const $stepsNav = getElement(selectors.checkout.stepsNav);
+  const $step1Panel = getElement(selectors.checkout.step1Panel);
+  const $step2Panel = getElement(selectors.checkout.step2Panel);
+  const $continueBtn = getElement(selectors.checkout.continueBtn);
+  const $backBtn = getElement(selectors.checkout.backBtn);
+
+  // Render Breadcrumbs
+  if ($breadcrumbs && typeof renderBreadcrumbs === 'function') {
+    renderBreadcrumbs($breadcrumbs, {
+      name: 'Checkout',
+    }, placeholders);
+  }
+
+  // 2-Step Navigation Handler
+  const goToStep = (stepNumber) => {
+    const isStep1 = stepNumber === 1;
+    $step1Panel.classList.toggle('active', isStep1);
+    $step2Panel.classList.toggle('active', !isStep1);
+
+    $stepsNav.querySelectorAll('.checkout-step-btn').forEach((btn) => {
+      const step = parseInt(btn.dataset.step, 10);
+      btn.classList.toggle('active', step === stepNumber);
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  $continueBtn?.addEventListener('click', async () => {
+    // Validate shipping form if present
+    const valid = validateForms([
+      { name: SHIPPING_FORM_NAME, ref: shippingFormRef },
+    ]);
+    if (valid) {
+      goToStep(2);
+    }
+  });
+
+  $backBtn?.addEventListener('click', () => {
+    goToStep(1);
+  });
+
+  $stepsNav?.querySelectorAll('.checkout-step-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const step = parseInt(btn.dataset.step, 10);
+      if (step === 1) {
+        goToStep(1);
+      } else if (step === 2) {
+        const valid = validateForms([
+          { name: SHIPPING_FORM_NAME, ref: shippingFormRef },
+        ]);
+        if (valid) {
+          goToStep(2);
+        }
+      }
+    });
+  });
 
   block.appendChild(checkoutFragment);
 
@@ -220,7 +281,12 @@ export default async function decorate(block) {
   ]);
 
   async function initializeCheckout(data) {
-    await initReCaptcha(0);
+    try {
+      await initReCaptcha(0);
+    } catch (e) {
+      // reCaptcha configuration not available – continue without it
+      console.warn('reCaptcha configuration could not be loaded:', e?.message);
+    }
     if (data.isGuest) await displayGuestAddressForms(data);
     else {
       removeOverlaySpinner(loaderRef, $loader);

@@ -259,9 +259,10 @@ export default async function decorate(block) {
 
   const minicartPanel = navTools.querySelector('.minicart-panel');
   const cartButton = navTools.querySelector('.nav-cart-button');
+  const cartButtonContainer = navTools.querySelector('.minicart-wrapper');
 
   if (excludeMiniCartFromPaths.includes(window.location.pathname)) {
-    cartButton.style.display = 'none';
+    cartButtonContainer.style.display = 'none';
   }
 
   async function withLoadingState(panel, button, loader) {

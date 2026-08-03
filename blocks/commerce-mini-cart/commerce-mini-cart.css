@@ -87,7 +87,7 @@
 }
 
 .minicart-quantity-stepper {
-align-items: center;
+    align-items: center;
   display: flex;
   position: relative;
   border: 0;

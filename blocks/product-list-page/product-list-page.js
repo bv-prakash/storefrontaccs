@@ -27,10 +27,12 @@ import {
   CS_FETCH_GRAPHQL,
   CORE_FETCH_GRAPHQL,
   setJsonLd,
+  rootLink,
 } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
 import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { showNotification } from '../../scripts/components/notification.js';
 
 // Initializers
 import '../../scripts/initializers/search.js';
@@ -442,7 +444,7 @@ export default async function decorate(block) {
 
   const fragment = document.createRange().createContextualFragment(`
     <div class="search__header">
-     <h1 class="plp-title"></h1>
+      <h1 class="plp-title"></h1>
       <div class="plp-breadcrumbs-container"></div>
     </div>
     <div class="search__wrapper">
@@ -617,7 +619,24 @@ export default async function decorate(block) {
     block.dataset.categoryId = categoryMeta.cateId;
   }
 
-  if (config.urlpath || categoryId) {
+  // --- BREADCRUMBS & HEADING RESOLUTION (SEARCH VS CATEGORY) ---
+  if (searchState.phrase) {
+    // 1. Search Results Context
+    const searchQuery = searchState.phrase;
+    $plpTitle.innerHTML = `Search Results for <span>"${searchQuery}"</span>`;
+    document.title = `Search Results for "${searchQuery}"`;
+
+    const searchBreadcrumbsData = {
+      name: `Search result for: "${searchQuery}"`,
+      breadcrumbs: [
+        {
+          category_url_path: '/',
+        },
+      ],
+    };
+    safeRenderBreadcrumbs($breadcrumbsContainer, searchBreadcrumbsData, labels);
+  } else if (config.urlpath || categoryId) {
+    // 2. Category Page Context
     getCategoryMetadata(categoryId, config.urlpath).then((categoryData) => {
       if (categoryData) {
         $plpTitle.textContent = categoryData.name;
@@ -676,7 +695,33 @@ export default async function decorate(block) {
     UI.render(Button, {
       children: labels.Global?.AddProductToCart,
       icon: Icon({ source: 'Cart' }),
-      onClick: () => cartApi.addProductsToCart([{ sku: product.sku, quantity: 1 }]),
+      onClick: async (e) => {
+        const btnElement = e.currentTarget || button.querySelector('button');
+        const originalText = btnElement ? btnElement.textContent : labels.Global?.AddProductToCart;
+        try {
+          if (btnElement) {
+            btnElement.disabled = true;
+            btnElement.textContent = labels.Global?.AddingToCart || 'Adding...';
+          }
+          await cartApi.addProductsToCart([{ sku: product.sku, quantity: 1 }]);
+          showNotification({
+            type: 'success',
+            message: `${product.name || 'Product'} added to your cart.`,
+            linkText: 'View Cart',
+            linkUrl: rootLink('/cart'),
+          });
+        } catch (err) {
+          showNotification({
+            type: 'error',
+            message: err.message || 'Failed to add product to cart.',
+          });
+        } finally {
+          if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.textContent = originalText;
+          }
+        }
+      },
       variant: 'primary',
     })(button);
     return button;
@@ -796,6 +841,12 @@ export default async function decorate(block) {
                     || ctx.product.price?.final?.amount?.value,
                 });
                 events.emit('compare/update');
+                showNotification({
+                  type: 'success',
+                  message: `${ctx.product.name || 'Product'} has been added to compare list.`,
+                  linkText: 'View Compare',
+                  linkUrl: rootLink('/compare'),
+                });
               });
             },
           })($compareBtnContainer);
