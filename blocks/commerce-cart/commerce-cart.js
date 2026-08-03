@@ -220,6 +220,62 @@ export default async function decorate(block) {
           });
         },
 
+        Quantity: (ctx) => {
+          const itemUid = ctx.item?.uid;
+          const currentQty = ctx.item?.quantity || 1;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'cart-quantity-stepper-wrapper';
+
+          wrapper.innerHTML = `
+            <div class="cart-quantity-stepper">
+              <button type="button" class="cart-qty-btn decrease-quantity" data-action="dec" ${currentQty <= 1 ? 'disabled' : ''} aria-label="Decrease quantity"><span>Decrease quantity</span></button>
+              <input type="number" name="quantity" aria-label="Item Quantity" class="cart-qty-input" value="${currentQty}" min="1" />
+              <button type="button" class="cart-qty-btn increase-quantity" data-action="inc" aria-label="Increase quantity"><span>Increase quantity</span></button>
+            </div>
+          `;
+
+          const input = wrapper.querySelector('.cart-qty-input');
+          const decBtn = wrapper.querySelector('.cart-qty-btn[data-action="dec"]');
+          const incBtn = wrapper.querySelector('.cart-qty-btn[data-action="inc"]');
+
+          const updateQuantity = async (newVal) => {
+            let qty = parseInt(newVal, 10);
+            if (Number.isNaN(qty) || qty < 1) qty = 1;
+
+            input.value = qty;
+            if (decBtn) decBtn.disabled = qty <= 1;
+
+            if (itemUid) {
+              try {
+                ctx.handleItemsLoading?.(true);
+                await Cart.updateProductsFromCart([{ uid: itemUid, quantity: qty }]);
+              } catch (err) {
+                console.error('Failed to update product quantity:', err);
+              } finally {
+                ctx.handleItemsLoading?.(false);
+              }
+            }
+          };
+
+          decBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const qty = parseInt(input.value || '1', 10);
+            if (qty > 1) updateQuantity(qty - 1);
+          });
+
+          incBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const qty = parseInt(input.value || '1', 10);
+            updateQuantity(qty + 1);
+          });
+
+          input?.addEventListener('change', (e) => {
+            updateQuantity(e.target.value);
+          });
+
+          ctx.replaceWith(wrapper);
+        },
+
         Actions: (ctx) => {
           // Edit Link
           if (ctx.item?.itemType === 'ConfigurableCartItem' && enableUpdatingProduct === 'true') {

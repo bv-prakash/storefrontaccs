@@ -34,6 +34,7 @@ import {
 } from '../../scripts/commerce.js';
 import { CompareService } from '../../scripts/compare-service.js';
 import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { showNotification } from '../../scripts/components/notification.js';
 
 // Initializers
 import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
@@ -140,6 +141,12 @@ function renderCompareButton(product, targetContainer) {
       });
 
       events.emit('compare/update');
+      showNotification({
+        type: 'success',
+        message: `${currentProduct?.name || 'Product'} has been added to compare list.`,
+        linkText: 'View Compare',
+        linkUrl: rootLink('/compare'),
+      });
     },
   })(compareBtnContainer);
 
@@ -441,6 +448,12 @@ export default async function decorate(block) {
             '@dropins/storefront-cart/api.js'
           );
           await addProductsToCart([{ ...values }]);
+          showNotification({
+            type: 'success',
+            message: 'You added product to your shopping cart.',
+            linkText: 'View Cart',
+            linkUrl: rootLink('/cart'),
+          });
         }
 
         inlineAlert?.remove();
@@ -515,6 +528,23 @@ export default async function decorate(block) {
       item,
       routeToWishlist,
     })($alert);
+
+    const productName = item?.product?.name || 'Product';
+    if (action === 'add') {
+      showNotification({
+        type: 'success',
+        message: `${productName} has been added to your Wish List.`,
+        linkText: 'View Wish List',
+        linkUrl: routeToWishlist,
+      });
+    } else if (action === 'remove') {
+      showNotification({
+        type: 'info',
+        message: `${productName} has been removed from your Wish List.`,
+        linkText: 'View Wish List',
+        linkUrl: routeToWishlist,
+      });
+    }
 
     setTimeout(() => {
       $alert.innerHTML = '';

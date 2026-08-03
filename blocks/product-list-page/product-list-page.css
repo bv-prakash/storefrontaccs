@@ -236,7 +236,7 @@
     color: var(--color-text-color);
 }
 
-.block.product-list-page .block-subtitle {
+.block.product-list-page .plp-drawer-title {
     font-size: 17px;
     font-weight: 400;
     text-transform: uppercase;
@@ -346,7 +346,7 @@
         display: none;
     }
 
-    .block.product-list-page .block-subtitle {
+    .block.product-list-page .plp-drawer-title {
         font-size: 17px;
         font-weight: 400;
         text-transform: uppercase;
@@ -423,7 +423,7 @@
 }
 
 @media (min-width: 1024px) {
-    .block.product-list-page .block-subtitle {
+    .block.product-list-page .plp-drawer-title {
         font-size: 22px;
     }
 }
@@ -437,7 +437,7 @@
         font-size: 32px;
     }
 
-    .block.product-list-page .block-subtitle {
+    .block.product-list-page .plp-drawer-title {
         font-size: 24px;
     }
 
@@ -465,11 +465,6 @@
     }
 }
 
-/* =====================================================
-   Collapsible Facet Groups (Layered Navigation)
-   ===================================================== */
-
-/* Each dropin facet group gets this class via JS */
 .block.product-list-page .plp-facet-group {
     border-bottom: 1px solid #000;
     overflow: hidden;
@@ -538,7 +533,6 @@
     transform: translateX(3px) rotate(45deg);
 }
 
-/* Collapsed state — chevron flips to point down */
 .block.product-list-page .plp-facet-group--collapsed .plp-facet-chevron::before {
     transform: translateX(-3px) rotate(45deg);
 }
@@ -547,7 +541,6 @@
     transform: translateX(3px) rotate(-45deg);
 }
 
-/* Collapsible content area with smooth height animation */
 .block.product-list-page .plp-facet-content {
     overflow: hidden;
     max-height: 600px;
@@ -565,9 +558,6 @@
     padding-bottom: 0;
 }
 
-/* =====================================================
-   PLP Toolbar, View Mode Toggle & Page Size Selector
-   ===================================================== */
 .block.product-list-page .plp-toolbar {
     display: flex;
     flex-wrap: wrap;

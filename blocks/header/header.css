@@ -190,6 +190,10 @@ header nav .minicart-panel {
     z-index: 1001;
 }
 
+header nav .minicart-panel.nav-tools-panel--show {
+  display: block;
+}
+
 .cart-mini-cart:not(:has(.cart-empty-cart)) {
   min-height: 360px;
 }
