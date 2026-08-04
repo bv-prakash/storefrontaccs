@@ -1,5 +1,142 @@
-main .commerce-login-container {
-    max-width: 700px;
-    margin: 40px auto;
+main .section.commerce-login-bg-section {
+    min-height: 100vh;
+    background-image: var(--login-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+}
+
+main .section.commerce-login-bg-section .default-content-wrapper,
+main .section.commerce-login-bg-section .commerce-login-wrapper {
     width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+main .commerce-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(100% - 40px);
+    max-width: 546px;
+    margin: 40px auto;
+    box-shadow: 0 3px 20px rgb(0 0 0 / 20%);
+}
+
+.commerce-login .commerce-login-card {
+    background-color: #fff;
+    box-shadow: 0 3px 20px rgb(0 0 0 / 20%);
+    padding: 30px 20px;
+    width: 100%;
+}
+
+.commerce-login .commerce-login-card .auth-sign-in-form {
+    padding: 0;
+}
+
+.auth-sign-in-form__title {
+    margin-bottom: 20px;
+    text-align: center;
+    text-transform: uppercase;
+    display: block;
+}
+
+.auth-sign-in-form__title .dropin-header-container__title {
+    font-weight: 600;
+    line-height: 1.1;
+    font-size: 2rem;
+    margin: 0;
+    color: #000;
+}
+
+.auth-sign-in-form__form__buttons {
+    display: block;
+    text-align: center;
+}
+
+.auth-sign-in-form__form__buttons
+    .auth-sign-in-form__form__buttons__combine
+    .auth-button {
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: #000;
+}
+
+.auth-sign-in-form__form__buttons .auth-sign-in-form__form__buttons__combine {
+    justify-content: center;
+}
+
+.dropin-input-password > div:first-child {
+    margin-bottom: 0;
+}
+
+.auth-sign-in-form__form__email,
+.auth-sign-in-form__form__password {
+    margin-bottom: 15px;
+}
+
+main .commerce-login .commerce-login-signup {
+    margin: 20px 0 0;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: #000;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+main .commerce-login .commerce-login-signup a {
+    color: #384c60;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+main .commerce-login .commerce-login-signup a:hover {
+    text-decoration: underline;
+}
+
+@media only screen and (min-width: 768px) {
+    .commerce-login .commerce-login-card {
+        padding: 70px;
+    }
+
+    .auth-sign-in-form__title {
+        margin-bottom: 30px;
+    }
+
+    .auth-sign-in-form__title .dropin-header-container__title {
+        font-size: 2.6rem;
+    }
+
+    .auth-sign-in-form__form__buttons
+        .auth-sign-in-form__form__buttons__combine
+        .auth-button {
+        margin-bottom: 25px;
+    }
+
+    .auth-sign-in-form__form__email,
+    .auth-sign-in-form__form__password {
+        margin-bottom: 20px;
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .auth-sign-in-form__title .dropin-header-container__title {
+        font-size: 3.2rem;
+    }
+
+    .auth-sign-in-form__form__buttons .auth-sign-in-form__form__buttons__combine .auth-button,
+    main .commerce-login .commerce-login-signup {
+        font-size: 1.8rem;
+    }
 }
