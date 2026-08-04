@@ -574,24 +574,7 @@ a.checkout-login-form__link {
     display: none;
 }
 
-@media only screen and (min-width: 320px) and (max-width: 768px) {
-    .checkout__main,
-    .checkout__aside {
-        display: contents;
-    }
 
-    .checkout__block {
-        order: 3;
-    }
-
-    .checkout__heading {
-        order: 1;
-    }
-
-    .checkout__cart-summary {
-        order: 2;
-    }
-}
 
 @media only screen and (min-width: 1024px) {
     .checkout__content {

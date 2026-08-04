@@ -105,10 +105,10 @@ export const authPrivacyPolicyConsentSlot = {
   PrivacyPolicyConsent: async (ctx) => {
     const wrapper = document.createElement('span');
     Object.assign(wrapper.style, {
-      color: 'var(--color-neutral-700)',
-      font: 'var(--type-details-caption-2-font)',
+      color: 'var(--color-text-color)',
+      font: '14px/1.3 var(--type-base-font-family)',
       display: 'block',
-      marginBottom: 'var(--spacing-medium)',
+      marginBottom: '20px',
     });
 
     const link = document.createElement('a');
