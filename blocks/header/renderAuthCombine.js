@@ -247,7 +247,7 @@ const renderAuthCombine = (navSections, toggleMenu) => {
             const { headerLoginButton, popupElement, popupMenuContainer } = getPopupElements();
 
             if (!authCombineNavElement || !headerLoginButton
-               || !popupElement || !popupMenuContainer) {
+              || !popupElement || !popupMenuContainer) {
               return;
             }
 
