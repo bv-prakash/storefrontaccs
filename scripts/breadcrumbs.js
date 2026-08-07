@@ -1,3 +1,5 @@
+import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
+
 /**
  * Renders structured breadcrumbs into a target HTML container.
  *
@@ -9,8 +11,9 @@
  * @param {Object} [labels={}] - Dictionary containing localized strings (e.g., labels.Home).
  */
 export function renderBreadcrumbs(container, data = {}, labels = {}) {
-  if (!container) return;
-  container.innerHTML = '';
+  const targetContainer = container || document.querySelector('.breadcrumbs-container');
+  if (!targetContainer) return;
+  targetContainer.innerHTML = '';
 
   const nav = document.createElement('nav');
   nav.className = 'breadcrumbs';
@@ -67,5 +70,12 @@ export function renderBreadcrumbs(container, data = {}, labels = {}) {
   }
 
   nav.appendChild(ol);
-  container.appendChild(nav);
+  targetContainer.appendChild(nav);
+}
+
+export function getGlobalBreadcrumbsContainer() {
+  const rootPath = getRootPath().replace(/\/$/, '') || '/';
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+  if (pathname === rootPath) return null;
+  return document.querySelector('.breadcrumbs-container');
 }

@@ -66,7 +66,7 @@ import {
 } from './constants.js';
 
 import { rootLink, fetchPlaceholders } from '../../scripts/commerce.js';
-import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
 // Initializers
 import '../../scripts/initializers/account.js';
@@ -145,8 +145,9 @@ export default async function decorate(block) {
   const $backBtn = getElement(selectors.checkout.backBtn);
 
   // Render Breadcrumbs
-  if ($breadcrumbs && typeof renderBreadcrumbs === 'function') {
-    renderBreadcrumbs($breadcrumbs, {
+  const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+  if (typeof renderBreadcrumbs === 'function') {
+    renderBreadcrumbs(globalBreadcrumbsContainer, {
       name: 'Checkout',
     }, placeholders);
   }

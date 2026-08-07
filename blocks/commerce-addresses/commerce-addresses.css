@@ -1,1 +1,228 @@
-/* stylelint-disable no-empty-source */
+
+
+.dropin-header-container {
+    display: none;
+}
+
+.dropin-card {
+    border: 1px solid #aaa;
+    border-radius: 0;
+}
+
+.account-address-card .dropin-card__content {
+    display: flex;
+    padding: 20px;
+    height: stretch;
+}
+
+.my-account-page .dropin-card .dropin-card__content {
+    padding: 20px;
+}
+
+.account-address-card {
+    margin-bottom: 0;
+}
+
+.my-account-page .account-address-card {
+    max-width: 400px;
+    width: 100%;
+}
+
+.account-address-card .account-address-card__description p,
+.account-address-card .account-address-card__description p:nth-child(1),
+.account-address-card .account-address-card__description p:nth-child(2) {
+    font-size: 1.4rem;
+    line-height: 2.4rem;
+    margin: 0;
+    color: #000;
+}
+
+.account-address-card .account-address-card__description p:nth-child(1),
+.account-address-card .account-address-card__description p:nth-child(2) {
+    margin: 0;
+    font-weight: 700;
+}
+
+.account-address-card .account-address-card__description p:nth-child(1){
+    margin-right: 10px;
+}
+
+.account-addresses-wrapper {
+    display: grid;
+    gap: 40px;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 40px;
+}
+
+.my-account-page .account-addresses-wrapper {
+    display: flex;
+    gap: 40px;
+    margin-top: 0;
+}
+
+.my-account-page .account-addresses__footer {
+    position: absolute;
+    top: -43px;
+    left: 140px;
+}
+
+.my-account-page .account-actions-address {
+    height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.my-account-page .account-actions-address .account-actions-address__title {
+    font-size: 1.4rem;
+    color: #384c60;
+    line-height: 3rem;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.my-account-page .account-actions-address svg {
+    width: 26px;
+    height: auto;
+}
+
+.account-addresses-wrapper .dropin-tag-container {
+    background: var(--color-dark-blue);
+    border: 3px solid var(--color-dark-blue);
+    padding: 5px 12px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+}
+
+.account-addresses-wrapper .dropin-tag-container__label {
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+
+@media only screen and (min-width:768px) {
+    .account-address-card .account-address-card__description p,
+    .account-address-card .account-address-card__description p:nth-child(1),
+    .account-address-card .account-address-card__description p:nth-child(2) {
+        font-size: 1.8rem;
+        line-height: 3rem;
+    }
+}
+
+.account-addresses .dropin-card:not(.account-address-card) {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    width: 100%;
+    background: rgb(0 0 0 / 50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    border: 0;
+    border-radius: 0;
+    margin: 0 !important;
+}
+
+.account-addresses .dropin-card:not(.account-address-card) .dropin-card__content {
+    display: block;
+    padding: 0;
+    max-width: 600px;
+    width: 100%;
+}
+
+.account-addresses .account-empty-list .dropin-card:not(.account-address-card) {
+    position: relative;
+    inset: unset;
+    background-color: #fff;
+    display: block;
+}
+
+.account-addresses .dropin-card:not(.account-address-card) .account-address-form-wrapper {
+    padding: 30px 30px 90px;
+    position: relative;
+    max-width: 600px;
+    width: 100%;
+}
+
+.account-addresses .dropin-card:not(.account-address-card) .account-address-form-wrapper .account-form {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.account-address-form-wrapper .account-form .account-address-form-wrapper__buttons {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+}
+
+.account-addresses-wrapper .account-empty-list,
+.account-addresses-wrapper .account-addresses__footer {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+
+.account-address-card .account-address-card__description {
+    order: 1;
+}
+
+.account-address-card .account-address-card__action {
+    order: 3;
+    margin-top: auto;
+}
+
+.account-address-card .account-address-card__labels {
+    order: 2;
+}
+
+
+.account-main-container:not(.my-account-page) .account-actions-address {
+    background: var(--color-dark-blue);
+    border: 3px solid var(--color-dark-blue);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    padding: 6px 12px;
+    font-size: 14px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    text-decoration: none;
+    width: max-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    border-radius: 0;
+    height: auto;
+    gap: 5px;
+    grid-column: 1 / -1;
+}
+
+.account-main-container:not(.my-account-page) .account-actions-address:hover {
+    background: var(--color-neutral-50);
+    border: 3px solid var(--color-dark-blue);
+    color: var(--color-dark-blue);
+}
+
+.account-main-container:not(.my-account-page) .account-actions-address__title {
+    font: inherit;
+    color: inherit;
+}
+
+.account-main-container:not(.my-account-page) .account-actions-address svg {
+    stroke: inherit;
+    color: inherit;
+    width: 26px;
+    height: auto;
+}
+
+

@@ -1,4 +1,4 @@
-import { Icon, provider as UI } from '@dropins/tools/components.js';
+import { Icon } from '@dropins/tools/components.js';
 import { render as accountRenderer } from '@dropins/storefront-account/render.js';
 import { loadFragment } from '../fragment/fragment.js';
 import { CUSTOMER_ORDERS_PATH, rootLink } from '../../scripts/commerce.js';
@@ -9,12 +9,10 @@ export default async function decorate(block) {
   const sidebarItems = Array.from(sidebarItemsConfig).map((item) => {
     const itemParams = Array.from(item.querySelectorAll('ol > li'));
     const itemTitle = item.childNodes[0]?.textContent?.trim() || item.querySelector(':scope > p')?.textContent?.trim() || 'Default Title';
-    const itemSubtitle = itemParams[0]?.innerText || '';
-    const itemLink = itemParams[1]?.innerText || rootLink('#');
-    const itemIcon = itemParams[2]?.innerText || 'Placeholder';
+    const itemLink = itemParams[0]?.innerText || rootLink('#');
+    const itemIcon = itemParams[1]?.innerText || 'Placeholder';
     const itemConfig = {
       itemTitle,
-      itemSubtitle,
       itemLink,
       itemIcon,
     };
@@ -33,12 +31,10 @@ export default async function decorate(block) {
     }
 
     const iconEl = createMenuItemIcon(itemConfig.itemIcon);
-    const contentEl = createMenuItemContent(itemConfig.itemTitle, itemConfig.itemSubtitle);
-    const arrowEl = createMenuItemArrow();
+    const contentEl = createMenuItemContent(itemConfig.itemTitle);
 
     menuItemEl.appendChild(iconEl);
     menuItemEl.appendChild(contentEl);
-    menuItemEl.appendChild(arrowEl);
 
     return menuItemEl;
   });
@@ -52,11 +48,11 @@ export default async function decorate(block) {
 function createMenuItemIcon(iconSource) {
   const iconEl = document.createElement('div');
   iconEl.classList.add('commerce-account-sidebar-item-icon');
-  accountRenderer.render(Icon, { source: iconSource, size: 32 })(iconEl);
+  accountRenderer.render(Icon, { source: iconSource, size: 26 })(iconEl);
   return iconEl;
 }
 
-function createMenuItemContent(title, subtitle) {
+function createMenuItemContent(title) {
   const contentEl = document.createElement('div');
   contentEl.classList.add('commerce-account-sidebar-item-content');
 
@@ -64,21 +60,6 @@ function createMenuItemContent(title, subtitle) {
   titleEl.classList.add('commerce-account-sidebar-item-title');
   titleEl.innerText = title;
 
-  const subtitleEl = document.createElement('p');
-  subtitleEl.classList.add('commerce-account-sidebar-item-subtitle');
-  subtitleEl.innerText = subtitle;
-
   contentEl.appendChild(titleEl);
-  contentEl.appendChild(subtitleEl);
   return contentEl;
-}
-
-function createMenuItemArrow() {
-  const arrowEl = document.createElement('div');
-  arrowEl.classList.add('commerce-account-sidebar-item-arrow');
-  UI.render(Icon, {
-    source: 'ChevronRight',
-    size: 32,
-  })(arrowEl);
-  return arrowEl;
 }

@@ -833,6 +833,11 @@ header .nav-search-input .search_autocomplete .popover-container {
     width: 398px;
 }
 
+.user-auth-container .auth-sign-in-form,
+.user-auth-container .sing-up-link {
+    padding: 20px;
+}
+
 .user-auth-container .sing-up-link {
     color: #000;
     font-size: 1.4rem;
@@ -840,11 +845,6 @@ header .nav-search-input .search_autocomplete .popover-container {
     line-height: 1.4;
     padding-top: 0;
     text-align: center;
-}
-
-.user-auth-container .auth-sign-in-form,
-.user-auth-container .sing-up-link {
-    padding: 20px;
 }
 
 .user-auth-container .dropin-input-password > div:first-child {
@@ -855,8 +855,8 @@ header .nav-search-input .search_autocomplete .popover-container {
     margin: 0;
     padding: 0;
     list-style: none;
-    min-width: 160px;
-    max-width: 160px;
+    min-width: 165px;
+    max-width: 165px;
 }
 
 .nav-tools-panel--show .user-auth-container {

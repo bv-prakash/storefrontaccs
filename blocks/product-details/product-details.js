@@ -33,7 +33,7 @@ import {
   getProductLink,
 } from '../../scripts/commerce.js';
 import { CompareService } from '../../scripts/compare-service.js';
-import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 import { showNotification } from '../../scripts/components/notification.js';
 
 // Initializers
@@ -334,7 +334,8 @@ export default async function decorate(block) {
         category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
       })) || [],
     };
-    safeRenderBreadcrumbs($breadcrumbs, categoryData, labels);
+    const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+    safeRenderBreadcrumbs(globalBreadcrumbsContainer, categoryData, labels);
     renderSkuDetails(product, $sku);
     renderStockStatus(product, $stock);
     renderCompareButton(product, $compareBtn);
