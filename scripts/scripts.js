@@ -1,3 +1,4 @@
+import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
 import {
   buildBlock,
   loadHeader,
@@ -149,6 +150,48 @@ export function decorateMain(main) {
   decorateBlocks(main);
   decorateButtons(main);
 }
+function createGlobalBreadcrumbsContainer(doc = document) {
+  const rootPath = getRootPath().replace(/\/$/, '') || '/';
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+
+  // 1. Exit early if on the home page
+  if (pathname === rootPath) return null;
+
+  const header = doc.querySelector('header');
+  if (!header) return null;
+
+  const isPlpPage = pathname.startsWith('/categories/');
+
+  // 2. Select existing container based on page type
+  let container = isPlpPage
+    ? doc.querySelector('.category-banner-wrapper')
+    : doc.querySelector('.breadcrumbs-container');
+
+  // 3. Only create and construct DOM elements if container doesn't exist yet
+  if (!container) {
+    if (isPlpPage) {
+      container = document.createElement('div');
+      container.className = 'category-banner-wrapper';
+
+      const breadcrumbsEl = document.createElement('div');
+      breadcrumbsEl.className = 'breadcrumbs-container';
+
+      const pageTitleEl = document.createElement('h1');
+      pageTitleEl.className = 'page-title';
+
+      container.appendChild(pageTitleEl);
+      container.appendChild(breadcrumbsEl);
+    } else {
+      container = document.createElement('div');
+      container.className = 'breadcrumbs-container';
+    }
+
+    // Insert newly created container directly after header
+    header.insertAdjacentElement('afterend', container);
+  }
+
+  return container;
+}
 
 /**
  * Loads everything needed to get to LCP.
@@ -157,6 +200,7 @@ export function decorateMain(main) {
 async function loadEager(doc) {
   document.documentElement.lang = 'en';
   decorateTemplateAndTheme();
+  createGlobalBreadcrumbsContainer(doc);
 
   const main = doc.querySelector('main');
   if (main) {

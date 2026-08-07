@@ -1,3 +1,30 @@
 body.columns main > .section > div.commerce-account-header-wrapper {
     margin-bottom: 0;
 }
+
+.account-main-container .commerce-header-title {
+    border-bottom: 1px solid #aaa;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+    margin: 0 0 20px;
+    padding-bottom: 15px;
+    padding-top: 10px;
+    text-transform: uppercase;
+}
+
+
+@media only screen and (min-width:768px) {
+    .account-main-container .commerce-header-title {
+        font-size: 2.5rem;
+        padding-top: 0;
+    }
+}
+
+
+@media only screen and (min-width:1200px) {
+    .account-main-container .commerce-header-title {
+        font-size: 3.5rem;
+    }
+}
+

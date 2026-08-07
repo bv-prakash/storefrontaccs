@@ -34,7 +34,7 @@ import '../../scripts/initializers/wishlist.js';
 
 import { readBlockConfig } from '../../scripts/aem.js';
 import { fetchPlaceholders, rootLink, getProductLink } from '../../scripts/commerce.js';
-import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
 /**
  * Safely renders breadcrumbs without breaking the block execution if an error occurs.
@@ -91,7 +91,6 @@ export default async function decorate(block) {
     <div class="cart__empty-cart"></div>
   `);
 
-  const $breadcrumbs = fragment.querySelector('.cart__breadcrumbs');
   const $wrapper = fragment.querySelector('.cart__wrapper');
   const $notification = fragment.querySelector('.cart__notification');
   const $list = fragment.querySelector('.cart__list');
@@ -108,7 +107,8 @@ export default async function decorate(block) {
     name: placeholders?.Global?.CartTitle || 'Shopping Cart',
     breadcrumbs: [],
   };
-  safeRenderBreadcrumbs($breadcrumbs, cartBreadcrumbsData, placeholders);
+  const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+  safeRenderBreadcrumbs(globalBreadcrumbsContainer, cartBreadcrumbsData, placeholders);
 
   // Wishlist variables
   const routeToWishlist = rootLink('/wishlist');

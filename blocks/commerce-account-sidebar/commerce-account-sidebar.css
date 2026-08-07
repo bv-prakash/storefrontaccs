@@ -1,27 +1,30 @@
-@media (min-width: 900px) {
-    body.columns main > .section.commerce-account-sidebar-container {
-        max-width: var(--column-width);
-    }
+
+.commerce-account-sidebar {
+    background: #fff;
+    box-shadow: 0 0 10px rgb(0 0 0 / 10%);
 }
 
-.commerce-account-sidebar-wrapper .commerce-account-sidebar .commerce-account-sidebar-item {
+.commerce-account-sidebar .commerce-account-sidebar-item {
+    color: #000;
+    line-height: 2.2rem;
+    padding: 20px 15px;
     display: flex;
     align-items: center;
-    padding: var(--spacing-medium);
-    margin-bottom: var(--spacing-small);
-    border: var(--shape-border-width-2) solid var(--color-neutral-400);
-    border-radius: var(--shape-border-radius-2);
+    font-size: 18px;
+    gap: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.commerce-account-sidebar .commerce-account-sidebar-item:hover,
+.commerce-account-sidebar .commerce-account-sidebar-item-active {
+    background-color: #384c60;
+    color: #fff;
+    font-weight: 700;
     text-decoration: none;
 }
 
-.commerce-account-sidebar-wrapper .commerce-account-sidebar .commerce-account-sidebar-item-active {
-    border-color: var(--color-neutral-800);
-    background-color: var(--color-neutral-200);
-}
-
-.commerce-account-sidebar-item-icon {
-    flex: 0 0 auto;
-    margin-right: var(--spacing-small);
+.commerce-account-sidebar .commerce-account-sidebar-item:first-child {
+    border-top: 1px solid #f0f0f0;
 }
 
 .commerce-account-sidebar-item-icon > div {
@@ -35,25 +38,5 @@
 }
 
 .commerce-account-sidebar-item-title {
-    font: var(--type-button-1-font);
-    margin: 0 0 var(--spacing-xxsmall);
-    border: none;
-    text-decoration: none;
-}
-
-.commerce-account-sidebar-item-subtitle {
-    font: var(--type-button-2-font);
     margin: 0;
-    text-decoration: none;
-}
-
-.commerce-account-sidebar-item-arrow {
-    flex: 0 0 auto;
-    margin-left: var(--spacing-small);
-}
-
-.commerce-account-sidebar-item-arrow > div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }

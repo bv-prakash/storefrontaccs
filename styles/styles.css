@@ -346,11 +346,9 @@ button.button {
     box-sizing: border-box;
     color: var(--color-neutral-50);
     cursor: pointer;
-    display: flex;
     font-size: 1.4rem;
     font-style: normal;
     font-weight: 700;
-    justify-content: center;
     letter-spacing: var(--type-button-2-letter-spacing);
     line-height: 1.25;
     margin: 0;
@@ -618,33 +616,41 @@ main .section[data-margin="xxhuge"] {
 
 /* Layout: Columns */
 body.columns main {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    width: 100%;
-    max-width: 1264px;
     margin: 0 auto;
-    padding: var(--spacing-large) var(--spacing-small);
-    box-sizing: border-box;
+    max-width: 1614px;
+    padding: 0 var(--spacing-theme-l) 40px;
+    width: 100%;
+    justify-content: space-between;
 }
 
-body.columns main>.section {
-    flex: 1;
-    flex-basis: 100%;
-    max-width: unset;
-    margin: unset;
-    padding: calc(var(--grid-4-gutters) / 2);
-    box-sizing: border-box;
+
+@media only screen and (min-width: 768px) {
+    body.columns main .commerce-account-sidebar-container {
+        padding: 0;
+        width: 28%;
+    }
+
+    body.columns main .account-main-container {
+        padding: 0;
+        width: calc(73% - 40px);
+        margin: 0;
+    }
 }
 
-body.columns main>.section:first-child {
-    padding-inline-start: 0;
-    padding-block-start: 0;
+@media only screen and (min-width: 1024px) {
+    body.columns main .commerce-account-sidebar-container {
+        width: 360px;
+    }
+
+    body.columns main .account-main-container {
+        padding: 0;
+        width: calc(100% - 410px);
+    }
 }
 
-body.columns main>.section:last-child {
-    padding-inline-end: 0;
-    padding-block-end: 0;
-}
 
 body.columns main>.section>div {
     max-width: unset;
@@ -659,11 +665,6 @@ body.columns main>.section:empty {
     display: none;
 }
 
-@media (min-width: 600px) {
-    body.columns main {
-        padding: var(--spacing-large) var(--spacing-big);
-    }
-}
 
 .dropin-product-item-card {
     border: unset;
@@ -673,17 +674,8 @@ body.columns main>.section:empty {
     body.columns main {
         flex-flow: row wrap;
     }
-
-    body.columns main>.section {
-        flex: 1;
-        flex-basis: var(--column-width, auto);
-    }
 }
 
-/**
-* Reset main element visibility
-* https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
-*/
 main[hidden] {
     display: none !important;
 }
@@ -754,9 +746,31 @@ main[hidden] {
     color: #fff;
 }
 
+
+.breadcrumbs-container,
+.category-banner-wrapper {
+    max-width: 1614px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-theme-l, 15px);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.category-banner-wrapper {
+    margin: 20px auto 25px;
+}
+
+.category-banner-wrapper .breadcrumbs-container {
+    padding: 0;
+}
+
 .breadcrumbs {
     margin: 20px 0;
     min-height: 24px;
+}
+
+.category-banner-wrapper .breadcrumbs {
+    margin: 0;
 }
 
 .breadcrumbs .breadcrumbs-list {
@@ -823,10 +837,15 @@ main[hidden] {
         margin: 20px 0 30px;
     }
 
+    .category-banner-wrapper {
+        margin: 20px auto 30px;
+    }
+
     .product-details__breadcrumbs .breadcrumbs {
         margin-bottom: 50px;
     }
 }
+
 
 button.dropin-button.dropin-button--primary,
 a.dropin-button.dropin-button--primary,
@@ -841,7 +860,6 @@ a.dropin-button.dropin-button--primary,
     box-sizing: border-box;
     vertical-align: middle;
     text-decoration: none;
-    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;

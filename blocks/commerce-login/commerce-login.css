@@ -74,6 +74,10 @@ main .commerce-login {
     justify-content: center;
 }
 
+.auth-sign-in-form__form__buttons .auth-sign-in-form__button {
+    width: 100%;
+}
+
 .dropin-input-password > div:first-child {
     margin-bottom: 0;
 }

@@ -31,7 +31,7 @@ import {
 } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
-import { renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 import { showNotification } from '../../scripts/components/notification.js';
 
 // Initializers
@@ -443,10 +443,7 @@ export default async function decorate(block) {
   }
 
   const fragment = document.createRange().createContextualFragment(`
-    <div class="search__header">
-      <h1 class="plp-title"></h1>
-      <div class="plp-breadcrumbs-container"></div>
-    </div>
+    <div class="search__header"></div>
     <div class="search__wrapper">
      <div class="column-main">
        <div class="plp-toolbar">
@@ -491,8 +488,17 @@ export default async function decorate(block) {
     </div>
   `);
 
-  const $breadcrumbsContainer = fragment.querySelector('.plp-breadcrumbs-container');
-  const $plpTitle = fragment.querySelector('.plp-title');
+  let $pageTitle = document.querySelector('.page-title') || fragment.querySelector('.plp-title') || fragment.querySelector('.page-title');
+  // Ensure we have a title element to update — if not, create one inside the fragment header
+  if (!$pageTitle) {
+    const headerEl = fragment.querySelector('.search__header');
+    if (headerEl) {
+      const h = document.createElement('h1');
+      h.className = 'page-title';
+      headerEl.appendChild(h);
+      $pageTitle = h;
+    }
+  }
   const $viewFacets = fragment.querySelector('.search__view-facets');
   const $facets = fragment.querySelector('.search__facets');
   const $productSort = fragment.querySelector('.search__product-sort');
@@ -623,7 +629,7 @@ export default async function decorate(block) {
   if (searchState.phrase) {
     // 1. Search Results Context
     const searchQuery = searchState.phrase;
-    $plpTitle.innerHTML = `Search Results for <span>"${searchQuery}"</span>`;
+    $pageTitle.innerHTML = `Search Results for <span>"${searchQuery}"</span>`;
     document.title = `Search Results for "${searchQuery}"`;
 
     const searchBreadcrumbsData = {
@@ -634,13 +640,15 @@ export default async function decorate(block) {
         },
       ],
     };
-    safeRenderBreadcrumbs($breadcrumbsContainer, searchBreadcrumbsData, labels);
+    const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+    safeRenderBreadcrumbs(globalBreadcrumbsContainer, searchBreadcrumbsData, labels);
   } else if (config.urlpath || categoryId) {
     // 2. Category Page Context
     getCategoryMetadata(categoryId, config.urlpath).then((categoryData) => {
       if (categoryData) {
-        $plpTitle.textContent = categoryData.name;
-        safeRenderBreadcrumbs($breadcrumbsContainer, categoryData, labels);
+        $pageTitle.textContent = categoryData.name;
+        const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+        safeRenderBreadcrumbs(globalBreadcrumbsContainer, categoryData, labels);
         if (!document.querySelector('meta[name="title"]')?.content) {
           document.title = categoryData.name;
         }

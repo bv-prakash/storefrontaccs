@@ -560,7 +560,14 @@ function decorateBlock(block) {
     const blockWrapper = block.parentElement;
     blockWrapper.classList.add(`${shortBlockName}-wrapper`);
     const section = block.closest('.section');
-    if (section) section.classList.add(`${shortBlockName}-container`);
+    if (section) {
+      section.classList.add(`${shortBlockName}-container`);
+      if (window.location.pathname.includes('/customer')) {
+        if (!section.classList.contains('commerce-account-sidebar-container')) {
+          section.classList.add('account-main-container');
+        }
+      }
+    }
   }
 }
 

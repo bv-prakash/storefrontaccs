@@ -1,1 +1,273 @@
-/* stylelint-disable no-empty-source */
+/* Table structure for commerce-orders-list matching desktop & mobile designs */
+
+.commerce-orders-list {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.commerce-orders-list .account-orders-list {
+  width: 100%;
+}
+
+.commerce-orders-list .account-orders-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header title section */
+.commerce-orders-list .account-orders-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.commerce-orders-list .account-orders-list-header h2,
+.commerce-orders-list .account-orders-list-header .dropin-header-container__title {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+}
+
+/* View All link section */
+.commerce-orders-list .account-orders-list-action {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.commerce-orders-list .account-orders-list-action a,
+.commerce-orders-list .account-orders-list-header a {
+  font-size: 1.4rem;
+  color: #384c60;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.commerce-orders-list .account-orders-list-action a:hover,
+.commerce-orders-list .account-orders-list-header a:hover {
+  color: #000;
+}
+
+/* Hide mobile labels on Desktop by default */
+.commerce-orders-list .mobile-label {
+  display: none;
+}
+
+.my-account-page .account-orders-list-action {
+    position: absolute;
+    top: 2px;
+    left: 156px;
+    margin: 0;
+    width: auto;
+}
+
+.my-account-page .account-orders-list-action .dropin-card  {
+    border: 0;
+    background-color: transparent;
+}
+
+.my-account-page .account-orders-list-action .dropin-card__content {
+    padding: 0;
+}
+
+.my-account-page .account-orders-list-action .account-orders-list-action__card-wrapper {
+    height: auto;
+    justify-content: flex-start;
+    color: #384c60;
+}
+
+.my-account-page .account-orders-list-action .account-orders-list-action__card-wrapper p {
+    font-size: 1.4rem;
+    line-height: 3rem;
+    letter-spacing: 0;
+    font-weight: 400;
+    margin: 0;
+}
+
+.my-account-page .account-orders-list-action .account-orders-list-action__card-wrapper svg {
+    width: 26px;
+    height: auto;
+}
+
+@media only screen and (min-width: 768px) {
+  /* Table Header Row */
+  .commerce-orders-list .account-orders-list__table-header {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #f2f2f2;
+    border: 1px solid #d0d0d0;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+  }
+
+  .commerce-orders-list .account-orders-list__table-header-item {
+    padding: 14px 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Column Widths */
+  .commerce-orders-list .col-order {
+    width: 22%;
+  }
+
+  .commerce-orders-list .col-date {
+    width: 14%;
+  }
+
+  .commerce-orders-list .col-created {
+    width: 24%;
+  }
+
+  .commerce-orders-list .col-total {
+    width: 16%;
+  }
+
+  .commerce-orders-list .col-status {
+    width: 12%;
+  }
+
+  .commerce-orders-list .col-action {
+    width: 12%;
+  }
+
+  /* Desktop Table Rows */
+  .commerce-orders-list .account-orders-list__formatted-row,
+  .commerce-orders-list .account-orders-list-card.account-orders-list__formatted-row {
+    width: 100%;
+    box-sizing: border-box;
+    border-left: 1px solid #d0d0d0;
+    border-right: 1px solid #d0d0d0;
+    border-bottom: 1px solid #d0d0d0;
+    border-top: none;
+    background-color: #fff;
+    margin-bottom: 0;
+    box-shadow: none;
+    border-radius: 0;
+    transition: background-color 0.15s ease;
+  }
+
+  .commerce-orders-list .account-orders-list__formatted-row:hover {
+    background-color: #fafafa;
+  }
+
+  .commerce-orders-list .account-orders-list__row-cells {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .commerce-orders-list .account-orders-list__cell {
+    padding: 20px;
+    box-sizing: border-box;
+    font-size: 1.6rem;
+    color: #000;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+  }
+
+  .commerce-orders-list .account-orders-list__cell.col-order {
+    font-weight: 400;
+  }
+
+  .commerce-orders-list .account-orders-list__cell.col-total {
+    font-weight: 500;
+  }
+
+  .commerce-orders-list .account-orders-list__view-order-link {
+    color: #384c60;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 1.4rem;
+  }
+
+  .commerce-orders-list .account-orders-list__view-order-link:hover {
+    color: #000;
+  }
+}
+
+/* Mobile View (< 768px) matching Screenshot 2 */
+@media (max-width: 767px) {
+  /* Hide main table header on mobile */
+  .commerce-orders-list .account-orders-list__table-header {
+    display: none;
+  }
+
+  /* Card container for each order */
+  .commerce-orders-list .account-orders-list__formatted-row,
+  .commerce-orders-list .account-orders-list-card.account-orders-list__formatted-row {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d0d0d0;
+    border-radius: 0;
+    background-color: #fff;
+    margin-bottom: 20px;
+    padding: 16px;
+    box-shadow: none;
+  }
+
+  /* 2-Column Grid Layout */
+  .commerce-orders-list .account-orders-list__row-cells {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    width: 100%;
+  }
+
+  .commerce-orders-list .account-orders-list__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    width: 100%;
+  }
+
+  .commerce-orders-list .mobile-label {
+    display: block;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #000;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .commerce-orders-list .cell-value {
+    font-size: 1.4rem;
+    color: #000;
+    line-height: 1.4;
+  }
+
+  /* Full-width for Action link */
+  .commerce-orders-list .col-action {
+    grid-column: span 2;
+    margin-top: 4px;
+  }
+
+  .commerce-orders-list .account-orders-list__view-order-link {
+    color: #384c60;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 1.4rem;
+  }
+}
+
+
+@media only screen and  (min-width: 1200px) {
+  .commerce-orders-list .account-orders-list__table-header,
+  .commerce-orders-list .account-orders-list__cell {
+    font-size: 1.8rem;
+  }
+}
