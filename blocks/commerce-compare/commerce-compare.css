@@ -1,24 +1,24 @@
-.compare-matrix-container {
+.commerce-compare .compare-matrix-container {
   overflow-x: auto;
   margin: 24px 0;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
 
-.compare-matrix-table {
+.commerce-compare .compare-matrix-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.compare-matrix-table th, 
-.compare-matrix-table td {
+.commerce-compare .compare-matrix-table th,
+.commerce-compare .compare-matrix-table td {
   padding: 16px;
   border-bottom: 1px solid #e2e8f0;
   border-right: 1px solid #e2e8f0;
   min-width: 260px;
 }
 
-.matrix-sticky-header {
+.commerce-compare .matrix-sticky-header {
   position: sticky;
   left: 0;
   background: #f8fafc;
@@ -27,14 +27,14 @@
   min-width: 165px !important;
 }
 
-.matrix-product-card {
+.commerce-compare .matrix-product-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
 }
 
-.matrix-remove-trigger {
+.commerce-compare .matrix-remove-trigger {
   align-self: flex-end;
   background: transparent;
   border: none;
@@ -43,20 +43,20 @@
   font-size: 14px;
 }
 
-.matrix-thumb {
+.commerce-compare .matrix-thumb {
   max-height: 140px;
   object-fit: contain;
   margin: 8px 0;
 }
 
-.matrix-cart-action-wrapper {
+.commerce-compare .matrix-cart-action-wrapper {
   margin-top: 12px;
   width: 100%;
   display: flex;
   justify-content: center;
 }
 
-.matrix-add-to-cart-btn {
+.commerce-compare .matrix-add-to-cart-btn {
   width: 100%;
   max-width: 180px;
   font-size: 14px;
@@ -65,9 +65,49 @@
   text-align: center;
 }
 
-.matrix-add-to-cart-btn[disabled] {
+.commerce-compare .matrix-add-to-cart-btn[disabled] {
   background-color: #cbd5e1;
   border-color: #cbd5e1;
   color: #64748b;
   cursor: not-allowed;
+}
+
+/* Empty state */
+.commerce-compare .compare-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.commerce-compare .compare-empty-state h2 {
+  margin-bottom: 12px;
+}
+
+.commerce-compare .compare-empty-state p {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+/* Page title – inherits site-standard .commerce-header-title styles */
+.commerce-compare-page-title {
+  border-bottom: 1px solid #aaa;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0 0 20px;
+  padding-bottom: 15px;
+  padding-top: 10px;
+  text-transform: uppercase;
+}
+
+@media only screen and (min-width: 768px) {
+  .commerce-compare-page-title {
+    font-size: 2.5rem;
+    padding-top: 0;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  .commerce-compare-page-title {
+    font-size: 3.5rem;
+  }
 }

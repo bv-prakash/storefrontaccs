@@ -13,8 +13,33 @@
     justify-content: center;
     align-items: center;
     z-index: 1;
-  }
+}
 
-  #signin-form {
+#signin-form {
     width: 800px;
-  }
+}
+
+/* Page title – inherits site-standard .commerce-header-title styles */
+.commerce-wishlist-page-title {
+    border-bottom: 1px solid #aaa;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+    margin: 0 0 20px;
+    padding-bottom: 15px;
+    padding-top: 10px;
+    text-transform: uppercase;
+}
+
+@media only screen and (min-width: 768px) {
+    .commerce-wishlist-page-title {
+        font-size: 2.5rem;
+        padding-top: 0;
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .commerce-wishlist-page-title {
+        font-size: 3.5rem;
+    }
+}
