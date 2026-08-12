@@ -6,8 +6,11 @@ import { AuthCombine } from '@dropins/storefront-auth/containers/AuthCombine.js'
 import { events } from '@dropins/tools/event-bus.js';
 import Wishlist from '@dropins/storefront-wishlist/containers/Wishlist.js';
 import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
-import { CS_FETCH_GRAPHQL, rootLink, getProductLink } from '../../scripts/commerce.js';
+import {
+  CS_FETCH_GRAPHQL, rootLink, getProductLink, fetchPlaceholders,
+} from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 
 import '../../scripts/initializers/wishlist.js';
 import '../../scripts/initializers/cart.js';
@@ -21,6 +24,16 @@ const WISHLIST_IMAGE_DIMENSIONS = {
   width: 288,
   height: 288,
 };
+
+function safeRenderBreadcrumbs(container, data, labels) {
+  try {
+    if (typeof renderBreadcrumbs === 'function' && container) {
+      renderBreadcrumbs(container, data, labels);
+    }
+  } catch (error) {
+    console.error('Breadcrumb rendering failed in commerce-wishlist:', error);
+  }
+}
 
 const showAuthModal = (event) => {
   if (event) {
@@ -72,6 +85,24 @@ export default async function decorate(block) {
   const {
     'start-shopping-url': startShoppingURL = '',
   } = readBlockConfig(block);
+
+  const placeholders = await fetchPlaceholders();
+  const pageTitle = document.querySelector('meta[name="title"]')?.content || 'Wishlist';
+
+  if (!document.title.includes(pageTitle)) {
+    document.title = pageTitle;
+  }
+
+  const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+  safeRenderBreadcrumbs(globalBreadcrumbsContainer, { name: 'Wishlist' }, placeholders);
+
+  const existingTitle = block.parentElement?.querySelector('.commerce-wishlist-page-title');
+  if (!existingTitle) {
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'commerce-wishlist-page-title commerce-header-title';
+    titleEl.textContent = pageTitle;
+    block.parentElement?.insertBefore(titleEl, block);
+  }
 
   await wishlistRenderer.render(Wishlist, {
     routeEmptyWishlistCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,

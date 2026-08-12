@@ -3,6 +3,20 @@ import * as cartApi from '@dropins/storefront-cart/api.js';
 import { CompareService } from '../../scripts/compare-service.js';
 import { getProductLink } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
+import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+
+/**
+ * Safely renders breadcrumbs without breaking the block execution if an error occurs.
+ */
+function safeRenderBreadcrumbs(container, data, labels) {
+  try {
+    if (typeof renderBreadcrumbs === 'function' && container) {
+      renderBreadcrumbs(container, data, labels);
+    }
+  } catch (error) {
+    console.error('Breadcrumb rendering failed in commerce-compare:', error);
+  }
+}
 
 export default async function decorate(block) {
   const config = readBlockConfig(block);
@@ -14,17 +28,24 @@ export default async function decorate(block) {
     document.title = pageTitle;
   }
 
+  // Render global breadcrumbs once (standard pattern used across the site)
+  const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+  safeRenderBreadcrumbs(globalBreadcrumbsContainer, { name: 'Compare' }, {});
+
+  // Render the page title using the site-standard heading element
+  const existingTitle = block.parentElement?.querySelector('.commerce-compare-page-title');
+  if (!existingTitle) {
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'commerce-compare-page-title commerce-header-title';
+    titleEl.textContent = pageTitle;
+    block.parentElement?.insertBefore(titleEl, block);
+  }
+
   const renderComparisonGrid = () => {
     const items = CompareService.getProducts();
 
     if (items.length === 0) {
       block.innerHTML = `
-        <div class="search__header">
-          <h1 class="plp-title">${pageTitle}</h1>
-          <div class="plp-breadcrumbs-container">
-            <a href="/">Home</a> / <span>Compare</span>
-          </div>
-        </div>
         <div class="compare-empty-state">
           <h2>Your comparison list is empty</h2>
           <p>Go back to the catalog to select items for review.</p>
@@ -35,13 +56,6 @@ export default async function decorate(block) {
     }
 
     block.innerHTML = `
-      <div class="search__header">
-        <h1 class="plp-title">${pageTitle}</h1>
-        <div class="plp-breadcrumbs-container">
-          <a href="/">Home</a> / <span>Compare</span>
-        </div>
-      </div>
-      
       <div class="compare-matrix-container">
         <table class="compare-matrix-table">
           <thead>

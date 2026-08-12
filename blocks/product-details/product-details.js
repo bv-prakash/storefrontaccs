@@ -179,7 +179,6 @@ export default async function decorate(block) {
   let isOutOfStock = false;
 
   const fragment = document.createRange().createContextualFragment(`
-    <div class="product-details__breadcrumbs"></div>
     <div class="product-details__alert"></div>
     <div class="product-details__wrapper">
       <div class="product-details__left-column">
@@ -268,7 +267,6 @@ export default async function decorate(block) {
     </div>
   `);
 
-  const $breadcrumbs = fragment.querySelector('.product-details__breadcrumbs');
   const $alert = fragment.querySelector('.product-details__alert');
   const $gallery = fragment.querySelector('.product-details__gallery.desktop-gallery');
   const $galleryMobile = fragment.querySelector('.product-details__gallery.mobile-gallery');
@@ -497,7 +495,8 @@ export default async function decorate(block) {
         category_url_path: cat.urlPath || `/categories/${cat.urlKey}`,
       })) || [],
     };
-    safeRenderBreadcrumbs($breadcrumbs, categoryData, labels);
+    const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
+    safeRenderBreadcrumbs(globalBreadcrumbsContainer, categoryData, labels);
     renderSkuDetails(data, $sku);
     renderStockStatus(data, $stock);
     renderCompareButton(data, $compareBtn);
