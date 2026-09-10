@@ -261,22 +261,22 @@ function loadDelayed() {
 // scripts/scripts.js
 
 async function loadPage() {
-  // const { pathname, search } = window.location;
+  const { pathname, search } = window.location;
 
-  // // REMOVE THIS BLOCK (Causes initial 404 redirect loop):
-  // if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
-  //   window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
-  //   return;
-  // }
+  // REMOVE THIS BLOCK (Causes initial 404 redirect loop):
+  if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
+    window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
+    return;
+  }
 
-  // // Keep parameter restoration for legacy bookmarks/backwards compatibility
-  // if (pathname === '/categories/default' && search.includes('cp=')) {
-  //   const urlParams = new URLSearchParams(search);
-  //   const cp = urlParams.get('cp');
-  //   if (cp) {
-  //     window.history.replaceState({}, '', decodeURIComponent(cp));
-  //   }
-  // }
+  // Keep parameter restoration for legacy bookmarks/backwards compatibility
+  if (pathname === '/categories/default' && search.includes('cp=')) {
+    const urlParams = new URLSearchParams(search);
+    const cp = urlParams.get('cp');
+    if (cp) {
+      window.history.replaceState({}, '', decodeURIComponent(cp));
+    }
+  }
 
   await loadEager(document);
   await loadLazy(document);
