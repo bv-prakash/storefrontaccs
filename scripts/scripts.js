@@ -258,23 +258,25 @@ function loadDelayed() {
   // load anything that can be postponed to the latest here
 }
 
+// scripts/scripts.js
+
 async function loadPage() {
-  const { pathname, search } = window.location;
+  // const { pathname, search } = window.location;
 
-  // If we are on a natural category path that is not default, redirect to default template
-  if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
-    window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
-    return;
-  }
+  // // REMOVE THIS BLOCK (Causes initial 404 redirect loop):
+  // if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
+  //   window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
+  //   return;
+  // }
 
-  // If we are on the default template with a cp parameter, clean the URL visually
-  if (pathname === '/categories/default' && search.includes('cp=')) {
-    const urlParams = new URLSearchParams(search);
-    const cp = urlParams.get('cp');
-    if (cp) {
-      window.history.replaceState({}, '', decodeURIComponent(cp));
-    }
-  }
+  // // Keep parameter restoration for legacy bookmarks/backwards compatibility
+  // if (pathname === '/categories/default' && search.includes('cp=')) {
+  //   const urlParams = new URLSearchParams(search);
+  //   const cp = urlParams.get('cp');
+  //   if (cp) {
+  //     window.history.replaceState({}, '', decodeURIComponent(cp));
+  //   }
+  // }
 
   await loadEager(document);
   await loadLazy(document);
