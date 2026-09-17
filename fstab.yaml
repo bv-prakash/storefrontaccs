@@ -19,3 +19,5 @@ mountpoints:
 folders:
   /products/: /products/default
   /categories/: /categories/default
+  /fr/products/: /fr/products/default
+  /fr/categories/: /fr/categories/default
