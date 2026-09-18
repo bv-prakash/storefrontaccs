@@ -1,4 +1,5 @@
 import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
+import { fetchPlaceholders } from './commerce.js';
 
 /**
  * Renders structured breadcrumbs into a target HTML container.
@@ -8,9 +9,18 @@ import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
  * @param {string} [data.name] - Current page/category title.
  * @param {Array<Object>} [data.breadcrumbs] - Array of parent links
  *   [{ category_name, category_url_path }].
- * @param {Object} [labels={}] - Dictionary containing localized strings (e.g., labels.Home).
+ * @param {Object} [labels=globalLabels] - Dictionary containing localized strings
+ *   (e.g., labels.Global.Breadcrums.Root.label). Defaults to the module-fetched
+ *   global placeholders. All property lookups are optional-chained so a
+ *   missing/empty labels object never throws and falls back to sensible
+ *   English defaults.
  */
-export function renderBreadcrumbs(container, data = {}, labels = {}) {
+
+// Global placeholders, used as the default `labels` for callers that do not
+// pass their own. fetchPlaceholders() returns the live merged object, so
+// localized values fetched later are picked up automatically.
+const globalLabels = await fetchPlaceholders('placeholders/global.json');
+export function renderBreadcrumbs(container, data = {}, labels = globalLabels) {
   const targetContainer = container || document.querySelector('.breadcrumbs-container');
   if (!targetContainer) return;
   targetContainer.innerHTML = '';
@@ -28,7 +38,7 @@ export function renderBreadcrumbs(container, data = {}, labels = {}) {
   const homeLink = document.createElement('a');
   homeLink.href = '/';
   homeLink.className = 'breadcrumbs-link';
-  homeLink.textContent = labels?.Home || 'Home';
+  homeLink.textContent = labels?.Global?.Breadcrums?.Root?.label || 'Home';
   homeLi.appendChild(homeLink);
   ol.appendChild(homeLi);
 

@@ -1,6 +1,6 @@
 import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
 import { CATEGORY_TREE_QUERY } from './categoryQuery.js';
-import { CS_FETCH_GRAPHQL } from '../../scripts/commerce.js';
+import { CS_FETCH_GRAPHQL, rootLink } from '../../scripts/commerce.js';
 
 function shouldShowCategory(category) {
   return category?.name && category?.urlPath;
@@ -25,8 +25,9 @@ function buildCategoryTree(categories, parentId) {
       return {
         id: category.id,
         name: category.name,
-        // Prepend the centralized route layout mapping path
-        url_path: `/categories/${cleanUrlPath}`,
+        // Prepend the centralized route layout mapping path and keep the
+        // link inside the active store/locale (e.g. "/fr/categories/gear")
+        url_path: rootLink(`/categories/${cleanUrlPath}`),
         isCustom: false,
         children: buildCategoryTree(categories, category.id),
       };

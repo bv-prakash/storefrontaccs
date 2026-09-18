@@ -341,8 +341,18 @@ export async function loadCommerceLazy() {
  * Initializes commerce configuration
  */
 export async function initializeCommerce() {
+  // Normalize trailing slashes so a path like "/fr" resolves the "/fr/" store
+  // configuration (the default matcher uses startsWith and would miss it).
+  const normalizePath = (p) => (p === '/' ? '/' : p.replace(/\/+$/, '') || '/');
+
   // Initialize Config
-  initializeConfig(await getConfigFromSession());
+  initializeConfig(await getConfigFromSession(), {
+    match: (key) => {
+      const path = normalizePath(window.location.pathname);
+      const root = normalizePath(key);
+      return path === root || path.startsWith(root === '/' ? '/' : `${root}/`);
+    },
+  });
 
   // Set Fetch GraphQL (Core)
   CORE_FETCH_GRAPHQL.setEndpoint(getConfigValue('commerce-core-endpoint') || await getConfigValue('commerce-endpoint'));
@@ -356,16 +366,95 @@ export async function initializeCommerce() {
 }
 
 /**
+ * Resolves the active Drop-in locale code from the URL locale prefix.
+ * Drop-ins use `en_US`-style keys (see `Lang` type), e.g. `/fr/...` -> `fr_FR`.
+ * Default store (no prefix) -> `default`.
+ * @returns {string} - The locale code used for langDefinitions
+ */
+function getDropinLocale() {
+  const localeRoot = getLocaleRootPath();
+  if (!localeRoot) return 'default';
+  const code = localeRoot.replace(/^\//, '').replace(/\/$/, '').split('-')[0].toLowerCase();
+  if (!code) return 'default';
+  // Map bare language prefix to full locale; extend as you add locales.
+  const map = {
+    fr: 'fr_FR', de: 'de_DE', es: 'es_ES', it: 'it_IT', nl: 'nl_NL',
+  };
+  return map[code] || `${code}_${code.toUpperCase()}`;
+}
+
+/**
+ * Wraps flat placeholder labels together with the active locale key so every
+ * Drop-in initializer can pass `{ [locale]: labels }` in addition to `default`.
+ * This is what makes SignIn / SignUp / Account containers pick the translated
+ * value instead of always falling back to English.
+ * @param {Object} labels flat placeholder labels for the active locale
+ * @returns {Object} langDefinitions with both `default` and active locale keys
+ */
+export function getLangDefinitions(labels) {
+  const locale = getDropinLocale();
+  return {
+    default: { ...labels },
+    [locale]: { ...labels },
+  };
+}
+
+/**
  * Decorates links.
+ * Keeps the active locale prefix (e.g. `/fr`) so auth/account redirects
+ * stay on the localized URL. Falls back to the configured store root
+ * when no locale prefix is detected.
  * @param {string} [link] url to be localized
  * @returns {string} - The localized link
  */
 export function rootLink(link) {
-  const root = getRootPath().replace(/\/$/, '');
+  const root = (getLocaleRootPath() || getRootPath()).replace(/\/$/, '');
 
+  // No locale/root prefix (default `en` store) - return as-is
+  if (!root) return link;
   // If the link is already localized, do nothing
-  if (link.startsWith(root)) return link;
+  if (link === root || link.startsWith(`${root}/`)) return link;
   return `${root}${link}`;
+}
+
+/**
+ * Resolves the locale prefix for the current page.
+ *
+ * Prefers a root path registered in the Storefront Configuration (e.g. when a
+ * locale store view is configured through config.json). When the locale is not
+ * registered as a root path - the case for content authored in a plain language
+ * folder such as `/fr/` - the language prefix is detected from the URL.
+ *
+ * @returns {string} The locale root (e.g. "/fr"), or "" for the default locale
+ */
+export function getLocaleRootPath() {
+  const configuredRoot = getRootPath().replace(/\/$/, '');
+  if (configuredRoot) return configuredRoot;
+
+  const [, firstSegment] = window.location.pathname.split('/');
+  return firstSegment && /^[a-z]{2}(-[a-z]{2})?$/i.test(firstSegment) ? `/${firstSegment}` : '';
+}
+
+/**
+ * Builds the path that must be handed to `loadFragment()` for a root-relative
+ * fragment (e.g. "/footer") on the active locale.
+ *
+ * `loadFragment()` already prefixes the configured root path, so the returned
+ * path is expressed relative to that root. This keeps localized fragments
+ * working whether or not the locale is registered in the configuration, and
+ * avoids double-prefixing (e.g. "/fr/fr/footer.plain.html").
+ *
+ * @param {string} path Root-relative fragment path, e.g. "/footer"
+ * @returns {string} Fragment path to pass to `loadFragment()`
+ */
+export function localizedFragmentPath(path) {
+  const relativePath = path.startsWith('/') ? path : `/${path}`;
+  const configuredRoot = getRootPath().replace(/\/$/, '');
+  const localeRoot = getLocaleRootPath();
+  const relativeRoot = localeRoot.startsWith(configuredRoot)
+    ? localeRoot.slice(configuredRoot.length)
+    : localeRoot;
+  return `${relativeRoot}${relativePath}`;
 }
 
 /**
@@ -423,23 +512,34 @@ export function applyTemplates(doc) {
  * const updatedPlaceholders = await fetchPlaceholders();
  */
 export async function fetchPlaceholders(path) {
-  const rootPath = getRootPath();
+  const localeRoot = getLocaleRootPath();
+  const rootPath = localeRoot || getRootPath();
   const fallback = getMetadata('placeholders');
   window.placeholders = window.placeholders || {};
+
+  // Locale-aware cache keys: the same placeholder file (e.g. auth.json)
+  // is different per locale (/fr/placeholders/auth.json vs /placeholders/auth.json),
+  // so without the locale in the key the EN value cached first would be
+  // returned on localized pages (sign-in / account stays in English).
+  const localePrefix = (localeRoot || '').replace(/\/$/, '');
+  const localeKey = localePrefix || '__default__';
 
   // Track pending requests to prevent duplicate fetches
   window.placeholders._pending = window.placeholders._pending || {};
 
-  // Initialize merged results storage as a single merged object
-  window.placeholders._merged = window.placeholders._merged || {};
+  // Merged placeholders are scoped per locale so navigating from `/`
+  // to `/fr/customer/login` never reuses the EN bundle cached first.
+  window.placeholders._mergedByLocale = window.placeholders._mergedByLocale || {};
+  window.placeholders._mergedByLocale[localeKey] = window.placeholders._mergedByLocale[localeKey]
+    || {};
 
-  // If no path is provided, return the merged placeholders
+  // If no path is provided, return the merged placeholders for active locale
   if (!path) {
-    return Promise.resolve(window.placeholders._merged || {});
+    return Promise.resolve(window.placeholders._mergedByLocale[localeKey] || {});
   }
 
   // Create cache key for this specific combination
-  const cacheKey = [path, fallback].filter(Boolean).join('|');
+  const cacheKey = [localePrefix, path, fallback].filter(Boolean).join('|');
 
   // Prevent empty cache keys
   if (!cacheKey) {
@@ -457,14 +557,16 @@ export async function fetchPlaceholders(path) {
 
     // Helper function to get or create fetch promise for a single resource
     const getOrCreateFetch = (url, resourceCacheKey) => {
+      // Scope resource cache by locale (e.g. `/fr|placeholders/auth.json`)
+      const scopedCacheKey = `${localePrefix}|${resourceCacheKey}`;
       // Check if already cached
-      if (window.placeholders[resourceCacheKey]) {
-        return Promise.resolve(window.placeholders[resourceCacheKey]);
+      if (window.placeholders[scopedCacheKey]) {
+        return Promise.resolve(window.placeholders[scopedCacheKey]);
       }
 
       // Check if already pending
-      if (window.placeholders._pending[resourceCacheKey]) {
-        return window.placeholders._pending[resourceCacheKey];
+      if (window.placeholders._pending[scopedCacheKey]) {
+        return window.placeholders._pending[scopedCacheKey];
       }
 
       // Create new fetch promise
@@ -472,7 +574,7 @@ export async function fetchPlaceholders(path) {
         if (response.ok) {
           const data = await response.json();
           // Cache the response
-          window.placeholders[resourceCacheKey] = data;
+          window.placeholders[scopedCacheKey] = data;
           return data;
         }
         console.warn(`Failed to fetch placeholders from ${url}: HTTP ${response.status} ${response.statusText}`);
@@ -482,24 +584,33 @@ export async function fetchPlaceholders(path) {
         return {};
       }).finally(() => {
         // Remove from pending
-        delete window.placeholders._pending[resourceCacheKey];
+        delete window.placeholders._pending[scopedCacheKey];
       });
 
       // Store pending promise
-      window.placeholders._pending[resourceCacheKey] = resourceFetchPromise;
+      window.placeholders._pending[scopedCacheKey] = resourceFetchPromise;
       return resourceFetchPromise;
     };
 
-    // path
-    if (path) {
-      const pathUrl = rootPath.replace(/\/$/, `/${path}`);
-      promises.push(getOrCreateFetch(pathUrl, path));
-    }
-
+    // Metadata fallback (usually the EN /placeholders.json) must NOT override
+    // the locale file (e.g. /fr/placeholders/auth.json). So process fallback
+    // FIRST and locale path LAST - later values win in the merge below.
+    const sources = [];
     // fallback - only if it exists from overrides
     if (fallback) {
-      promises.push(getOrCreateFetch(fallback, fallback));
+      sources.push({ url: fallback, key: fallback });
     }
+
+    // path
+    if (path) {
+      const base = (rootPath || '').replace(/\/$/, '');
+      const pathUrl = `${base}/${path}`;
+      sources.push({ url: pathUrl, key: path });
+    }
+
+    sources.forEach(({ url, key }) => {
+      promises.push(getOrCreateFetch(url, key));
+    });
 
     Promise.all(promises)
       // process json from sources and combine them
@@ -551,14 +662,13 @@ export async function fetchPlaceholders(path) {
           target[lastKey] = Value;
         });
 
-        // Merge the new placeholders into the global merged object
-        const merged = Object.assign(window.placeholders._merged, placeholders);
+        // Merge the new placeholders into the locale-scoped merged object
+        const merged = Object.assign(window.placeholders._mergedByLocale[localeKey], placeholders);
 
         resolve(merged);
       })
       .catch((error) => {
         console.error(`Error loading placeholders for path: ${path}${fallback ? ` and fallback: ${fallback}` : ''}`, error);
-        // error loading placeholders
         resolve({});
       });
   });
@@ -578,32 +688,31 @@ export async function fetchPlaceholders(path) {
  * Fetches config from remote and saves in session, then returns it, otherwise
  * returns if it already exists.
  *
- * @returns {Promise<Object>} - The config JSON from session storage
+ * @returns {Promise<Object>} - The commerce configuration JSON
  */
 export async function getConfigFromSession() {
   const configURL = `${window.location.origin}/config.json`;
 
   try {
-    const configJSON = window.sessionStorage.getItem('config');
-    if (!configJSON) {
-      throw new Error('No config in session storage');
-    }
-
-    const parsedConfig = JSON.parse(configJSON);
-    if (
-      !parsedConfig[':expiry']
-      || parsedConfig[':expiry'] < Math.round(Date.now() / 1000)
-    ) {
-      throw new Error('Config expired');
-    }
-    return parsedConfig;
-  } catch (e) {
-    const config = await fetch(configURL);
-    if (!config.ok) throw new Error('Failed to fetch config');
-    const configJSON = await config.json();
+    // Always revalidate the configuration so store/locale changes take effect
+    // immediately instead of being masked by a stale session cache.
+    const response = await fetch(configURL, { cache: 'no-cache' });
+    if (!response.ok) throw new Error('Failed to fetch config');
+    const configJSON = await response.json();
     configJSON[':expiry'] = Math.round(Date.now() / 1000) + 7200;
-    window.sessionStorage.setItem('config', JSON.stringify(configJSON));
+    try {
+      window.sessionStorage.setItem('config', JSON.stringify(configJSON));
+    } catch {
+      // Ignore storage errors (quota / private mode)
+    }
     return configJSON;
+  } catch {
+    // Origin unreachable - fall back to the last known-good configuration
+    const configJSON = window.sessionStorage.getItem('config');
+    if (configJSON) {
+      return JSON.parse(configJSON);
+    }
+    throw new Error('Failed to load commerce configuration');
   }
 }
 
@@ -936,7 +1045,7 @@ export async function loadErrorPage(code = 404) {
  * @returns {boolean} - true if the user is authenticated
  */
 export function checkIsAuthenticated() {
-  return !!getCookie('auth_dropin_user_token') ?? false;
+  return Boolean(getCookie('auth_dropin_user_token'));
 }
 
 /**
@@ -945,7 +1054,6 @@ export function checkIsAuthenticated() {
  * @returns {boolean} True if consent was given
  */
 export function getConsent(_topic) {
-  console.warn('getConsent not implemented');
   return true;
 }
 

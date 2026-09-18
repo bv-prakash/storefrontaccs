@@ -27,7 +27,7 @@
   <script nonce="aem" type="text/javascript">
     window.isErrorPage = true;
     window.errorCode = '404';
-    if (window.location.pathname.startsWith('/categories/')) {
+    if (/(^|\/)(categories|products)\//.test(window.location.pathname)) {
       document.write('<style>main.error { display: none !important; }</style>');
     }
   </script>
@@ -72,6 +72,13 @@
   <script nonce="aem" src="/scripts/scripts.js" type="module"></script>
   <script nonce="aem" type="module">
     window.addEventListener('load', () => {
+      // Keep "Go home" inside the active store/locale (e.g. "/fr/")
+      const homeButton = document.querySelector('.error-button-home');
+      const [, firstSegment] = window.location.pathname.split('/');
+      if (homeButton && /^[a-z]{2}(-[A-Za-z]{2})?$/i.test(firstSegment)) {
+        homeButton.href = `/${firstSegment}/`;
+      }
+
       if (document.referrer) {
         const { origin, pathname } = new URL(document.referrer);
         if (origin === window.location.origin) {
@@ -87,10 +94,6 @@
         }
       }
     });
-  </script>
-  <script nonce="aem" type="module">
-    import { sampleRUM } from '/scripts/aem.js';
-    sampleRUM('404', { source: document.referrer });
   </script>
   <link rel="stylesheet" href="/styles/styles.css">
   <style>
