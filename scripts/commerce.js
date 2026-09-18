@@ -376,11 +376,7 @@ function getDropinLocale() {
   if (!localeRoot) return 'default';
   const code = localeRoot.replace(/^\//, '').replace(/\/$/, '').split('-')[0].toLowerCase();
   if (!code) return 'default';
-  // Map bare language prefix to full locale; extend as you add locales.
-  const map = {
-    fr: 'fr_FR', de: 'de_DE', es: 'es_ES', it: 'it_IT', nl: 'nl_NL',
-  };
-  return map[code] || `${code}_${code.toUpperCase()}`;
+  return `${code}_${code.toUpperCase()}`;
 }
 
 /**
