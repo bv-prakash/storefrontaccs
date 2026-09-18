@@ -10,6 +10,7 @@ import {
   loadSection,
   loadSections,
   loadCSS,
+  sampleRUM,
 } from './aem.js';
 import {
   loadCommerceEager,
@@ -17,6 +18,8 @@ import {
   initializeCommerce,
   applyTemplates,
   decorateLinks,
+  getLocaleRootPath,
+  resetMediaBasePaths,
   loadErrorPage,
   decorateSections,
   IS_UE,
@@ -62,7 +65,7 @@ async function loadFonts() {
 
   try {
     if (!window.location.hostname.includes('localhost')) {
-      sessionStorage.setItem('styles-loaded', 'true');
+      sessionStorage.setItem('fonts-loaded', 'true');
     }
   } catch (e) {
     // Ignore storage errors
@@ -198,7 +201,9 @@ function createGlobalBreadcrumbsContainer(doc = document) {
  * @param {Element} doc The container element
  */
 async function loadEager(doc) {
-  document.documentElement.lang = 'en';
+  // Reflect the active locale on the <html> element (e.g. "fr" for /fr pages)
+  const localeRoot = getLocaleRootPath();
+  document.documentElement.lang = localeRoot ? localeRoot.slice(1) : 'en';
   decorateTemplateAndTheme();
   createGlobalBreadcrumbsContainer(doc);
 
@@ -258,23 +263,164 @@ function loadDelayed() {
   // load anything that can be postponed to the latest here
 }
 
-// scripts/scripts.js
+const COMMERCE_FOLDERS = ['categories', 'products'];
+const COMMERCE_FOLDER_RE = new RegExp(`^/(${COMMERCE_FOLDERS.join('|')})/`);
+const COMMERCE_TEMPLATE_RE = new RegExp(`^/(${COMMERCE_FOLDERS.join('|')})/default$`);
+
+function getLocaleRelativePath() {
+  return window.location.pathname.slice(getLocaleRootPath().length);
+}
+
+/**
+ * Fetches the template page of a commerce folder for the active store,
+ * preferring the localized one (e.g. "/fr/products/default").
+ */
+async function fetchCommerceTemplate(localeRoot, folder) {
+  const paths = [...new Set([`${localeRoot}/${folder}/default`, `/${folder}/default`])];
+  const tryFetch = async (index) => {
+    if (index >= paths.length) return null;
+    const path = paths[index];
+    try {
+      const response = await fetch(path);
+      if (response.ok) {
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        return { path, doc };
+      }
+    } catch {
+      // try the next candidate
+    }
+    return tryFetch(index + 1);
+  };
+  return tryFetch(0);
+}
+
+/**
+ * Returns an element in the document head, creating it when missing.
+ * @param {string} selector The selector of the element
+ * @param {() => Element} create Factory for a missing element
+ * @returns {Element} The existing or newly created element
+ */
+function upsertHeadElement(selector, create) {
+  let element = document.head.querySelector(selector);
+  if (!element) {
+    element = create();
+    document.head.appendChild(element);
+  }
+  return element;
+}
+
+/**
+ * Sets a meta tag in the document head, replacing any existing value.
+ * @param {string} attr The meta attribute ("name" or "property")
+ * @param {string} key The meta key
+ * @param {string} content The value to set
+ */
+function setHeadMeta(attr, key, content) {
+  upsertHeadElement(`meta[${attr}="${key}"]`, () => {
+    const meta = document.createElement('meta');
+    meta.setAttribute(attr, key);
+    return meta;
+  }).setAttribute('content', content);
+}
+
+/**
+ * Applies the template page metadata to the current document: the title and
+ * the template meta tags win over the error shell values, while URL-specific
+ * tags describe the deep URL that stays in the address bar.
+ * @param {Document} templateDoc The parsed template page
+ */
+function syncHeadFromTemplate(templateDoc) {
+  const currentUrl = `${window.location.origin}${window.location.pathname}`;
+
+  const templateTitle = templateDoc.querySelector('title')?.textContent;
+  if (templateTitle) document.title = templateTitle;
+
+  upsertHeadElement('link[rel="canonical"]', () => {
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    return canonical;
+  }).href = currentUrl;
+  setHeadMeta('property', 'og:url', currentUrl);
+
+  templateDoc.head.querySelectorAll('meta').forEach((meta) => {
+    const attr = ['name', 'property'].find((name) => meta.hasAttribute(name));
+    const key = attr && meta.getAttribute(attr);
+    const content = meta.getAttribute('content');
+    // og:url is handled above, it must describe the requested URL
+    if (!key || key === 'og:url' || content === null) return;
+    setHeadMeta(attr, key, content);
+  });
+}
+
+/**
+ * Renders a commerce template page in place of the error shell. The address
+ * bar is left untouched, so the deep link - and the SKU/category read from
+ * the path - keeps working.
+ * @param {{path: string, doc: Document}} template The template to render
+ * @returns {boolean} true when the template could be rendered in place
+ */
+function renderCommerceTemplateInPlace(template) {
+  const currentMain = document.querySelector('main');
+  const templateMain = template.doc.querySelector('main');
+  if (!currentMain || !templateMain) return false;
+
+  resetMediaBasePaths(templateMain, template.path);
+  currentMain.replaceWith(document.importNode(templateMain, true));
+  syncHeadFromTemplate(template.doc);
+
+  // The document now holds real content and must not be handled as an error page.
+  window.isErrorPage = false;
+  return true;
+}
 
 async function loadPage() {
   const { pathname, search } = window.location;
+  const localeRoot = getLocaleRootPath();
+  const relativePath = getLocaleRelativePath();
 
-  // REMOVE THIS BLOCK (Causes initial 404 redirect loop):
-  if (pathname.startsWith('/categories/') && pathname !== '/categories/default') {
-    window.location.replace(`/categories/default?cp=${encodeURIComponent(pathname)}`);
-    return;
+  // Commerce deep links the delivery layer cannot resolve are served as the
+  // 404 shell (window.isErrorPage): render the store template in place so the
+  // listing/details appear with no 404 screen and no extra navigation.
+  const folderMatch = COMMERCE_FOLDER_RE.exec(relativePath);
+  if (window.isErrorPage && folderMatch) {
+    const [, folder] = folderMatch;
+    let pendingRedirect = `${localeRoot}/${folder}/default`;
+
+    try {
+      const template = await fetchCommerceTemplate(localeRoot, folder);
+      if (template) {
+        pendingRedirect = template.path;
+        if (renderCommerceTemplateInPlace(template)) pendingRedirect = null;
+      }
+    } catch {
+      // Fall through to the redirect below
+    }
+
+    if (pendingRedirect && pathname !== pendingRedirect) {
+      // Last resort when the template cannot be rendered in place.
+      window.location.replace(`${pendingRedirect}?cp=${encodeURIComponent(pathname + search)}`);
+      return;
+    }
+
+    if (window.isErrorPage) {
+      // Neither rendering nor redirecting worked: reveal the error content.
+      document.querySelector('main.error')?.style.setProperty('display', 'block', 'important');
+    }
   }
 
-  // Keep parameter restoration for legacy bookmarks/backwards compatibility
-  if (pathname === '/categories/default' && search.includes('cp=')) {
+  // Whatever is still flagged as an error page is a genuine 404: report it
+  // from here so in-place rendered commerce links are not counted as 404s.
+  if (window.isErrorPage) {
+    sampleRUM('404', { source: document.referrer });
+  }
+
+  // Restore the deep link kept in ?cp= by the redirect above.
+  if (search.includes('cp=') && COMMERCE_TEMPLATE_RE.test(relativePath)) {
     const urlParams = new URLSearchParams(search);
     const cp = urlParams.get('cp');
     if (cp) {
-      window.history.replaceState({}, '', decodeURIComponent(cp));
+      const restored = new URL(decodeURIComponent(cp), window.location.origin);
+      window.history.replaceState({}, '', `${restored.pathname}${restored.search}`);
     }
   }
 

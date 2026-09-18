@@ -1,0 +1,154 @@
+/* --- Ensure the wrapper container takes up space (least specific first) --- */
+.store-switcher,
+.storeview-switcher-wrapper {
+  display: block !important;
+  visibility: visible !important;
+  min-height: 40px;
+  margin: 10px 0;
+}
+
+/* Style the Dropin UI Button trigger */
+.storeview-trigger-btn,
+button[data-testid="storeview-switcher-button"] {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* --- Trigger Button Layout --- */
+.store-switcher .storeview-switcher-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.store-switcher .storeview-trigger-btn {
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  color: #fff;
+}
+
+.store-switcher .storeview-trigger-btn::before {
+  content: "\e91a"; /* Assumes project icon library contains a globe string */
+  font-family: icomoon, sans-serif;
+  font-size: 16px;
+}
+
+/* --- Modal Layout Box --- */
+#storeview-modal {
+  padding: 24px;
+  min-width: 320px;
+  max-width: 480px;
+  background: #fff;
+  font-family: var(--body-font-family), sans-serif;
+}
+
+#storeview-modal .storeview-modal-heading {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #111;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 12px;
+}
+
+/* --- Region & Country Grid Systems --- */
+#storeview-modal .storeview-selection-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Accordion Regions Container (title text + toggle trigger) */
+#storeview-modal .storeview-multiple-stores {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s ease;
+  font-size: 15px;
+  font-weight: 500;
+  color: #222;
+  padding: 12px 16px;
+}
+
+/* Sub Dropdown Multi-Store Options lists */
+#storeview-modal .storeviews-dropdown {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Single Item Options */
+#storeview-modal .storeview-single-store-item a,
+#storeview-modal .storeviews-dropdown a {
+  display: block;
+  padding: 10px 14px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+  background: #f9f9f9;
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+#storeview-modal .storeviews-dropdown li {
+  padding: 0;
+}
+
+#storeview-modal .storeviews-dropdown a {
+  background: #fff;
+  border: 1px solid transparent;
+  padding-left: 12px;
+}
+
+/* Hover states (higher specificity than the base link rules above) */
+#storeview-modal .storeview-single-store-item a:hover,
+#storeview-modal .storeviews-dropdown a:hover {
+  background: #f0f0f0;
+  color: var(--link-hover-color, #06c);
+}
+
+#storeview-modal .storeviews-dropdown a:hover {
+  background: #f5f9ff;
+  border-color: #d0e3ff;
+}
+
+#storeview-modal .storeview-multiple-stores:hover {
+  border-color: #b5b5b5;
+}
+
+/* Region Section Text Header acting as trigger */
+#storeview-modal .storeview-multiple-stores::after {
+  content: "\25be";
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  font-size: 14px;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+#storeview-modal .storeview-multiple-stores[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+
+#storeview-modal .storeview-multiple-stores[aria-expanded="true"] .storeviews-dropdown {
+  display: flex;
+}

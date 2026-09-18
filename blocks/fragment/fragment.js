@@ -6,6 +6,7 @@
 
 import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
 import { decorateMain } from '../../scripts/scripts.js';
+import { resetMediaBasePaths } from '../../scripts/commerce.js';
 import {
   loadSections,
 } from '../../scripts/aem.js';
@@ -24,14 +25,7 @@ export async function loadFragment(path) {
       const main = document.createElement('main');
       main.innerHTML = await resp.text();
 
-      // reset base path for media to fragment base
-      const resetAttributeBase = (tag, attr) => {
-        main.querySelectorAll(`${tag}[${attr}^="./media_"]`).forEach((elem) => {
-          elem[attr] = new URL(elem.getAttribute(attr), new URL(path, window.location)).href;
-        });
-      };
-      resetAttributeBase('img', 'src');
-      resetAttributeBase('source', 'srcset');
+      resetMediaBasePaths(main, path);
 
       decorateMain(main);
       await loadSections(main);

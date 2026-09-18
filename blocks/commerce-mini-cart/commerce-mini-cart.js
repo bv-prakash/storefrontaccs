@@ -144,7 +144,6 @@ export default async function decorate(block) {
   if (productsContainer) {
     productsContainer.insertBefore(shadowWrapper, productsContainer.firstChild);
   } else {
-    console.info('Products container not found, appending message to block');
     block.appendChild(shadowWrapper);
   }
 
