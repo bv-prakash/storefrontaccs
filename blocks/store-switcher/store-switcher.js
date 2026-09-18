@@ -1,6 +1,10 @@
 import { provider as UI, Button } from '@dropins/tools/components.js';
 import { getRootPath } from '@dropins/tools/lib/aem/configs.js';
-import { getLocaleRootPath, localizedFragmentPath } from '../../scripts/commerce.js';
+import {
+  getLocaleRootPath,
+  localizedFragmentPath,
+  resetMediaBasePaths,
+} from '../../scripts/commerce.js';
 import { decorateIcons } from '../../scripts/aem.js';
 import createModal from '../modal/modal.js';
 
@@ -16,14 +20,7 @@ async function fetchStoreSwitcherFragment(path) {
   const main = document.createElement('main');
   main.innerHTML = await resp.text();
 
-  // Reset media base paths to the fragment base (same behaviour as loadFragment)
-  const resetAttributeBase = (tag, attr) => {
-    main.querySelectorAll(`${tag}[${attr}^="./media_"]`).forEach((elem) => {
-      elem[attr] = new URL(elem.getAttribute(attr), new URL(path, window.location)).href;
-    });
-  };
-  resetAttributeBase('img', 'src');
-  resetAttributeBase('source', 'srcset');
+  resetMediaBasePaths(main, path);
 
   await decorateIcons(main);
   return main;

@@ -458,6 +458,21 @@ export function localizedFragmentPath(path) {
 }
 
 /**
+ * Rewrites root-relative media references ("media_...") to absolute URLs, so
+ * markup authored in one folder still resolves its media from that folder.
+ * @param {Element} root The element holding the media references
+ * @param {string} basePath The path the references resolve against
+ */
+export function resetMediaBasePaths(root, basePath) {
+  const base = new URL(basePath, window.location);
+  [['img', 'src'], ['source', 'srcset']].forEach(([tag, attr]) => {
+    root.querySelectorAll(`${tag}[${attr}^="./media_"]`).forEach((elem) => {
+      elem[attr] = new URL(elem.getAttribute(attr), base).href;
+    });
+  });
+}
+
+/**
  * Decorates Columns Template to the main element.
  * @param {Element} doc The document element
  */
