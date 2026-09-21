@@ -2,7 +2,6 @@ import { getCookie } from '@dropins/tools/lib.js';
 import { render as authRenderer } from '@dropins/storefront-auth/render.js';
 import { AuthCombine } from '@dropins/storefront-auth/containers/AuthCombine.js';
 import { SuccessNotification } from '@dropins/storefront-auth/containers/SuccessNotification.js';
-import * as authApi from '@dropins/storefront-auth/api.js';
 import { events } from '@dropins/tools/event-bus.js';
 import { Button, provider as UI } from '@dropins/tools/components.js';
 import {
@@ -45,8 +44,8 @@ const signInFormConfig = {
               children: 'Logout',
               variant: 'tertiary',
               onClick: async () => {
-                await authApi.revokeCustomerToken();
-                window.location.href = rootLink('/');
+                const { performLogout } = await import('../../scripts/auth-session.js');
+                await performLogout();
               },
             })(secondaryButton);
             innerCtx.appendChild(secondaryButton);
@@ -268,6 +267,10 @@ const renderAuthCombine = (navSections, toggleMenu) => {
                 <li><button class="logoutButton">Logout</button></li>
               </ul>`,
             );
+            popupElement.querySelector('.logoutButton')?.addEventListener('click', async () => {
+              const { performLogout } = await import('../../scripts/auth-session.js');
+              await performLogout();
+            });
           }
         });
         toggleMenu?.();

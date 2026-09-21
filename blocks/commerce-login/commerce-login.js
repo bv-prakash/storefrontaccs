@@ -6,6 +6,7 @@ import {
   checkIsAuthenticated,
   rootLink,
 } from '../../scripts/commerce.js';
+import { hasPendingAuthMessage } from '../../scripts/auth-session.js';
 
 // Initialize
 import '../../scripts/initializers/auth.js';
@@ -14,7 +15,7 @@ import '../../scripts/initializers/auth.js';
 const CUSTOMER_CREATE_ACCOUNT_PATH = '/customer/create';
 
 export default async function decorate(block) {
-  if (checkIsAuthenticated()) {
+  if (checkIsAuthenticated() && !hasPendingAuthMessage()) {
     window.location.href = rootLink(CUSTOMER_ACCOUNT_PATH);
   } else {
     // Extract the authored background image from the first row
