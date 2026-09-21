@@ -6,23 +6,10 @@ import {
   CUSTOMER_FORGOTPASSWORD_PATH,
   rootLink,
 } from '../../scripts/commerce.js';
+import { performLogout } from '../../scripts/auth-session.js';
 
 // Path to the create-account page
 const CUSTOMER_CREATE_ACCOUNT_PATH = '/customer/create';
-
-function handleLogout(redirections) {
-  const shouldRedirect = Object.entries(redirections).some(([currentPath, redirectPath]) => {
-    if (window.location.pathname.includes(currentPath)) {
-      window.location.href = redirectPath;
-      return true;
-    }
-    return false;
-  });
-
-  if (!shouldRedirect) {
-    window.location.reload();
-  }
-}
 
 function renderSignIn(element) {
   authRenderer.render(SignIn, {
@@ -104,12 +91,7 @@ export function renderAuthDropdown(navTools) {
       // Attach logout handler to newly rendered button
       const logoutButton = authDropDownPanel.querySelector('.logout-button');
       logoutButton?.addEventListener('click', async () => {
-        await authApi.revokeCustomerToken();
-        handleLogout({
-          '/checkout': rootLink('/cart'),
-          '/customer': rootLink('/customer/login'),
-          '/order-details': rootLink('/'),
-        });
+        await performLogout();
       });
     } else {
       // 1. Update trigger button
