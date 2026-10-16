@@ -36,8 +36,6 @@
           "rootCategory": "2"
         }
       }
-<<<<<<< Updated upstream
-=======
     },
     "/fr/": {
       "commerce-endpoint": "https://na1-sandbox.api.commerce.adobe.com/4XR4RKXgJjQXaxUCMC6TN3/graphql",
@@ -72,7 +70,6 @@
           "rootCategory": "42"
         }
       }
->>>>>>> Stashed changes
     }
   }
 }
