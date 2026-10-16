@@ -52,6 +52,14 @@ export const CS_FETCH_GRAPHQL = new FetchGraphQL();
 export const IS_UE = window.location.hostname.includes('ue.da.live');
 export const IS_DA = new URL(window.location.href).searchParams.has('dapreview');
 
+export function getCommerceStoreScopeKey() {
+  const cs = getHeaders('cs') || {};
+  const store = getHeaders('all')?.Store || 'default';
+  const view = cs['Magento-Store-View-Code'] || store;
+  const website = cs['Magento-Website-Code'] || 'base';
+  return `${website}__${view}__${store}`;
+}
+
 /**
  * Product template paths - pages that are templates and should use
  * default/fake SKUs. Should be relative to root path, ie "/" , "/fr/" , etc.
@@ -348,7 +356,17 @@ export async function initializeCommerce() {
   CORE_FETCH_GRAPHQL.setEndpoint(getConfigValue('commerce-core-endpoint') || await getConfigValue('commerce-endpoint'));
   CORE_FETCH_GRAPHQL.setFetchGraphQlHeaders((prev) => ({ ...prev, ...getHeaders('all') }));
 
-  // Set Fetch GraphQL (Catalog Service)
+  const currency = await import('./currency.js');
+  const currencyInfo = await currency.initDisplayCurrency();
+
+  if (currencyInfo) {
+    currency.applyContentCurrencyHeader(
+      currencyInfo.selectedCurrency,
+      currencyInfo.default_display_currency_code,
+    );
+  }
+
+  // Catalog Service endpoint `cb` hash includes display currency (after initDisplayCurrency)
   CS_FETCH_GRAPHQL.setEndpoint(await commerceEndpointWithQueryParams());
   CS_FETCH_GRAPHQL.setFetchGraphQlHeaders((prev) => ({ ...prev, ...getHeaders('cs') }));
 
@@ -634,7 +652,22 @@ function createHashFromObject(obj, length = 5) {
  */
 export async function commerceEndpointWithQueryParams() {
   const urlWithQueryParams = new URL(getConfigValue('commerce-endpoint'));
-  const headers = getHeaders('cs');
+  const headers = { ...getHeaders('cs') };
+  try {
+    const {
+      getActiveCurrencySessionStorageKey,
+      getStoredDisplayCurrency,
+    } = await import('./currency.js');
+    let activeCurrency = sessionStorage.getItem(getActiveCurrencySessionStorageKey());
+    if (!activeCurrency) {
+      activeCurrency = getStoredDisplayCurrency();
+    }
+    if (activeCurrency) {
+      headers['Content-Currency'] = activeCurrency;
+    }
+  } catch {
+    // ignore storage errors
+  }
   const shortHash = createHashFromObject(headers);
   urlWithQueryParams.searchParams.append('cb', shortHash);
   return urlWithQueryParams;

@@ -1,0 +1,16 @@
+{
+  "definitions": [{
+    "title": "Currency Switcher",
+    "id": "currency-switcher",
+    "model": "currency-switcher",
+    "plugins": {
+      "da": {
+        "name": "currency-switcher",
+        "rows": 1,
+        "columns": 1
+      }
+    }
+  }],
+  "models": [],
+  "filters": []
+}
