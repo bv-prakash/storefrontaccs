@@ -107,6 +107,8 @@ export default async function initializeDropins() {
       sessionStorage.removeItem('DROPIN__CART__SHIPPING__DATA');
       localStorage.removeItem('DROPIN__CART__CART__AUTHENTICATED');
       clearStoreScopedCaches();
+      const { onCommerceStoreContextChanged } = await import('../currency.js');
+      onCommerceStoreContextChanged();
     }
     document.cookie = `${DROPIN_WEBSITE_COOKIE}=${currentWebsitePath}; path=/`;
     document.cookie = `${DROPIN_STORE_COOKIE}=${currentStoreCode}; path=/`;
