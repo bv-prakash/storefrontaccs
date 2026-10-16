@@ -1,3 +1,12 @@
+import { rootLink } from '../../scripts/commerce.js';
+
+// Keep root-relative authored links inside the active store/locale;
+// external, scheme (https:, mailto:, tel:) and anchor targets stay untouched.
+function toLocaleMenuUrl(url) {
+  if (url === '#' || url.startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(url)) return url;
+  return rootLink(url);
+}
+
 /**
  * Hardened parsing utility that blends dynamic GraphQL structures with authored documents.
  * Custom-built to handle exact text/link nodes and strictly formats URLs to absolute root paths.
@@ -53,7 +62,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
           children.push({
             id: `custom-${Math.random().toString(36).substring(2, 7)}`,
             name: childName,
-            url_path: childUrl,
+            url_path: toLocaleMenuUrl(childUrl),
             isCustom: true,
             children: [],
           });
@@ -76,7 +85,7 @@ export function blendNavigationTrees(placeholderBlock, commerceTree = []) {
       unifiedMenu.push({
         id: `custom-${Math.random().toString(36).substring(2, 7)}`,
         name,
-        url_path: urlPath,
+        url_path: toLocaleMenuUrl(urlPath),
         isCustom: true,
         children,
       });

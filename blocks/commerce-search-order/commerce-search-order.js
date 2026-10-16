@@ -52,9 +52,7 @@ export default async function decorate(block) {
       },
       routeCustomerOrder: () => rootLink(CUSTOMER_ORDER_DETAILS_PATH),
       routeGuestOrder: () => rootLink(ORDER_DETAILS_PATH),
-      onError: async (errorInformation) => {
-        console.info('errorInformation', errorInformation);
-      },
+      onError: async () => {},
     })(block);
   });
 
@@ -71,8 +69,6 @@ export default async function decorate(block) {
     },
     routeCustomerOrder: () => rootLink(CUSTOMER_ORDER_DETAILS_PATH),
     routeGuestOrder: () => rootLink(ORDER_DETAILS_PATH),
-    onError: async (errorInformation) => {
-      console.info('errorInformation', errorInformation);
-    },
+    onError: async () => {},
   })(block);
 }

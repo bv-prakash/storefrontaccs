@@ -1,26 +1,8 @@
-// Import directly from the core toolkit instead of proxying through commerce.js
-import { getConfigValue } from '@dropins/tools/lib/aem/configs.js';
+import { getConfigValue, getHeaders } from '@dropins/tools/lib/aem/configs.js';
+import { CORE_FETCH_GRAPHQL } from '../../../scripts/commerce.js';
 
 /**
- * Helper to dynamically resolve the Core GraphQL endpoint
- */
-async function getGraphQlEndpoint() {
-  try {
-    // Read the configured core endpoint via the native tools framework
-    const endpoint = await getConfigValue('commerce-core-endpoint') || await getConfigValue('commerce-endpoint');
-    if (endpoint) return endpoint;
-  } catch (e) {
-    console.warn('[Newsletter Debug]: Could not read endpoint from core dropin tools, trying window fallback.');
-  }
-
-  // Fallback to global window configuration objects if tools mapping hasn't resolved yet
-  return window.configs?.['commerce-core-endpoint']
-    || window.configs?.['commerce-endpoint']
-    || '/graphql';
-}
-
-/**
- * Subscribes an email to the Adobe Commerce newsletter.
+ * Subscribes an email to the Adobe Commerce newsletter for the active store view.
  * @param {string} email
  * @returns {Promise<string>} Status: 'SUBSCRIBED', 'NOT_ACTIVE', or throws error
  */
@@ -33,11 +15,31 @@ export async function subscribeEmail(email) {
     }
   `;
 
-  const endpoint = await getGraphQlEndpoint();
+  if (CORE_FETCH_GRAPHQL.endpoint) {
+    const result = await CORE_FETCH_GRAPHQL.fetchGraphQl(query, {
+      method: 'POST',
+      variables: { email },
+    });
+
+    if (result.errors?.length) {
+      throw new Error(result.errors[0].message);
+    }
+
+    return result?.data?.subscribeEmailToNewsletter?.status;
+  }
+
+  const endpoint = await getConfigValue('commerce-core-endpoint')
+    || await getConfigValue('commerce-endpoint')
+    || window.configs?.['commerce-core-endpoint']
+    || window.configs?.['commerce-endpoint']
+    || '/graphql';
 
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getHeaders('all'),
+    },
     body: JSON.stringify({
       query,
       variables: { email },
@@ -50,7 +52,7 @@ export async function subscribeEmail(email) {
 
   const result = await response.json();
 
-  if (result.errors && result.errors.length > 0) {
+  if (result.errors?.length) {
     throw new Error(result.errors[0].message);
   }
 

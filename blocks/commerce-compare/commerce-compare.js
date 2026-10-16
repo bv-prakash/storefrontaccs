@@ -1,9 +1,11 @@
 import { events } from '@dropins/tools/event-bus.js';
 import * as cartApi from '@dropins/storefront-cart/api.js';
 import { CompareService } from '../../scripts/compare-service.js';
-import { getProductLink } from '../../scripts/commerce.js';
+import { getProductLink, fetchPlaceholders } from '../../scripts/commerce.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
+
+const placeholders = await fetchPlaceholders('placeholders/global.json');
 
 /**
  * Safely renders breadcrumbs without breaking the block execution if an error occurs.
@@ -30,7 +32,7 @@ export default async function decorate(block) {
 
   // Render global breadcrumbs once (standard pattern used across the site)
   const globalBreadcrumbsContainer = getGlobalBreadcrumbsContainer();
-  safeRenderBreadcrumbs(globalBreadcrumbsContainer, { name: 'Compare' }, {});
+  safeRenderBreadcrumbs(globalBreadcrumbsContainer, { name: 'Compare' }, placeholders);
 
   // Render the page title using the site-standard heading element
   const existingTitle = block.parentElement?.querySelector('.commerce-compare-page-title');
@@ -78,8 +80,6 @@ export default async function decorate(block) {
                       <button class="matrix-remove-trigger" data-sku="${product.sku}">Remove ×</button>
                       <img src="${product.image}" alt="${product.name}" class="matrix-thumb">
                       <a href="${getProductLink(product.urlKey, product.sku)}" class="matrix-title">${product.name}</a>
-                      
-                      <!-- Standard Frame Matrix Action Slot Insertion -->
                       <div class="matrix-cart-action-wrapper">
                         ${actionButtonHtml}
                       </div>

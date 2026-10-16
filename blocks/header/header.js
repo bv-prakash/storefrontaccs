@@ -3,7 +3,9 @@ import { events } from '@dropins/tools/event-bus.js';
 import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
-import { fetchPlaceholders, getProductLink, rootLink } from '../../scripts/commerce.js';
+import {
+  fetchPlaceholders, getProductLink, localizedFragmentPath, rootLink,
+} from '../../scripts/commerce.js';
 
 import renderAuthCombine from './renderAuthCombine.js';
 import { renderAuthDropdown } from './renderAuthDropdown.js';
@@ -39,7 +41,7 @@ function toggleMenu(nav, navSections, forceExpanded = null) {
 
 function decorateCompareCounter(navToolsPanel) {
   const counterLink = document.createElement('a');
-  counterLink.href = '/compare';
+  counterLink.href = rootLink('/compare');
   counterLink.className = 'nav-compare-counter-btn';
   counterLink.innerHTML = `
     <span class="compare-label">
@@ -160,15 +162,25 @@ export default async function decorate(block) {
     document.body.insertAdjacentElement('afterbegin', sellerAssistedBuyingBanner);
   }
 
-  // Load nav fragment document sheets natively
+  // Load nav fragment document sheets natively.
+  // loadFragment() already prefixes the configured root path, so only the
+  // locale-aware, root-relative path is passed here (e.g. "/fr/nav" or "/nav").
   const navMeta = getMetadata('nav');
-  const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
-  const fragment = await loadFragment(navPath);
+  const navPath = navMeta ? new URL(navMeta, window.location).pathname : localizedFragmentPath('/nav');
+  let fragment = await loadFragment(navPath);
+
+  // Fall back to the master /nav when the localized fragment has no content.
+  // loadFragment() resolves to a <main> element, so inspect its own children.
+  if (!fragment || fragment.children.length === 0) {
+    fragment = await loadFragment('/nav');
+  }
 
   block.textContent = '';
   const nav = document.createElement('nav');
   nav.id = 'nav';
-  while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
+  if (fragment) {
+    while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
+  }
 
   // Map functional segment locations across AEM container classes
   const classes = ['brand', 'sections', 'tools'];
@@ -182,6 +194,13 @@ export default async function decorate(block) {
   if (brandLink) {
     brandLink.className = '';
     brandLink.closest('.button-container').className = '';
+  }
+
+  // Keep the logo pointing at the active store/locale home (e.g. "/fr/")
+  const logoLink = navBrand?.querySelector('a');
+  const logoHref = logoLink?.getAttribute('href');
+  if (logoHref?.startsWith('/')) {
+    logoLink.href = rootLink(logoHref);
   }
 
   const navSections = nav.querySelector('.nav-sections');

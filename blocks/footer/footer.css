@@ -15,15 +15,7 @@ footer .footer p {
     margin: 0;
 }
 
-.storeview-switcher-button {
-    background: transparent;
-    padding-left: 0;
-}
 
-.storeview-modal-storeview-title {
-    margin-bottom: var(--spacing-xxbig);
-    padding-inline-start: var(--spacing-xbig);
-}
 
 .modal .close-button {
     top: 40px !important;

@@ -1,10 +1,26 @@
 import { Icon } from '@dropins/tools/components.js';
 import { render as accountRenderer } from '@dropins/storefront-account/render.js';
 import { loadFragment } from '../fragment/fragment.js';
-import { CUSTOMER_ORDERS_PATH, rootLink } from '../../scripts/commerce.js';
+import {
+  CUSTOMER_ORDERS_PATH,
+  localizedFragmentPath,
+  rootLink,
+} from '../../scripts/commerce.js';
 
 export default async function decorate(block) {
-  const fragment = await loadFragment('/customer/sidebar-fragment');
+  // Load the localized sidebar fragment (e.g. /fr/customer/sidebar-fragment on
+  // French pages) so authored titles, links and icons are translated. Fall back
+  // to the master fragment when the locale-specific one is not authored.
+  let fragment = await loadFragment(localizedFragmentPath('/customer/sidebar-fragment'));
+
+  if (!fragment || fragment.children.length === 0) {
+    fragment = await loadFragment('/customer/sidebar-fragment');
+  }
+
+  // If the fragment still could not be loaded, leave the block empty
+  // instead of throwing.
+  if (!fragment) return;
+
   const sidebarItemsConfig = fragment.querySelectorAll('.default-content-wrapper > ol > li');
   const sidebarItems = Array.from(sidebarItemsConfig).map((item) => {
     const itemParams = Array.from(item.querySelectorAll('ol > li'));

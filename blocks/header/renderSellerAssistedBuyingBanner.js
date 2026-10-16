@@ -1,7 +1,7 @@
 import { getCookie } from '@dropins/tools/lib.js';
 import { events } from '@dropins/tools/event-bus.js';
 import * as authApi from '@dropins/storefront-auth/api.js';
-import { checkIsAuthenticated, rootLink } from '../../scripts/commerce.js';
+import { checkIsAuthenticated } from '../../scripts/commerce.js';
 
 const ADMIN_SESSION_COOKIE = 'auth_dropin_admin_session';
 
@@ -74,11 +74,8 @@ export default async function renderSellerAssistedBuyingBanner() {
       closeButton.disabled = true;
       closeButton.textContent = 'Closing...';
 
-      // Use regular logout mutation, banner will be hidden automatically
-      await authApi.revokeCustomerToken();
-
-      // Redirect to home page after logout
-      window.location.href = rootLink('/');
+      const { performLogout } = await import('../../scripts/auth-session.js');
+      await performLogout();
     } catch (error) {
       console.error('Error closing seller assisted buying session:', error);
       closeButton.disabled = false;

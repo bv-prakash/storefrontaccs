@@ -12,10 +12,9 @@ query CategoryByUrlPath($urlPath: [String!]!) {
 
 export async function getCategory(urlPath) {
   try {
-    if (!CS_FETCH_GRAPHQL.getFetchGraphQlHeader('Magento-Store-View-Code') && !CS_FETCH_GRAPHQL.getFetchGraphQlHeader('AC-Scope-Locale')) {
-      CS_FETCH_GRAPHQL.setFetchGraphQlHeader('Magento-Store-View-Code', 'default');
-    }
-
+    // Store/store-view headers are configured centrally in
+    // initializeCommerce() (getHeaders('cs')), so every request is routed to
+    // the store of the active locale (e.g. "bca" for /fr).
     const response = await CS_FETCH_GRAPHQL.fetchGraphQl(
       CATEGORY_QUERY,
       { variables: { urlPath: [urlPath] } },
