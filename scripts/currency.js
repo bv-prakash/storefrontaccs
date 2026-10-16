@@ -6,19 +6,10 @@ import {
   getCommerceStoreScopeKey,
 } from './commerce.js';
 
-export const DISPLAY_CURRENCY_COOKIE = 'currency';
-
+const DISPLAY_CURRENCY_COOKIE = 'currency';
 const MIN_SWITCHER_CURRENCIES = 2;
 const STORAGE_PREFIX = 'dropin_display_currency__';
-const CURRENCY_INFO_CACHE_VERSION = 10;
-
-export function getActiveCurrencySessionStorageKey() {
-  return `commerce_active_display_currency__${getCommerceStoreScopeKey()}`;
-}
-
-export function getCurrencyInfoSessionStorageKey() {
-  return `commerce_currency_info_v${CURRENCY_INFO_CACHE_VERSION}__${getCommerceStoreScopeKey()}`;
-}
+const CURRENCY_INFO_CACHE_VERSION = 16;
 
 const CURRENCY_QUERY = `
   query CurrencySwitcher {
@@ -44,7 +35,15 @@ let catalogConversionHookRegistered = false;
 let currencyInfoPromise = null;
 let currencyFetchScope = null;
 
-export function getCurrencyStorageKey() {
+export function getActiveCurrencySessionStorageKey() {
+  return `commerce_active_display_currency__${getCommerceStoreScopeKey()}`;
+}
+
+function getCurrencyInfoSessionStorageKey() {
+  return `commerce_currency_info_v${CURRENCY_INFO_CACHE_VERSION}__${getCommerceStoreScopeKey()}`;
+}
+
+function getCurrencyStorageKey() {
   return `${STORAGE_PREFIX}${getCommerceStoreScopeKey()}`;
 }
 
@@ -92,12 +91,6 @@ export function getStoredDisplayCurrency() {
   return null;
 }
 
-export function getActiveDisplayCurrency() {
-  return activeCurrencyContext?.selectedCurrency
-    ?? getStoredDisplayCurrency()
-    ?? null;
-}
-
 export function setStoredDisplayCurrency(code) {
   const maxAge = 60 * 60 * 24 * 365;
   const cookiePath = getCurrencyCookiePath();
@@ -119,26 +112,9 @@ function commerceLocaleToBcp47(locale) {
   return locale.trim().replace(/_/g, '-');
 }
 
-function isDistinctSymbol(symbol, code) {
-  const key = toCurrencyCodeKey(code);
-  const value = symbol?.trim();
-  if (!value || !key) return false;
-  if (value.toUpperCase() === key) return false;
-  if (value === '$' && key !== 'USD') return false;
-  return true;
-}
-
 function getLocaleCandidates(storeLocale) {
   const candidates = [];
-  if (storeLocale) {
-    candidates.push(storeLocale);
-    try {
-      const maximized = new Intl.Locale(storeLocale).maximize().toString();
-      if (maximized) candidates.push(maximized);
-    } catch {
-      /* empty */
-    }
-  }
+  if (storeLocale) candidates.push(storeLocale);
   try {
     if (typeof navigator !== 'undefined' && navigator.language) {
       candidates.push(navigator.language.replace(/_/g, '-'));
@@ -156,20 +132,7 @@ function getLocaleCandidates(storeLocale) {
   });
 }
 
-function intlCurrencyPart(key, loc, currencyDisplay) {
-  try {
-    const parts = new Intl.NumberFormat(loc || undefined, {
-      style: 'currency',
-      currency: key,
-      currencyDisplay,
-    }).formatToParts(0);
-    return parts.find((p) => p.type === 'currency')?.value?.trim() || '';
-  } catch {
-    return '';
-  }
-}
-
-function resolveDistinctSymbol(code, storeLocale) {
+function resolveIntlSymbol(code, storeLocale) {
   const key = toCurrencyCodeKey(code);
   if (!key) return '';
 
@@ -177,10 +140,17 @@ function resolveDistinctSymbol(code, storeLocale) {
   for (let i = 0; i < locales.length; i += 1) {
     const loc = locales[i];
     for (let d = 0; d < 2; d += 1) {
-      const display = d === 0 ? 'symbol' : 'narrowSymbol';
-      const value = intlCurrencyPart(key, loc, display);
-      if (isDistinctSymbol(value, key)) {
-        return value;
+      const currencyDisplay = d === 0 ? 'symbol' : 'narrowSymbol';
+      try {
+        const parts = new Intl.NumberFormat(loc || undefined, {
+          style: 'currency',
+          currency: key,
+          currencyDisplay,
+        }).formatToParts(0);
+        const value = parts.find((p) => p.type === 'currency')?.value?.trim();
+        if (value) return value;
+      } catch {
+        /* empty */
       }
     }
   }
@@ -195,37 +165,30 @@ function mergeGraphQlSymbols(map, currency) {
   if (base && baseSymbol) map[base] = baseSymbol;
   if (def && defSymbol) map[def] = defSymbol;
 
-  [currency?.available_currencies, currency?.currencies].forEach((list) => {
-    if (!Array.isArray(list)) return;
-    list.forEach((entry) => {
-      const code = toCurrencyCodeKey(entry?.code);
-      const symbol = entry?.symbol?.trim();
-      if (code && symbol) map[code] = symbol;
-    });
+  const list = currency?.available_currencies;
+  if (!Array.isArray(list)) return;
+  list.forEach((entry) => {
+    const code = toCurrencyCodeKey(entry?.code);
+    const symbol = entry?.symbol?.trim() || entry?.value?.trim();
+    if (code && symbol) map[code] = symbol;
   });
 }
 
 function buildSymbolByCode(currency, storeLocale) {
   const map = {};
   mergeGraphQlSymbols(map, currency);
+
   normalizeAvailableCodes(currency?.available_currency_codes).forEach((code) => {
-    const existing = map[code]?.trim();
-    if (existing && isDistinctSymbol(existing, code)) return;
-    const distinct = resolveDistinctSymbol(code, storeLocale);
-    map[code] = distinct || existing || code;
+    if (map[code]?.trim()) return;
+    map[code] = resolveIntlSymbol(code, storeLocale) || code;
   });
   return map;
 }
 
-export function getCurrencySignForSwitcher(code, storeLocale, symbolByCode) {
+export function getCurrencySignForSwitcher(code, _storeLocale, symbolByCode) {
   const key = toCurrencyCodeKey(code);
   if (!key) return '';
-  const locale = storeLocale || activeCurrencyContext?.storeLocale;
-  const fromMap = symbolByCode?.[key]?.trim();
-  if (fromMap && isDistinctSymbol(fromMap, key)) return fromMap;
-  const distinct = resolveDistinctSymbol(key, locale);
-  if (distinct) return distinct;
-  return fromMap || key;
+  return symbolByCode?.[key]?.trim() || key;
 }
 
 export function formatCurrencyLabel(code, storeLocale, symbolByCode) {
@@ -314,7 +277,7 @@ function shouldConvertCatalogPrices(ctx) {
   return Boolean(ctx?.exchangeRateMap?.[displayCode]);
 }
 
-export function convertCurrencyAmount(amount, fromCode, toCode, baseCode, rates) {
+function convertCurrencyAmount(amount, fromCode, toCode, baseCode, rates) {
   if (fromCode === toCode || amount === null || amount === undefined || !rates) return amount;
   const fromRate = rates[fromCode];
   const toRate = rates[toCode];
@@ -370,7 +333,7 @@ function buildCurrencyInfoFromResponse(currency, storeScope, storeConfig) {
   if (!available.length) return null;
 
   const storeLocale = commerceLocaleToBcp47(storeConfig?.locale);
-  const info = normalizeCurrencyInfo({
+  return normalizeCurrencyInfo({
     ...currency,
     available_currency_codes: available,
     exchangeRateMap: buildExchangeRateMap(currency.exchange_rates, currency.base_currency_code),
@@ -382,9 +345,6 @@ function buildCurrencyInfoFromResponse(currency, storeScope, storeConfig) {
     storeScope,
     storeLocale,
   });
-
-  if (!info) return null;
-  return { ...info, storeScope, storeLocale: info.storeLocale || storeLocale };
 }
 
 export function onCommerceStoreContextChanged() {
@@ -399,32 +359,28 @@ export function onCommerceStoreContextChanged() {
   }
 }
 
-export async function fetchCurrencyInfo(forceRefresh = false) {
+export async function fetchCurrencyInfo() {
   const storeScope = getCommerceStoreScopeKey();
 
-  if (!forceRefresh) {
-    try {
-      const cached = sessionStorage.getItem(getCurrencyInfoSessionStorageKey());
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const normalized = normalizeCurrencyInfo(parsed);
-        if (
-          normalized
-          && parsed.storeScope === storeScope
-          && isValidCurrencyCache(normalized)
-        ) {
-          activeCurrencyContext = { ...normalized, storeScope };
-          return activeCurrencyContext;
-        }
+  try {
+    const cached = sessionStorage.getItem(getCurrencyInfoSessionStorageKey());
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const normalized = normalizeCurrencyInfo(parsed);
+      if (
+        normalized
+        && parsed.storeScope === storeScope
+        && isValidCurrencyCache(normalized)
+      ) {
+        activeCurrencyContext = { ...normalized, storeScope };
+        return activeCurrencyContext;
       }
-    } catch {
-      /* empty */
     }
+  } catch {
+    /* empty */
   }
 
-  const needsFetch = forceRefresh
-    || !currencyInfoPromise
-    || currencyFetchScope !== storeScope;
+  const needsFetch = !currencyInfoPromise || currencyFetchScope !== storeScope;
 
   if (!needsFetch) {
     return currencyInfoPromise;
@@ -536,10 +492,7 @@ function clearPriceScopedSessionCaches() {
 }
 
 export async function initDisplayCurrency() {
-  const fetched = await fetchCurrencyInfo();
-  if (!fetched) return null;
-
-  const info = normalizeCurrencyInfo(fetched);
+  const info = await fetchCurrencyInfo();
   if (!info) return null;
 
   activeCurrencyContext = info;

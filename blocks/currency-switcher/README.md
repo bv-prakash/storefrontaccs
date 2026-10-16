@@ -76,7 +76,7 @@ Configure per store view:
 
 - **Stores → Configuration → General → Currency Setup** — allowed currencies, default display currency, base currency.
 - **Stores → Currency → Currency Rates** — rates must be **> 0** for amount conversion (for example AWG). Rates of `0` still allow currency labels on prices but not converted amounts.
-- **Stores → Currency → Currency Symbols** — custom symbols; standard GraphQL often exposes only base/default symbols, not every code.
+- **Stores → Currency → Currency Symbols** — custom per-code symbols require GraphQL to expose them (for example `available_currencies` on PaaS 2.4.8+). The storefront query requests base/default symbols, allowed codes, and rates only. If a code has no symbol in the response, the UI uses **Intl** (for example ₹ for INR). Currency data loads once per page; toggling the dropdown does not call Commerce again.
 
 ---
 

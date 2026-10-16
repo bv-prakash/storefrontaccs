@@ -1,4 +1,3 @@
-import { getCommerceStoreScopeKey } from '../../scripts/commerce.js';
 import {
   canShowCurrencySwitcher,
   fetchCurrencyInfo,
@@ -169,7 +168,6 @@ export default async function decorate(block) {
 
   block.textContent = '';
   block.classList.add('currency-switcher-ready');
-  block.dataset.storeScope = getCommerceStoreScopeKey();
 
   const currencyInfo = await fetchCurrencyInfo();
   if (!currencyInfo?.available_currency_codes?.length) {
