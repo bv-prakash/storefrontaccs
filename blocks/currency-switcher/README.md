@@ -2,6 +2,9 @@
 
 ## Overview
 
+**Change summary for docs / stakeholders:** [IMPLEMENTATION.md](./IMPLEMENTATION.md) (opening **Summary** section).  
+**This README:** module file checklists, wiring, add/remove steps, and troubleshooting.
+
 This module adds **display currency** support to the Edge Delivery storefront:
 
 1. **Global behavior** (`scripts/currency.js`) — loads allowed currencies from Core GraphQL, persists the shopper’s choice, sends `Content-Currency` on Core and Catalog Service, and adjusts catalog price payloads for PLP/PDP.
