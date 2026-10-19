@@ -1,29 +1,34 @@
-# Commerce mini-PDP
+# Commerce Mini-PDP
 
 ## Overview
 
-For a formal change record (title, file list, **how to use**, **how to remove** quick view or the whole feature), see **[IMPLEMENTATION.md](./IMPLEMENTATION.md)**.
+**Change summary for docs / stakeholders:** [IMPLEMENTATION.md](./IMPLEMENTATION.md) (opening **Summary** section).  
+**This README:** API, integration points, file checklist, add/remove steps, and validation.
 
-`commerce-mini-pdp` renders a product configuration UI inside the shared [modal utility](../../../blocks/modal/README.md). It supports:
+`commerce-mini-pdp` renders product configuration UI inside the shared [modal utility](../../blocks/modal/README.md):
 
-1. **Quick view** (product list) — preview a product, select configurable options, add to cart
-2. **Cart edit** — change quantity/options for a configurable line item
+1. **Quick view (PLP)** — preview product from the list, select options, add to cart (lazy-loaded).
+2. **Cart edit** — update quantity/options for a configurable cart line item (`blocks/commerce-cart/commerce-cart.js`).
 
-The layout and styling align with the **`product-details`** block (gallery, header, SKU/stock, price, options, quantity, add/update cart). Styles come from `blocks/product-details/product-details.css` plus `commerce-mini-pdp.css`.
+Layout and styling align with the **product-details** block (`blocks/product-details/product-details.css` + `commerce-mini-pdp.css`).
+
+---
 
 ## Important: PDP initializer
 
-Do **not** statically import `scripts/initializers/pdp.js` from this module. That initializer runs on every page load and calls `loadErrorPage()` when no SKU is in the URL (e.g. category/PLP pages).
+Do **not** statically import `scripts/initializers/pdp.js` from PLP or this module. That initializer runs on page load and calls `loadErrorPage()` when no SKU is in the URL (category/PLP pages).
 
-Mini-PDP mounts the PDP drop-in with `initializers.mountImmediately(initialize, { scope: 'modal', … })` only when the modal opens.
+Mini-PDP mounts the PDP drop-in with `initializers.mountImmediately(initialize, { scope: 'modal', … })` when the modal opens.
 
-PLP loads this module with **dynamic `import()`** on quick-view click for the same reason.
+PLP must use **dynamic `import()`** of `commerce-mini-pdp.js` on quick-view click only.
+
+---
 
 ## API
 
 ### `createMiniPDP(input, onSuccess?, onClose?)`
 
-Returns a **`HTMLElement`** root (`#mini-pdp-modal`, class `commerce-mini-pdp`).
+Returns a **`HTMLElement`** root (`#mini-pdp-modal`, class `commerce-mini-pdp` or `commerce-mini-pdp--quick-view`).
 
 #### Quick view input
 
@@ -31,7 +36,7 @@ Returns a **`HTMLElement`** root (`#mini-pdp-modal`, class `commerce-mini-pdp`).
 {
   sku: string,      // required
   urlKey?: string,
-  image?: string,   // fallback if gallery not ready
+  image?: string,
 }
 ```
 
@@ -40,20 +45,21 @@ Returns a **`HTMLElement`** root (`#mini-pdp-modal`, class `commerce-mini-pdp`).
 ```javascript
 {
   uid: string,      // cart line item UID
-  // …other cart item fields from Cart API
 }
 ```
 
 | Callback | When |
 | --- | --- |
 | `onSuccess` | Cart line updated (cart edit only) |
-| `onClose` | After successful add/update or when user cancels / view-details navigation |
+| `onClose` | After add/update, cancel, or view-details navigation |
 
-On failure, returns an error panel with a Close button instead of throwing before DOM creation.
+On failure, returns an error panel with a Close button.
+
+---
 
 ## Opening the modal (callers)
 
-Callers pass the returned element to `createModal` with a **title** and **size** (header is owned by the modal utility, not mini-PDP).
+Header **title** and **size** are passed to `createModal`, not built inside mini-PDP.
 
 ### Product list — quick view
 
@@ -85,70 +91,97 @@ const modal = await createModal([miniPDPContent], {
 modal.showModal();
 ```
 
-See `blocks/commerce-cart/commerce-cart.js` (`handleEditButtonClick`).
+See `blocks/commerce-cart/commerce-cart.js`.
 
-## Markup structure (inside `.modal-content`)
+---
+
+## Markup structure (quick view / product-details layout)
 
 ```text
 #mini-pdp-modal.commerce-mini-pdp[--quick-view]
 ├── .product-details__alert
 └── .product-details__wrapper
-    ├── .product-details__left-column
-    │   ├── .product-details__gallery.desktop-gallery
-    │   └── .product-details__gallery.mobile-gallery
+    ├── .product-details__left-column (galleries)
     └── .product-details__right-column
-        ├── .product-details__header          (ProductHeader drop-in)
-        ├── .product-details__meta-info     (SKU + stock, updated on option change)
-        ├── .product-details__price
-        ├── .product-details__configuration
-        │   ├── .product-details__options   (ProductOptions + swatch slot)
-        │   └── .product-details__buttons
-        │       ├── .product-details__quantity
-        │       └── .product-details__buttons__add-to-cart
-        └── .mini-pdp__footer-actions
-            ├── Cancel
-            └── View all details → PDP URL
+        ├── header, SKU/stock, price, options, quantity, add to cart
+        └── .mini-pdp__footer-actions (Cancel, View details)
 ```
+
+---
 
 ## Drop-ins and scope
 
 | Container | Scope |
 | --- | --- |
-| PDP API / events | `modal` (`MINI_PDP_SCOPE`) |
+| PDP API / events | `modal` |
 
-- **ProductGallery** — thumbnails on desktop (`≥1024px`), dots on smaller viewports
-- **ProductOptions** — `SwatchImage` uses `tryRenderAemAssetsImage` (same pattern as `product-details`)
-- **Add to cart / update** — uses `getProductConfigurationValues({ scope: 'modal' })` and `{ ...values }` for configurable products
-- **`pdp/data`** — refreshes SKU/stock when options change
+- **ProductGallery** — thumbnails (desktop) / dots (mobile)
+- **ProductOptions** — `SwatchImage` via `tryRenderAemAssetsImage` (same as product-details)
+- **Cart** — `getProductConfigurationValues({ scope: 'modal' })` and `{ ...values }` for configurables
+- **`pdp/data`** — updates SKU/stock on option change
 
-## CSS
+---
 
-| File | Role |
+## Module file checklist
+
+| Path | Purpose |
 | --- | --- |
-| `blocks/product-details/product-details.css` | PDP layout, buttons, incrementer, **configurable option swatches** |
-| `commerce-mini-pdp.css` | Gallery visibility, footer actions, error state; optional `.modal-content` overrides via `:has(.commerce-mini-pdp)` |
+| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` | Component |
+| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.css` | Styles |
+| `scripts/components/commerce-mini-pdp/IMPLEMENTATION.md` | Change record |
+| `blocks/product-list-page/product-list-page.js` | Quick view (when enabled) |
+| `blocks/product-list-page/product-list-page.css` | Quick-view button |
+| `blocks/modal/modal.js` | `createModal` |
+| `blocks/commerce-cart/commerce-cart.js` | Cart edit |
+| `blocks/product-details/product-details.css` | Shared PDP / swatch styles |
 
-Configurable option styling is scoped under `.product-details .product-details__options` and `.commerce-mini-pdp .product-details__options` in `product-details.css`.
+### Placeholders (optional)
 
-## PLP quick-view control
+| Key | Usage |
+| --- | --- |
+| `Global.QuickView` | Modal title, quick-view `aria-label` |
+| `Global.AddProductToCart` / `Global.UpdateProductInCart` | Primary buttons |
+| `Global.ViewAllDetails` / `Global.Cancel` | Quick view footer |
 
-The PLP block adds a quick-view button on the product image (`product-discovery-product-actions__quick-view`). Styles live in `blocks/product-list-page/product-list-page.css`.
+---
 
-## Placeholders
+## Add quick view on PLP
 
-Uses global placeholders from `fetchPlaceholders()` (e.g. `Global.AddProductToCart`, `Global.UpdateProductInCart`, `Global.ViewAllDetails`, `Global.Cancel`). Quick view **modal title** is set by the PLP caller (`Global.QuickView`), not inside mini-PDP.
+1. On quick-view click, **dynamically import** `commerce-mini-pdp.js` and `blocks/modal/modal.js`.
+2. `createMiniPDP({ sku, urlKey, image }, null, onClose)`.
+3. `createModal([content], { title, size: 'wide' })`.
+4. Add control in `SearchResults` → `ProductImage` slot; CSS in `product-list-page.css`.
+5. `npm run lint` and test simple + configurable products.
 
-## Testing locally
+---
+
+## Remove module
+
+### Quick view only (keep cart edit)
+
+1. Remove quick-view UI and `openQuickView` from `product-list-page.js` / `.css`.
+2. Keep `scripts/components/commerce-mini-pdp/` and cart wiring.
+
+### Entire mini-PDP
+
+1. Complete quick-view removal.
+2. Remove cart `createMiniPDP` usage in `commerce-cart.js`.
+3. Delete `scripts/components/commerce-mini-pdp/`.
+
+Details: [IMPLEMENTATION.md §5](./IMPLEMENTATION.md).
+
+---
+
+## Validation
 
 1. `npm run lint`
-2. Start AEM CLI and open a category PLP with configurable products
-3. Quick view: options, gallery, add to cart, close header
-4. Cart: edit a configurable line item; confirm update and modal title
+2. PLP: no PDP error page on category URL; quick view works when enabled.
+3. Cart: edit configurable line item when enabled.
+4. Modal header matches other storefront modals.
 
-## Changelog summary (feature)
+---
 
-- PLP quick view with lazy-loaded mini-PDP + modal
-- Mini-PDP mirrors `product-details` for configurables (gallery, options, swatches)
-- Unified modal header/title/sizes across storefront modals
-- Fixed blank modal wrapper from empty `buildBlock('modal')` rows
-- Cart add/update uses full PDP configuration values for configurables
+## Related
+
+- [Modal README](../../blocks/modal/README.md)
+- [Product details README](../../blocks/product-details/README.md)
