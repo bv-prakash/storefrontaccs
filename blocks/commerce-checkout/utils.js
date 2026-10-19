@@ -37,9 +37,10 @@ let modal;
 /**
  * Shows a modal with the specified content
  * @param {HTMLElement} content - DOM element to display in the modal
+ * @param {{ title?: string, size?: 'compact' | 'default' | 'wide' }} [options]
  */
-export const showModal = async (content) => {
-  modal = await createModal([content]);
+export const showModal = async (content, options = {}) => {
+  modal = await createModal([content], options);
   modal.showModal();
 };
 

@@ -688,6 +688,50 @@ export default async function decorate(block) {
     });
   }
 
+  let quickViewModal = null;
+
+  const closeQuickViewModal = () => {
+    if (quickViewModal) {
+      quickViewModal.removeModal();
+      quickViewModal = null;
+    }
+  };
+
+  const openQuickView = async (product) => {
+    closeQuickViewModal();
+    try {
+      const [
+        { default: createMiniPDP },
+        { default: createModal },
+      ] = await Promise.all([
+        import('../../scripts/components/commerce-mini-pdp/commerce-mini-pdp.js'),
+        import('../modal/modal.js'),
+      ]);
+
+      const miniPDPContent = await createMiniPDP(
+        {
+          sku: product.sku,
+          urlKey: product.urlKey,
+          image: product.images?.[0]?.url,
+        },
+        null,
+        closeQuickViewModal,
+      );
+
+      quickViewModal = await createModal([miniPDPContent], {
+        title: labels.Global?.QuickView || 'Quick view',
+        size: 'wide',
+      });
+      quickViewModal.showModal();
+    } catch (error) {
+      console.error('Quick view failed:', error);
+      showNotification({
+        type: 'error',
+        message: error.message || labels.Global?.ProductLoadError || 'Unable to load product.',
+      });
+    }
+  };
+
   const getAddToCartButton = (product) => {
     if (product.typename === 'ComplexProductView') {
       const button = document.createElement('div');
@@ -798,6 +842,9 @@ export default async function decorate(block) {
           const imgWidth = Number(defaultImageProps?.width) || 400;
           const imgHeight = Number(defaultImageProps?.height) || 450;
 
+          const imageWrap = document.createElement('div');
+          imageWrap.className = 'product-discovery-product-item__image-wrap';
+
           const anchorWrapper = document.createElement('a');
           anchorWrapper.href = getProductLink(product.urlKey, product.sku);
           anchorWrapper.className = 'product-discovery-product-item__image-link';
@@ -819,7 +866,21 @@ export default async function decorate(block) {
           img.className = 'dropin-image product-discovery-product-item__image';
           anchorWrapper.appendChild(img);
 
-          ctx.replaceWith(anchorWrapper);
+          const quickViewBtn = document.createElement('button');
+          quickViewBtn.type = 'button';
+          quickViewBtn.className = 'product-discovery-product-actions__quick-view';
+          quickViewBtn.setAttribute(
+            'aria-label',
+            labels.Global?.QuickView || `Quick view ${product.name || 'product'}`,
+          );
+          quickViewBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openQuickView(product);
+          });
+
+          imageWrap.append(anchorWrapper, quickViewBtn);
+          ctx.replaceWith(imageWrap);
         },
         ProductActions: (ctx) => {
           const actionsWrapper = document.createElement('div');

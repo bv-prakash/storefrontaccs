@@ -156,9 +156,9 @@ export default async function decorate(block) {
 
   const storeViewTitle = storeModalContainer.querySelector('.storeview-modal-storeview-title');
   const modalHeading = storeViewTitle?.querySelector('h3');
-  if (modalHeading) {
-    modalHeading.className = 'storeview-modal-heading';
-    modalHeading.setAttribute('tabindex', '0');
+  const modalTitle = modalHeading?.textContent?.trim() || 'Select store';
+  if (storeViewTitle) {
+    storeViewTitle.remove();
   }
 
   const storeViewList = storeModalContainer.querySelector('.storeview-modal-storeview-list');
@@ -210,7 +210,10 @@ export default async function decorate(block) {
     // Rewrite store-view links to preserve the current page path so
     // switching locales keeps the shopper on the same content page.
     localizeStoreLinks(storeModalContainer);
-    const modalInstance = await createModal([storeModalContainer]);
+    const modalInstance = await createModal([storeModalContainer], {
+      title: modalTitle,
+      size: 'compact',
+    });
     modalInstance.showModal();
   };
 

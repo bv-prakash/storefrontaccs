@@ -13,60 +13,162 @@ import {
   InLineAlert,
   Icon,
   Button,
-  Image,
   provider as UI,
 } from '@dropins/tools/components.js';
 import { h } from '@dropins/tools/preact.js';
+import { tryRenderAemAssetsImage } from '@dropins/tools/lib/aem/assets.js';
 import * as Cart from '@dropins/storefront-cart/api.js';
 
-// PDP Containers for Mini PDP
+import ProductHeader from '@dropins/storefront-pdp/containers/ProductHeader.js';
 import ProductPrice from '@dropins/storefront-pdp/containers/ProductPrice.js';
 import ProductOptions from '@dropins/storefront-pdp/containers/ProductOptions.js';
 import ProductQuantity from '@dropins/storefront-pdp/containers/ProductQuantity.js';
+import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
 
-// Initializers
 import '../../initializers/cart.js';
 
-import { fetchPlaceholders, CS_FETCH_GRAPHQL, getProductLink } from '../../commerce.js';
-
+import {
+  fetchPlaceholders,
+  CS_FETCH_GRAPHQL,
+  getProductLink,
+  rootLink,
+} from '../../commerce.js';
 import { loadCSS } from '../../aem.js';
+import { showNotification } from '../notification.js';
 
-// Function to get fresh cart item data by UID
+const MINI_PDP_SCOPE = 'modal';
+
+const IMAGES_SIZES = {
+  width: 800,
+  height: 800,
+};
+
+const THUMBNAIL_SIZES = {
+  width: 100,
+  height: 100,
+};
+
+function renderSkuDetails(product, targetContainer) {
+  targetContainer.innerHTML = '';
+  const skuContainer = document.createElement('div');
+  skuContainer.className = 'pdp-sku-info';
+
+  const rawSku = product?.sku || '';
+  const seriesName = product?.series || 'SERIES';
+
+  skuContainer.innerHTML = `
+    <strong class="pdp-sku-label">${seriesName}:</strong>
+    <span class="pdp-sku-value">${rawSku}</span>
+  `;
+
+  targetContainer.appendChild(skuContainer);
+}
+
+function renderStockStatus(product, targetContainer) {
+  targetContainer.innerHTML = '';
+  const statusContainer = document.createElement('div');
+
+  const inStock = product?.inStock ?? (product?.stockStatus === 'IN_STOCK');
+  statusContainer.className = `pdp-stock-status ${inStock ? 'is-in-stock' : 'is-out-of-stock'}`;
+
+  statusContainer.innerHTML = `
+    <span class="pdp-stock-text">${inStock ? 'In Stock' : 'Out of Stock'}</span>
+  `;
+
+  targetContainer.appendChild(statusContainer);
+}
+
+function imageSlotConfig(ctx) {
+  const { data, defaultImageProps } = ctx;
+  return {
+    alias: data.sku,
+    imageProps: defaultImageProps,
+
+    params: {
+      width: defaultImageProps.width,
+      height: defaultImageProps.height,
+    },
+  };
+}
+
 async function getFreshCartItem(cartItemUid) {
   try {
     const cartData = await Cart.getCartData();
-    if (!cartData?.items) {
-      return null;
-    }
+    if (!cartData?.items) return null;
     return cartData.items.find((item) => item.uid === cartItemUid) || null;
-  } catch (error) {
-    console.warn('Could not fetch fresh cart data:', error);
+  } catch {
     return null;
   }
 }
 
-export default async function createMiniPDP(cartItem, onUpdate, onClose) {
-  await loadCSS(
-    `${window.hlx.codeBasePath}/scripts/components/commerce-mini-pdp/commerce-mini-pdp.css`,
-  );
+function resolveMiniPdpContext(input) {
+  if (input?.uid) {
+    return { mode: 'cart', cartItem: input };
+  }
+  return {
+    mode: 'quickView',
+    sku: input?.sku,
+    urlKey: input?.urlKey,
+    imageFallback: input?.image,
+  };
+}
+
+async function mountMiniPdpProduct(sku, optionsUIDs, placeholders, product) {
+  setEndpoint(CS_FETCH_GRAPHQL);
+
+  const langDefinitions = { default: placeholders };
+
+  await initializers.mountImmediately(initialize, {
+    scope: MINI_PDP_SCOPE,
+    sku,
+    optionsUIDs,
+    langDefinitions,
+    models: {
+      ProductDetails: {
+        initialData: { ...product },
+        fallbackData: (parent, refinedData) => ({
+          ...parent,
+          ...refinedData,
+          images: refinedData.images?.length > 0 ? refinedData.images : parent.images,
+          description: refinedData.description && refinedData.description !== ''
+            ? refinedData.description
+            : parent.description,
+        }),
+      },
+    },
+    acdl: false,
+    persistURLParams: false,
+  });
+}
+
+export default async function createMiniPDP(input, onSuccess, onClose) {
+  const codeBase = window.hlx.codeBasePath;
+  await Promise.all([
+    loadCSS(`${codeBase}/blocks/product-details/product-details.css`),
+    loadCSS(`${codeBase}/scripts/components/commerce-mini-pdp/commerce-mini-pdp.css`),
+  ]);
 
   const placeholders = await fetchPlaceholders();
+  const ctx = resolveMiniPdpContext(input);
+  const isQuickView = ctx.mode === 'quickView';
 
-  // Try to get fresh cart item data, fallback to the provided cartItem if unavailable
-  const freshCartItem = await getFreshCartItem(cartItem.uid) || cartItem;
+  let sku;
+  let optionsUIDs;
+  let initialQuantity = 1;
 
-  const sku = freshCartItem.topLevelSku || freshCartItem.sku;
-
-  const optionsUIDs = freshCartItem.selectedOptionsUIDs
-    ? Object.values(freshCartItem.selectedOptionsUIDs).filter(Boolean)
-    : undefined;
-
-  const langDefinitions = {
-    default: placeholders,
-  };
+  if (isQuickView) {
+    sku = ctx.sku;
+    if (!sku) throw new Error('Product SKU is required');
+  } else {
+    const freshCartItem = await getFreshCartItem(ctx.cartItem.uid) || ctx.cartItem;
+    sku = freshCartItem.topLevelSku || freshCartItem.sku;
+    initialQuantity = freshCartItem.quantity || 1;
+    optionsUIDs = freshCartItem.selectedOptionsUIDs
+      ? Object.values(freshCartItem.selectedOptionsUIDs).filter(Boolean)
+      : undefined;
+  }
 
   try {
-    // Inherit Fetch GraphQL Instance (Catalog Service)
     setEndpoint(CS_FETCH_GRAPHQL);
 
     const product = await fetchProductData(sku, {
@@ -78,183 +180,173 @@ export default async function createMiniPDP(cartItem, onUpdate, onClose) {
       throw new Error('Product data not available');
     }
 
-    // Initialize PDP API with pre-selected options
-    await initializers.mountImmediately(initialize, {
-      scope: 'modal',
-      sku,
-      optionsUIDs,
-      langDefinitions,
-      models: {
-        ProductDetails: {
-          initialData: { ...product },
-          fallbackData: (parent, refinedData) => ({
-            ...parent,
-            ...refinedData,
-            images:
-              refinedData.images?.length > 0 ? refinedData.images : parent.images,
-            description:
-              refinedData.description && refinedData.description !== ''
-                ? refinedData.description
-                : parent.description,
-          }),
-        },
-      },
-      acdl: false,
-      persistURLParams: false,
-    });
+    await mountMiniPdpProduct(sku, optionsUIDs, placeholders, product);
 
-    if (!product) {
-      throw new Error('Product data not available');
-    }
-
-    // Set initial quantity using PDP API BEFORE rendering components
     setProductConfigurationValues((prev) => ({
       ...prev,
-      quantity: freshCartItem.quantity || 1,
-    }), { scope: 'modal' });
+      quantity: initialQuantity,
+    }), { scope: MINI_PDP_SCOPE });
 
-    // Create the mini PDP container
     const miniPDPContainer = document.createElement('div');
-    miniPDPContainer.className = 'commerce-mini-pdp';
+    miniPDPContainer.id = 'mini-pdp-modal';
+    miniPDPContainer.className = isQuickView
+      ? 'commerce-mini-pdp commerce-mini-pdp--quick-view'
+      : 'commerce-mini-pdp';
 
-    // Layout structure
+    const productUrl = getProductLink(product.urlKey, product.sku);
+
     const fragment = document.createRange().createContextualFragment(`
-      <div class="mini-pdp__alert"></div>
-      <div class="mini-pdp__wrapper">
-        <div class="mini-pdp__header">
-          <a href="${getProductLink(product.urlKey, product.sku)}" class="quick-view__close">
-          ${product.name}
-          </a>
+      <div class="product-details__alert mini-pdp__alert"></div>
+      <div class="product-details__wrapper mini-pdp__wrapper">
+        <div class="product-details__left-column">
+          <div class="product-details__gallery desktop-gallery mini-pdp__gallery"></div>
+          <div class="product-details__gallery mobile-gallery mini-pdp__gallery"></div>
         </div>
-        <div class="mini-pdp__price"></div>
-        <div class="mini-pdp__left-column">
-          <div class="mini-pdp__gallery"></div>
-        </div>
-        <div class="mini-pdp__right-column">
-          <div class="mini-pdp__configuration">
-            <div class="mini-pdp__options"></div>
-            <div class="mini-pdp__quantity-wrapper">
-              <div class="mini-pdp__quantity-label">
-                ${placeholders?.Global?.quantityLabel}
-              </div>
-              <div class="mini-pdp__quantity"></div>
+        <div class="product-details__right-column">
+          <div class="product-details__header mini-pdp__header"></div>
+          <div class="product-details__meta-info">
+            <div class="product-details__sku"></div>
+            <div class="product-details__stock"></div>
+          </div>
+          <div class="product-details__price mini-pdp__price"></div>
+          <div class="product-details__configuration mini-pdp__configuration">
+            <div class="product-details__options mini-pdp__options"></div>
+            <div class="product-details__buttons mini-pdp__buttons">
+              <div class="product-details__quantity mini-pdp__quantity"></div>
+              <div class="product-details__buttons__add-to-cart mini-pdp__primary-button"></div>
             </div>
           </div>
-        </div>
-        <div class="mini-pdp__buttons">
-          <div class="mini-pdp__update-button"></div>
-          <div class="mini-pdp__cancel-button"></div>
-          <div class="mini-pdp__buttons__redirect-to-pdp">
-            <a href="${getProductLink(product.urlKey, product.sku)}">
-            </a>
+          <div class="mini-pdp__footer-actions">
+            <div class="mini-pdp__cancel-button"></div>
+            <div class="mini-pdp__buttons__redirect-to-pdp"></div>
           </div>
         </div>
       </div>
     `);
 
     const $alert = fragment.querySelector('.mini-pdp__alert');
+    const $gallery = fragment.querySelector('.product-details__gallery.desktop-gallery');
+    const $galleryMobile = fragment.querySelector('.product-details__gallery.mobile-gallery');
     const $header = fragment.querySelector('.mini-pdp__header');
+    const $sku = fragment.querySelector('.product-details__sku');
+    const $stock = fragment.querySelector('.product-details__stock');
     const $price = fragment.querySelector('.mini-pdp__price');
-    const $gallery = fragment.querySelector('.mini-pdp__gallery');
     const $options = fragment.querySelector('.mini-pdp__options');
     const $quantity = fragment.querySelector('.mini-pdp__quantity');
-    const $updateButton = fragment.querySelector('.mini-pdp__update-button');
+    const $primaryButton = fragment.querySelector('.mini-pdp__primary-button');
     const $cancelButton = fragment.querySelector('.mini-pdp__cancel-button');
+    const $redirectButton = fragment.querySelector('.mini-pdp__buttons__redirect-to-pdp');
 
     miniPDPContainer.appendChild(fragment);
 
-    // Get the redirect button after fragment is appended otherwise it will be null
-    const $redirectButton = miniPDPContainer.querySelector(
-      '.mini-pdp__buttons__redirect-to-pdp',
-    );
+    renderSkuDetails(product, $sku);
+    renderStockStatus(product, $stock);
 
-    // State management
     let isLoading = false;
+    let isOutOfStock = product?.inStock === false;
     let inlineAlert = null;
 
-    // Render components
+    const primaryLabel = isQuickView
+      ? placeholders?.Global?.AddProductToCart
+      : placeholders?.Global?.UpdateProductInCart;
+    const primaryLoadingLabel = isQuickView
+      ? placeholders?.Global?.AddingToCart
+      : placeholders?.Global?.UpdatingInCart;
+
+    const galleryOptions = {
+      scope: MINI_PDP_SCOPE,
+      peak: false,
+      gap: 'small',
+      loop: false,
+      videos: true,
+      imageParams: { ...IMAGES_SIZES },
+      thumbnailParams: { ...THUMBNAIL_SIZES },
+    };
+
     const [
-      _galleryInstance,
-      _headerInstance,
+      _galleryMobile,
+      _gallery,
+      _header,
       _priceInstance,
       _optionsInstance,
       _quantityInstance,
-      updateButton,
+      primaryButton,
       _cancelButton,
       _viewDetailsButton,
     ] = await Promise.all([
-      // Gallery - Simple image for now
-      UI.render(Image, {
-        src: product.images?.[0]?.url || freshCartItem.image,
-        alt: product.images?.[0]?.label || product.name,
-        width: 400,
-        height: 400,
-        imageParams: {
-          width: 400,
-          height: 400,
-        },
+      pdpRender.render(ProductGallery, {
+        ...galleryOptions,
+        controls: 'dots',
+        arrows: true,
+      })($galleryMobile),
+
+      pdpRender.render(ProductGallery, {
+        ...galleryOptions,
+        controls: 'thumbnailsRow',
+        arrows: false,
       })($gallery),
 
-      // Header - just set the content, no special rendering needed
-      Promise.resolve($header),
+      pdpRender.render(ProductHeader, { scope: MINI_PDP_SCOPE })($header),
 
-      pdpRender.render(ProductPrice, { scope: 'modal' })($price),
+      pdpRender.render(ProductPrice, { scope: MINI_PDP_SCOPE })($price),
 
-      pdpRender.render(ProductOptions, { hideSelectedValue: false, scope: 'modal' })($options),
+      pdpRender.render(ProductOptions, {
+        hideSelectedValue: false,
+        scope: MINI_PDP_SCOPE,
+        slots: {
+          SwatchImage: (swatchCtx) => {
+            tryRenderAemAssetsImage(swatchCtx, {
+              ...imageSlotConfig(swatchCtx),
+              wrapper: document.createElement('span'),
+            });
+          },
+        },
+      })($options),
 
-      pdpRender.render(ProductQuantity, { scope: 'modal' })($quantity),
+      pdpRender.render(ProductQuantity, { scope: MINI_PDP_SCOPE })($quantity),
 
-      // Update button
       UI.render(Button, {
-        children: placeholders?.Global?.UpdateProductInCart,
-        variant: 'primary',
-        size: 'medium',
+        children: primaryLabel,
+        icon: h(Icon, { source: 'Cart' }),
         onClick: async () => {
           if (isLoading) return;
 
           try {
             isLoading = true;
-            updateButton.setProps((prev) => ({
+            primaryButton.setProps((prev) => ({
               ...prev,
-              children: placeholders?.Global?.UpdatingInCart,
+              children: primaryLoadingLabel,
               disabled: true,
             }));
 
-            // Get current product configuration
-            const values = getProductConfigurationValues({ scope: 'modal' });
-            const valid = isProductConfigurationValid({ scope: 'modal' });
+            const values = getProductConfigurationValues({ scope: MINI_PDP_SCOPE });
+            const valid = isProductConfigurationValid({ scope: MINI_PDP_SCOPE });
 
             if (!valid) {
               throw new Error('Please select all required options');
             }
 
-            // Update cart item with new configuration
-            const updateData = {
-              uid: freshCartItem.uid,
-              quantity: values.quantity || freshCartItem.quantity,
-              ...(values.optionsUIDs
-                && values.optionsUIDs.length > 0 && {
-                optionsUIDs: values.optionsUIDs,
-              }),
-            };
-
-            const updateResponse = await Cart.updateProductsFromCart([
-              updateData,
-            ]);
-
-            // Trigger cart refresh to ensure UI updates
-            events.emit('cart/updated', updateResponse);
-
-            inlineAlert?.remove();
-
-            if (onUpdate) {
-              onUpdate(updateData);
+            if (isQuickView) {
+              await Cart.addProductsToCart([{ ...values }]);
+              showNotification({
+                type: 'success',
+                message: `${product.name} added to your cart.`,
+                linkText: placeholders?.Global?.CartTitle || 'View Cart',
+                linkUrl: rootLink('/cart'),
+              });
+              onClose?.();
+            } else {
+              const freshCartItem = await getFreshCartItem(ctx.cartItem.uid) || ctx.cartItem;
+              const updateData = { ...values, uid: freshCartItem.uid };
+              const updateResponse = await Cart.updateProductsFromCart([updateData]);
+              events.emit('cart/updated', updateResponse);
+              onSuccess?.(updateData);
+              onClose?.();
             }
 
-            onClose();
+            inlineAlert?.remove();
           } catch (error) {
             inlineAlert?.remove();
-
             inlineAlert = await UI.render(InLineAlert, {
               heading: 'Error',
               description: error.message,
@@ -265,25 +357,19 @@ export default async function createMiniPDP(cartItem, onUpdate, onClose) {
                 inlineAlert.remove();
               },
             })($alert);
-
-            $alert.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
+            $alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
           } finally {
             isLoading = false;
-            updateButton.setProps((prev) => ({
+            primaryButton.setProps((prev) => ({
               ...prev,
-              children:
-                placeholders?.Global?.UpdateProductInCart,
-              disabled: false,
+              children: primaryLabel,
+              disabled: isOutOfStock || !isProductConfigurationValid({ scope: MINI_PDP_SCOPE }),
             }));
           }
         },
-        disabled: isLoading,
-      })($updateButton),
+        disabled: isLoading || isOutOfStock,
+      })($primaryButton),
 
-      // Cancel button
       UI.render(Button, {
         children: placeholders?.Global?.Cancel,
         variant: 'secondary',
@@ -291,47 +377,55 @@ export default async function createMiniPDP(cartItem, onUpdate, onClose) {
         onClick: onClose,
       })($cancelButton),
 
-      // View all details button
       UI.render(Button, {
         children: placeholders?.Global?.ViewAllDetails,
         variant: 'tertiary',
         size: 'medium',
         onClick: () => {
-          onClose();
-          // Navigate to full PDP page
-          window.location.href = getProductLink(product.urlKey, product.sku);
+          onClose?.();
+          window.location.href = productUrl;
         },
       })($redirectButton),
     ]);
 
-    // Handle PDP validation events
+    events.on(
+      'pdp/data',
+      (data) => {
+        if (!data) return;
+        isOutOfStock = data?.inStock === false;
+        primaryButton.setProps((prev) => ({
+          ...prev,
+          disabled: isOutOfStock || isLoading,
+        }));
+        renderSkuDetails(data, $sku);
+        renderStockStatus(data, $stock);
+      },
+      { eager: true, scope: MINI_PDP_SCOPE },
+    );
+
     events.on(
       'pdp/valid',
       (valid) => {
-        updateButton.setProps((prev) => ({
+        primaryButton.setProps((prev) => ({
           ...prev,
-          disabled: !valid || isLoading,
+          disabled: !valid || isLoading || isOutOfStock,
         }));
       },
-      { eager: true, scope: 'modal' },
+      { eager: true, scope: MINI_PDP_SCOPE },
     );
 
     return miniPDPContainer;
   } catch (error) {
-    // Create error container
     const errorContainer = document.createElement('div');
     errorContainer.className = 'commerce-mini-pdp commerce-mini-pdp--error';
     errorContainer.innerHTML = `
       <div class="mini-pdp__error">
         <h3>Error</h3>
         <p>${error.message || placeholders?.Global?.ProductLoadError}</p>
-        <button onclick="arguments[0]()" class="mini-pdp__close-button">Close</button>
+        <button type="button" class="mini-pdp__close-button">Close</button>
       </div>
     `;
-
-    const closeButton = errorContainer.querySelector('.mini-pdp__close-button');
-    closeButton.onclick = onClose;
-
+    errorContainer.querySelector('.mini-pdp__close-button').addEventListener('click', onClose);
     return errorContainer;
   }
 }
