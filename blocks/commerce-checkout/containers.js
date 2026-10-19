@@ -264,7 +264,7 @@ export const renderLoginForm = async (container) => renderContainer(
         resetPasswordFormConfig: {},
       })(signInForm);
 
-      await showModal(signInForm);
+      await showModal(signInForm, { title: 'Sign in', size: 'default' });
     },
     onSignOutClick: () => {
       authApi.revokeCustomerToken();

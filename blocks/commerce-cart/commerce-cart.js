@@ -163,8 +163,10 @@ export default async function decorate(block) {
         },
       );
 
-      // Create and show modal
-      currentModal = await createModal([miniPDPContent]);
+      currentModal = await createModal([miniPDPContent], {
+        title: placeholders?.Global?.UpdateProductInCart || 'Edit item',
+        size: 'wide',
+      });
 
       if (currentModal.block) {
         currentModal.block.setAttribute('id', 'mini-pdp-modal');

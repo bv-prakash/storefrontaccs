@@ -1,34 +1,79 @@
 import { Render } from '@dropins/tools/lib.js';
-import { loadCSS, buildBlock } from '../../scripts/aem.js';
+import { loadCSS } from '../../scripts/aem.js';
 
-export default async function createModal(contentNodes) {
-  await loadCSS(`${window.hlx.codeBasePath}/blocks/modal/modal.css`);
-  const dialog = document.createElement('dialog');
-  dialog.setAttribute('tabindex', 1);
-  dialog.setAttribute('role', 'dialog');
-
-  const dialogContent = document.createElement('div');
-  dialogContent.classList.add('modal-content');
-  dialogContent.append(...contentNodes);
-  dialog.append(dialogContent);
-
+function createCloseButton() {
   const closeButton = document.createElement('button');
   closeButton.classList.add('close-button');
   closeButton.setAttribute('aria-label', 'Close');
   closeButton.setAttribute('data-dismiss', 'modal');
   closeButton.type = 'button';
   closeButton.innerHTML = '<span class="icon icon-close"></span>';
-  closeButton.addEventListener('click', () => dialog.close());
-  dialog.append(closeButton);
+  return closeButton;
+}
+
+/**
+ * Shared modal header (title + close).
+ * @param {string} [title]
+ * @returns {HTMLElement}
+ */
+export function createModalHeader(title = '') {
+  const header = document.createElement('header');
+  header.className = 'modal-header';
+
+  const titleEl = document.createElement('p');
+  titleEl.className = 'modal-header__title';
+  if (title) {
+    titleEl.textContent = title;
+  } else {
+    titleEl.classList.add('modal-header__title--empty');
+    titleEl.setAttribute('aria-hidden', 'true');
+  }
+
+  header.append(titleEl, createCloseButton());
+  return header;
+}
+
+/**
+ * @param {HTMLElement[]} contentNodes
+ * @param {{
+ *   header?: HTMLElement | null,
+ *   title?: string,
+ *   size?: 'compact' | 'default' | 'wide',
+ * }} [options]
+ */
+export default async function createModal(contentNodes, options = {}) {
+  await loadCSS(`${window.hlx.codeBasePath}/blocks/modal/modal.css`);
+  const dialog = document.createElement('dialog');
+  dialog.setAttribute('tabindex', 1);
+  dialog.setAttribute('role', 'dialog');
+
+  const size = options.size ?? 'default';
+  dialog.dataset.modalSize = size;
+
+  const dialogContent = document.createElement('div');
+  dialogContent.classList.add('modal-content');
+  dialogContent.append(...contentNodes);
 
   const closeModal = () => {
-    // close the dialog
     dialog.close();
-    // unmount any dropin containers rendered in the modal
     dialog.querySelectorAll('[data-dropin-container]').forEach(Render.unmount);
   };
 
-  // close dialog on clicks outside the dialog. https://stackoverflow.com/a/70593278/79461
+  const modalHeader = options.header instanceof HTMLElement
+    ? options.header
+    : createModalHeader(options.title ?? '');
+
+  modalHeader.classList.add('modal-header');
+  let headerClose = modalHeader.querySelector('.close-button');
+  if (!headerClose) {
+    headerClose = createCloseButton();
+    modalHeader.append(headerClose);
+  }
+  headerClose.addEventListener('click', closeModal);
+
+  dialog.append(modalHeader);
+  dialog.append(dialogContent);
+
   dialog.addEventListener('click', (event) => {
     if (event.pointerType !== 'mouse') return;
 
@@ -43,7 +88,8 @@ export default async function createModal(contentNodes) {
     }
   });
 
-  const block = buildBlock('modal', '');
+  const block = document.createElement('div');
+  block.classList.add('modal');
   document.querySelector('main').append(block);
 
   dialog.addEventListener('close', () => {
@@ -58,13 +104,10 @@ export default async function createModal(contentNodes) {
     removeModal: () => closeModal(),
     showModal: () => {
       dialog.showModal();
-      // Google Chrome restores the scroll position when the dialog is reopened,
-      // so we need to reset it.
       setTimeout(() => {
         dialogContent.scrollTop = 0;
       }, 0);
 
-      // Focus the first input when content is fully loaded using MutationObserver.
       const observer = new MutationObserver(() => {
         const firstInput = dialogContent.querySelector('input');
         if (firstInput) {

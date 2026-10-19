@@ -43,21 +43,10 @@ button[data-testid="storeview-switcher-button"] {
 
 /* --- Modal Layout Box --- */
 #storeview-modal {
-  padding: 24px;
-  min-width: 320px;
-  max-width: 480px;
   background: #fff;
   font-family: var(--body-font-family), sans-serif;
-}
-
-#storeview-modal .storeview-modal-heading {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 20px;
-  color: #111;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e5e5;
-  padding-bottom: 12px;
+  min-width: 0;
+  padding: 0;
 }
 
 /* --- Region & Country Grid Systems --- */

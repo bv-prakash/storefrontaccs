@@ -138,7 +138,7 @@ async function renderOrderHeader(container, options = {}) {
       routeRedirectOnEmailConfirmationClose: () => rootLink('/customer/account'),
       slots: { ...authPrivacyPolicyConsentSlot },
     })(signUpForm);
-    signUpModal = await createModal([signUpForm]);
+    signUpModal = await createModal([signUpForm], { title: 'Create account', size: 'default' });
     signUpModal.showModal();
   };
 

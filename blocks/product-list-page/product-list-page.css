@@ -246,6 +246,84 @@
     display: block;
 }
 
+.product-list-page .product-discovery-product-item__image-wrap {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.product-list-page .product-discovery-product-item__image-link {
+    display: block;
+    line-height: 0;
+}
+
+.product-list-page .product-discovery-product-actions__quick-view {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #dadada;
+    border-radius: 0;
+    color: var(--color-text-color, #000);
+    cursor: pointer;
+    display: flex;
+    height: 40px;
+    justify-content: center;
+    left: 50%;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    width: 40px;
+    z-index: 1;
+}
+
+.product-list-page .product-discovery-product-actions__quick-view::before {
+    content: '\e90f';
+    font-family: var(--icomoon-font);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.product-list-page .product-discovery-product-item__image-wrap::after {
+    background: rgb(0 0 0 / 0%);
+    content: '';
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: background 0.2s ease;
+}
+
+.product-list-page .product-discovery-product-item__image-wrap:hover::after {
+    background: rgb(0 0 0 / 8%);
+}
+
+.product-list-page .product-discovery-product-actions__quick-view:focus-visible {
+    background: var(--color-dark-blue);
+    border-color: var(--color-dark-blue);
+    color: #fff;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.product-list-page .product-discovery-product-actions__quick-view:hover {
+    background: var(--color-dark-blue);
+    border-color: var(--color-dark-blue);
+    color: #fff;
+}
+
+.product-list-page .product-discovery-product-item__image-wrap:hover .product-discovery-product-actions__quick-view {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 767px) {
+    .product-list-page .product-discovery-product-actions__quick-view {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
 .product-list-page .dropin-product-item-card .dropin-product-item-card__image a {
     display: block;
     line-height: 0;

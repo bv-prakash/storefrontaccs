@@ -3,58 +3,112 @@ body.modal-open {
 }
 
 .modal dialog {
-    --dialog-border-radius: var(--shape-border-radius-2);
-
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-height: min(90dvh, 900px);
     overscroll-behavior: none;
-    border: var(--shape-border-width-1) solid var(--color-neutral-400);
-    border-radius: var(--dialog-border-radius);
-    width: 100vw;
+    padding: 0;
+    width: 86vw;
 }
 
-.modal dialog .modal-content {
-    overflow-y: auto;
-    overscroll-behavior: none;
-    max-height: calc(100dvh - 60px);
+.modal dialog[data-modal-size="compact"] {
+    max-width: min(480px, 100vw);
+}
+
+.modal dialog[data-modal-size="default"] {
+    max-width: min(700px, 100vw);
+}
+
+.modal dialog[data-modal-size="wide"] {
+    max-width: min(960px, 100vw);
 }
 
 .modal dialog::backdrop {
     background-color: rgb(0 0 0 / 50%);
 }
 
-.modal .close-button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 48px;
-    height: 48px;
+.modal .modal-header {
+    align-items: center;
+    background: var(--color-dark-blue, #002941);
+    box-sizing: border-box;
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--spacing-small);
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 12px var(--spacing-medium);
+}
+
+
+.modal .modal-content { 
+    max-height: 75vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--spacing-medium);
+    margin: 20px 0 35px;
+}
+
+.modal .modal-header__title {
+    color: #fff;
+    flex: 1;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    line-height: 1.3;
     margin: 0;
+    text-transform: uppercase;
+}
+
+.modal .modal-header__title--empty {
+    padding: 0;
+}
+
+.modal .modal-header .close-button {
+    background-color: transparent;
     border: none;
     border-radius: 0;
-    padding: 0;
-    background-color: transparent;
-    color: var(--color-brand-600);
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 40px;
     line-height: 0;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal .modal-header .close-button:hover,
+.modal .modal-header .close-button:focus-visible {
+    background-color: rgb(255 255 255 / 12%);
 }
 
 .modal .close-button .icon.icon-close {
-    content: "";
-    width: 24px;
+    display: block;
     height: 24px;
+    position: relative;
+    width: 24px;
 }
 
 .modal .close-button .icon.icon-close::before,
 .modal .close-button .icon.icon-close::after {
-    content: "";
+    background-color: currentcolor;
+    border-radius: var(--shape-border-radius-1);
     box-sizing: border-box;
+    content: "";
     display: block;
+    height: 2px;
+    left: 50%;
     position: absolute;
     top: 50%;
-    left: 50%;
     transform: translate(-50%, -50%) rotate(45deg);
     width: 24px;
-    height: 2px;
-    border-radius: var(--shape-border-radius-1);
-    background-color: currentcolor;
 }
 
 .modal .close-button .icon.icon-close::after {
@@ -71,11 +125,10 @@ body.modal-open {
 
 @media (min-width: 600px) {
     .modal dialog {
-        width: 80vw;
-        max-width: 700px;
+        width: 92vw;
     }
 
-    .modal dialog .modal-content {
-        max-height: calc(100vh - 90px);
+    .modal .modal-header {
+        padding: 14px var(--spacing-medium);
     }
 }
