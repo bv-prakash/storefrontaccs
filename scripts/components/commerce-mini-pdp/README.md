@@ -2,6 +2,8 @@
 
 ## Overview
 
+For a formal change record (title, file list, **how to use**, **how to remove** quick view or the whole feature), see **[IMPLEMENTATION.md](./IMPLEMENTATION.md)**.
+
 `commerce-mini-pdp` renders a product configuration UI inside the shared [modal utility](../../../blocks/modal/README.md). It supports:
 
 1. **Quick view** (product list) — preview a product, select configurable options, add to cart
