@@ -27,6 +27,7 @@
     "default": {
       "commerce-core-endpoint": "{ENDPOINT}",
       "commerce-endpoint": "{CS_ENDPOINT}",
+      "product-reviews-api-base": "{PRODUCT_REVIEWS_API_BASE}",
       "headers": {
         "all": {
           "Store": "default"

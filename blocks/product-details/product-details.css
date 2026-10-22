@@ -724,6 +724,7 @@
   height: 46px;
   padding: 0 19px;
   text-transform: uppercase;
+  cursor: pointer;
 }
 
 /* Hover State */
