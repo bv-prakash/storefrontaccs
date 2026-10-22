@@ -176,6 +176,7 @@ main {
 
 body main {
     flex-grow: 1;
+    overflow-x: hidden;
 }
 
 @media (min-width: 1200px) {

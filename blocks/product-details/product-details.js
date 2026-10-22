@@ -35,6 +35,11 @@ import {
 import { CompareService } from '../../scripts/compare-service.js';
 import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 import { showNotification } from '../../scripts/components/notification.js';
+import { loadCSS } from '../../scripts/aem.js';
+import {
+  mountProductReviewsSection,
+  renderProductReviewTeaser,
+} from '../../scripts/components/product-reviews/product-reviews.js';
 
 // Initializers
 import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
@@ -192,6 +197,7 @@ export default async function decorate(block) {
           <div class="product-details__stock"></div>
         </div>
         <div class="product-details__price"></div>
+        <div class="product-details__review-teaser"></div>
         <div class="product-details__short-description"></div>
         <div class="product-details__gift-card-options"></div>
         <div class="product-details__configuration">
@@ -228,6 +234,14 @@ export default async function decorate(block) {
           aria-controls="pdp-tab-panel-attributes">
           Specifications
         </button>
+        <button 
+          class="pdp-tab-btn" 
+          data-tab="reviews" 
+          role="tab" 
+          aria-selected="false" 
+          aria-controls="pdp-tab-panel-reviews">
+          Reviews
+        </button>
       </div>
 
       <!-- Accordion & Tab Content Panels -->
@@ -263,6 +277,21 @@ export default async function decorate(block) {
           data-panel="attributes">
           <div class="product-details__attributes"></div>
         </div>
+
+        <button 
+          class="pdp-accordion-header" 
+          data-tab="reviews" 
+          aria-expanded="false" 
+          aria-controls="pdp-tab-panel-reviews">
+          Reviews
+        </button>
+        <div 
+          id="pdp-tab-panel-reviews" 
+          class="pdp-tab-panel" 
+          role="tabpanel" 
+          data-panel="reviews">
+          <div class="product-details__reviews"></div>
+        </div>
       </div>
     </div>
   `);
@@ -274,6 +303,8 @@ export default async function decorate(block) {
   const $sku = fragment.querySelector('.product-details__sku');
   const $stock = fragment.querySelector('.product-details__stock');
   const $price = fragment.querySelector('.product-details__price');
+  const $reviewTeaser = fragment.querySelector('.product-details__review-teaser');
+  const $reviewsSection = fragment.querySelector('.product-details__reviews');
   const $shortDescription = fragment.querySelector('.product-details__short-description');
   const $options = fragment.querySelector('.product-details__options');
   const $quantity = fragment.querySelector('.product-details__quantity');
@@ -285,6 +316,44 @@ export default async function decorate(block) {
   const $attributes = fragment.querySelector('.product-details__attributes');
 
   block.replaceChildren(fragment);
+
+  await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-reviews/product-reviews.css`);
+
+  const reviewLabels = {
+    beFirstReviewer: labels.Global?.BeFirstReviewer || 'Be the first reviewer',
+    viewReviews: labels.Global?.ViewReviews || 'View reviews',
+    reviewsHeading: labels.Global?.CustomerReviews || 'Review',
+    reviewsListHeading: labels.Global?.ReviewsListHeading || 'Reviews',
+    writeReviewCta: labels.Global?.WriteReview || 'Write a Review',
+    writeReview: labels.Global?.WriteReview || 'Write a review',
+    author: labels.Global?.ReviewAuthor || 'Your name',
+    reviewTitle: labels.Global?.ReviewTitle || 'Review title',
+    review: labels.Global?.ReviewText || 'Your review',
+    submitReview: labels.Global?.SubmitReview || 'Submit review',
+    ratingRequired: labels.Global?.ReviewRatingRequired || 'Please select a star rating.',
+    fieldsRequired: labels.Global?.ReviewFieldsRequired || 'Please fill in all fields.',
+    reviewSubmitted: labels.Global?.ReviewSubmitted || 'Thank you. Your review was submitted for approval.',
+    reviewError: labels.Global?.ReviewSubmitError || 'Could not submit your review.',
+    noReviewsYet: labels.Global?.NoReviewsYet || 'No reviews yet.',
+    reviewsUnavailable: labels.Global?.ReviewsUnavailable || 'Reviews are unavailable right now.',
+    reviewsPrevious: labels.Global?.ReviewsPrevious || 'Previous',
+    reviewsNext: labels.Global?.ReviewsNext || 'Next',
+    reviewsPageOf: labels.Global?.ReviewsPageOf || 'Page {current} of {total}',
+    reviewsPagination: labels.Global?.ReviewsPagination || 'Reviews pagination',
+  };
+
+  let activeReviewSku = null;
+
+  const syncProductReviews = (sku) => {
+    if (!sku || sku === activeReviewSku) return;
+    activeReviewSku = sku;
+    if ($reviewTeaser) {
+      renderProductReviewTeaser($reviewTeaser, sku, { labels: reviewLabels });
+    }
+    if ($reviewsSection) {
+      mountProductReviewsSection($reviewsSection, sku, { labels: reviewLabels });
+    }
+  };
 
   block.addEventListener('click', (e) => {
     const tabBtn = e.target.closest('.pdp-tab-btn');
@@ -500,6 +569,7 @@ export default async function decorate(block) {
     renderSkuDetails(data, $sku);
     renderStockStatus(data, $stock);
     renderCompareButton(data, $compareBtn);
+    syncProductReviews(data.sku);
   }, { eager: true });
 
   events.on('pdp/valid', (valid) => {

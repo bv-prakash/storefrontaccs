@@ -29,7 +29,8 @@ import {
   setJsonLd,
   rootLink,
 } from '../../scripts/commerce.js';
-import { readBlockConfig } from '../../scripts/aem.js';
+import { loadCSS, readBlockConfig } from '../../scripts/aem.js';
+import { renderPlpProductReviewRating } from '../../scripts/components/product-reviews/product-reviews.js';
 import { getSearchStateFromUrl, applySearchStateToUrl } from './search-url.js';
 import { getGlobalBreadcrumbsContainer, renderBreadcrumbs } from '../../scripts/breadcrumbs.js';
 import { showNotification } from '../../scripts/components/notification.js';
@@ -688,6 +689,8 @@ export default async function decorate(block) {
     });
   }
 
+  await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-reviews/product-reviews.css`);
+
   let quickViewModal = null;
 
   const closeQuickViewModal = () => {
@@ -837,6 +840,12 @@ export default async function decorate(block) {
     provider.render(SearchResults, {
       routeProduct: (product) => getProductLink(product.urlKey, product.sku),
       slots: {
+        ProductName: (ctx) => {
+          const ratingMount = document.createElement('div');
+          // Sibling of title link — rating inside the <a> is clipped by line-clamp on PLP CSS.
+          ctx.appendSibling(ratingMount);
+          renderPlpProductReviewRating(ratingMount, ctx.product.sku);
+        },
         ProductImage: (ctx) => {
           const { product, defaultImageProps } = ctx;
           const imgWidth = Number(defaultImageProps?.width) || 400;

@@ -380,6 +380,9 @@ export async function initializeCommerce() {
   CS_FETCH_GRAPHQL.setEndpoint(await commerceEndpointWithQueryParams());
   CS_FETCH_GRAPHQL.setFetchGraphQlHeaders((prev) => ({ ...prev, ...getHeaders('cs') }));
 
+  const { initProductReviewsApi } = await import('./product-reviews.js');
+  initProductReviewsApi();
+
   return initializeDropins();
 }
 
