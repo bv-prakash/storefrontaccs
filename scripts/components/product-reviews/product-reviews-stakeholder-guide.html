@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Product Reviews — Stakeholder Guide</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.4; max-width: 8.5in; margin: 1in; color: #000; }
+    h1 { font-size: 16pt; margin-bottom: 12pt; }
+    h2 { font-size: 13pt; margin-top: 18pt; margin-bottom: 8pt; }
+    h3 { font-size: 11pt; margin-top: 12pt; margin-bottom: 6pt; }
+    p { margin: 0 0 8pt; }
+    ul { margin: 0 0 10pt; padding-left: 24pt; }
+    li { margin-bottom: 4pt; }
+    .mono { font-family: Consolas, monospace; font-size: 10pt; }
+    table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+    th, td { border: 1px solid #999; padding: 6pt 8pt; text-align: left; vertical-align: top; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+<h1>Custom product reviews on PDP and PLP (Mesh REST API)</h1>
+
+<h2>Purpose</h2>
+<p>Shoppers see star ratings and review counts on PLP and PDP, open a Reviews tab on the product page, read paginated reviews, and submit new reviews (name, title, rating, body). Data is loaded and saved through an Adobe I/O Runtime / App Builder REST API (<span class="mono">get-ratings</span>, <span class="mono">create-review</span>), not through Commerce storefront GraphQL. The API base URL is set in <span class="mono">config.json</span> per store view; review content and moderation live in your Mesh/backend service.</p>
+<p><strong>Repo:</strong> <a href="https://github.com/bv-prakash/storefrontaccs/">https://github.com/bv-prakash/storefrontaccs/</a></p>
+
+<h2>Who does what</h2>
+
+<h3>Merchants / backend (Mesh / App Builder)</h3>
+<ul>
+  <li>Deploy and maintain the product-reviews web actions (<span class="mono">get-ratings</span>, <span class="mono">create-review</span>).</li>
+  <li>Expose a stable base URL (e.g. <span class="mono">https://…/api/v1/web/product-reviews</span>).</li>
+  <li>Allow CORS for storefront origins: local dev (<span class="mono">localhost:3000</span>), feature preview (<span class="mono">*.aem.page</span>), and live (<span class="mono">*.aem.live</span>).</li>
+  <li>Ensure responses include <span class="mono">averageRating</span>, <span class="mono">reviewCount</span>, <span class="mono">reviews[]</span>, and <span class="mono">pagination</span>.</li>
+  <li>Operate review moderation in your backend if required before reviews appear in <span class="mono">get-ratings</span>.</li>
+</ul>
+
+<h3>Authors (da.live / AEM)</h3>
+<ul>
+  <li>Use the standard <strong>Product Details</strong> block on PDP pages (reviews are built into that block, not a separate CMS block).</li>
+  <li>Ensure the PDP includes the <strong>Reviews</strong> tab and product-details layout from this project.</li>
+  <li><strong>PLP / category</strong> pages use the <strong>Product List Page</strong> block; review stars appear under the product title when the API returns reviews for that SKU.</li>
+  <li>No extra block rows or cells are required—UI is rendered at runtime from the API.</li>
+</ul>
+
+<h3>Shoppers</h3>
+<ul>
+  <li><strong>PDP (under price):</strong> If reviews exist, gold stars and “N Reviews” (opens Reviews tab). If none, <strong>Be the first reviewer</strong> opens the write-review form.</li>
+  <li><strong>PDP (Reviews tab):</strong> Rating summary and breakdown, <strong>Write a Review</strong> (toggles the form), review list (5 per page with Previous/Next when more than 5).</li>
+  <li><strong>Write a review:</strong> Select stars, enter name, <strong>review title</strong>, and review text, then submit.</li>
+  <li><strong>PLP:</strong> Stars and review count under the product name when that SKU has reviews.</li>
+</ul>
+
+<h3>Developers / implementers</h3>
+<ul>
+  <li><strong>What was built:</strong> <span class="mono">scripts/product-reviews.js</span> (REST client) + <span class="mono">scripts/components/product-reviews/</span> (UI/CSS), wired in <span class="mono">scripts/commerce.js</span>, <span class="mono">blocks/product-details/product-details.js</span>, and <span class="mono">blocks/product-list-page/product-list-page.js</span>.</li>
+  <li><strong>Initialization:</strong> <span class="mono">initializeCommerce()</span> → <span class="mono">initProductReviewsApi()</span>.</li>
+  <li>Install, file lists, remove steps: see repo <span class="mono">scripts/components/product-reviews/README.md</span>.</li>
+</ul>
+
+<h2>If you do not need product reviews</h2>
+<ul>
+  <li><strong>UI only:</strong> Remove PLP/PDP wiring and delete <span class="mono">scripts/components/product-reviews/</span> (see Remove — UI only below).</li>
+  <li><strong>Full removal:</strong> Also remove <span class="mono">scripts/product-reviews.js</span>, <span class="mono">commerce.js</span> init, and config keys (see Remove — full module below).</li>
+</ul>
+
+<h2>Support checklist</h2>
+<table>
+  <tr><th>Issue</th><th>What to check</th></tr>
+  <tr><td>No stars on PDP or PLP</td><td><span class="mono">product-reviews-api-base</span> in config.json; Network tab for get-ratings</td></tr>
+  <tr><td>PLP stars missing but PDP works</td><td>Rating mount must be sibling of title link (not inside line-clamped title)</td></tr>
+  <tr><td>CORS / fetch failed</td><td>Mesh runtime allowlist includes storefront origin</td></tr>
+  <tr><td>Submit fails</td><td>POST create-review; fields: sku, author, title, review, rating (1–5)</td></tr>
+  <tr><td>Wrong average / stars</td><td>API ratings 1–5; half stars from average (e.g. 3.5)</td></tr>
+  <tr><td>Stale counts after submit</td><td>Hard refresh; cache invalidated on successful submit</td></tr>
+  <tr><td>Configurable wrong SKU</td><td>Review sync when variant SKU changes on PDP</td></tr>
+  <tr><td>Pagination missing</td><td>More than 5 reviews; API pagination.totalPages</td></tr>
+</table>
+
+<h2>Repository paths</h2>
+<p class="mono">scripts/product-reviews.js · scripts/components/product-reviews/ · scripts/commerce.js · blocks/product-details/ · blocks/product-list-page/ · config.json · default-site.json · icons/star.svg</p>
+
+<h2>Remove — UI only</h2>
+<ol>
+  <li><span class="mono">blocks/product-details/product-details.js</span> — remove reviews imports, teaser, Reviews mount, syncProductReviews, CSS load.</li>
+  <li><span class="mono">blocks/product-list-page/product-list-page.js</span> — remove PLP rating slot and CSS load.</li>
+  <li>Delete <span class="mono">scripts/components/product-reviews/</span>.</li>
+</ol>
+
+<h2>Remove — full module</h2>
+<p>Complete UI steps above, then remove <span class="mono">initProductReviewsApi</span> from <span class="mono">scripts/commerce.js</span>, delete <span class="mono">scripts/product-reviews.js</span>, remove <span class="mono">product-reviews-api-base</span> from config files, run <span class="mono">npm run lint</span>.</p>
+
+<h2>Local validation</h2>
+<ol>
+  <li>Set <span class="mono">product-reviews-api-base</span> in config.json.</li>
+  <li>Start dev server (<span class="mono">npx @adobe/aem-cli up</span>).</li>
+  <li>Test PDP (teaser, Reviews tab, form, pagination) and PLP.</li>
+  <li>Run <span class="mono">npm run lint</span> before commit.</li>
+</ol>
+
+</body>
+</html>
