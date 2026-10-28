@@ -120,8 +120,9 @@
 
 /* Thumbnail / image */
 .cart-cart-summary-table__item-image-wrapper {
-    width: 80px;
+    width: 100%;
     height: 80px;
+    max-width: 80px;
     border: 1px solid #eee;
     display: block;
     overflow: hidden;
@@ -704,8 +705,9 @@
     }
 
     .cart-cart-summary-table__item-image-wrapper {
-        width: 100px;
         height: 100px;
+        max-width: 100px;
+        width: 100%;
     }
 
     .cart-quantity-stepper .cart-qty-input {

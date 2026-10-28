@@ -24,6 +24,7 @@ import ProductDescription from '@dropins/storefront-pdp/containers/ProductDescri
 import ProductAttributes from '@dropins/storefront-pdp/containers/ProductAttributes.js';
 import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
 import ProductGiftCardOptions from '@dropins/storefront-pdp/containers/ProductGiftCardOptions.js';
+import ProductDownloadableOptions from '@dropins/storefront-pdp/containers/ProductDownloadableOptions.js';
 
 // Relative Lib Imports (2 levels up)
 import {
@@ -40,6 +41,11 @@ import {
   mountProductReviewsSection,
   renderProductReviewTeaser,
 } from '../../scripts/components/product-reviews/product-reviews.js';
+import {
+  buildAddToCartPayload,
+  mountProductInputOptions,
+  resetConfigurationForSimpleProduct,
+} from '../../scripts/components/product-input-options/product-input-options.js';
 
 // Initializers
 import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
@@ -200,6 +206,8 @@ export default async function decorate(block) {
         <div class="product-details__review-teaser"></div>
         <div class="product-details__short-description"></div>
         <div class="product-details__gift-card-options"></div>
+        <div class="product-details__downloadable-options"></div>
+        <div class="product-details__input-options"></div>
         <div class="product-details__configuration">
           <div class="product-details__options"></div>
           <div class="product-details__buttons">
@@ -309,6 +317,8 @@ export default async function decorate(block) {
   const $options = fragment.querySelector('.product-details__options');
   const $quantity = fragment.querySelector('.product-details__quantity');
   const $giftCardOptions = fragment.querySelector('.product-details__gift-card-options');
+  const $downloadableOptions = fragment.querySelector('.product-details__downloadable-options');
+  const $inputOptions = fragment.querySelector('.product-details__input-options');
   const $addToCart = fragment.querySelector('.product-details__buttons__add-to-cart');
   const $compareBtn = fragment.querySelector('.product-details__buttons__compare');
   const $wishlistToggleBtn = fragment.querySelector('.product-details__buttons__add-to-wishlist');
@@ -318,6 +328,8 @@ export default async function decorate(block) {
   block.replaceChildren(fragment);
 
   await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-reviews/product-reviews.css`);
+  await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-input-options/product-input-options.css`);
+  mountProductInputOptions($inputOptions);
 
   const reviewLabels = {
     beFirstReviewer: labels.Global?.BeFirstReviewer || 'Be the first reviewer',
@@ -420,6 +432,7 @@ export default async function decorate(block) {
     _options,
     _quantity,
     _giftCardOptions,
+    _downloadableOptions,
     _description,
     _attributes,
     wishlistToggleBtn,
@@ -464,6 +477,7 @@ export default async function decorate(block) {
 
     pdpRendered.render(ProductQuantity, {})($quantity),
     pdpRendered.render(ProductGiftCardOptions, {})($giftCardOptions),
+    pdpRendered.render(ProductDownloadableOptions, {})($downloadableOptions),
     pdpRendered.render(ProductDescription, {})($description),
     pdpRendered.render(ProductAttributes, {
       formatValue: formatNumericAttributeValue,
@@ -490,39 +504,48 @@ export default async function decorate(block) {
 
         const values = pdpApi.getProductConfigurationValues();
         const valid = pdpApi.isProductConfigurationValid();
+        const productData = events.lastPayload('pdp/data');
 
-        if (valid) {
-          if (isUpdateMode) {
-            const { updateProductsFromCart } = await import(
-              '@dropins/storefront-cart/api.js'
-            );
+        if (!valid) {
+          throw new Error(
+            labels.Global?.SelectProductOptions
+              || 'Please select all required options before adding to cart.',
+          );
+        }
 
-            await updateProductsFromCart([{ ...values, uid: itemUidFromUrl }]);
+        const cartLine = buildAddToCartPayload(values, productData);
 
-            const updatedSku = values?.sku;
-            if (updatedSku) {
-              const cartRedirectUrl = new URL(
-                rootLink('/cart'),
-                window.location.origin,
-              );
-              cartRedirectUrl.searchParams.set('itemUid', itemUidFromUrl);
-              window.location.href = cartRedirectUrl.toString();
-            } else {
-              window.location.href = rootLink('/cart');
-            }
-            return;
-          }
-          const { addProductsToCart } = await import(
+        if (isUpdateMode) {
+          const { updateProductsFromCart } = await import(
             '@dropins/storefront-cart/api.js'
           );
-          await addProductsToCart([{ ...values }]);
-          showNotification({
-            type: 'success',
-            message: 'You added product to your shopping cart.',
-            linkText: 'View Cart',
-            linkUrl: rootLink('/cart'),
-          });
+
+          await updateProductsFromCart([{ ...cartLine, uid: itemUidFromUrl }]);
+
+          const updatedSku = values?.sku;
+          if (updatedSku) {
+            const cartRedirectUrl = new URL(
+              rootLink('/cart'),
+              window.location.origin,
+            );
+            cartRedirectUrl.searchParams.set('itemUid', itemUidFromUrl);
+            window.location.href = cartRedirectUrl.toString();
+          } else {
+            window.location.href = rootLink('/cart');
+          }
+          return;
         }
+
+        const { addProductsToCart } = await import(
+          '@dropins/storefront-cart/api.js'
+        );
+        await addProductsToCart([cartLine]);
+        showNotification({
+          type: 'success',
+          message: 'You added product to your shopping cart.',
+          linkText: 'View Cart',
+          linkUrl: rootLink('/cart'),
+        });
 
         inlineAlert?.remove();
       } catch (error) {
@@ -545,17 +568,20 @@ export default async function decorate(block) {
         updateAddToCartButtonText(addToCart, isUpdateMode, labels);
         addToCart.setProps((prev) => ({
           ...prev,
-          disabled: isOutOfStock,
+          disabled: isOutOfStock || !pdpApi.isProductConfigurationValid(),
         }));
       }
     },
   })($addToCart);
 
-  // Lifecycle Events
   events.on('pdp/data', (data) => {
     if (!data) return;
     isOutOfStock = data?.inStock === false;
-    addToCart.setProps((prev) => ({ ...prev, disabled: isOutOfStock }));
+    resetConfigurationForSimpleProduct(data);
+    addToCart.setProps((prev) => ({
+      ...prev,
+      disabled: isOutOfStock || !pdpApi.isProductConfigurationValid(),
+    }));
 
     const categoryData = {
       name: data.name,

@@ -84,7 +84,41 @@ const triggerQuantityUpdate = debounce(async (itemUid, newQty) => {
   }
 }, 300);
 
-// Scans and replaces static quantity markup with interactive +/- controls & EDITABLE input field
+function syncMiniCartQuantitiesFromData(panel, cartData) {
+  if (!panel || !cartData?.items?.length) return;
+
+  const quantityByUid = new Map(
+    cartData.items.map((item) => [item.uid, item.quantity]),
+  );
+
+  panel.querySelectorAll('.dropin-cart-item').forEach((itemEl) => {
+    const lineUid = (itemEl.getAttribute('data-testid') || '')
+      .replace('cart-list-item-entry-', '');
+    if (!lineUid) return;
+
+    const quantity = quantityByUid.get(lineUid);
+    if (quantity == null) return;
+
+    const input = itemEl.querySelector('.minicart-qty-input');
+    if (input) {
+      input.value = String(quantity);
+      const decBtn = itemEl.querySelector('.minicart-qty-btn[data-action="dec"]');
+      if (decBtn) decBtn.disabled = quantity <= 1;
+      return;
+    }
+
+    const dropinQty = itemEl.querySelector('.dropin-cart-item__quantity__number');
+    if (dropinQty) {
+      dropinQty.textContent = String(quantity);
+    }
+  });
+}
+
+function refreshMiniCartSteppers(panel, cartData) {
+  syncMiniCartQuantitiesFromData(panel, cartData);
+  initializeMiniCartSteppers(panel);
+}
+
 function initializeMiniCartSteppers(panel) {
   const items = panel.querySelectorAll('.dropin-cart-item');
 
@@ -94,18 +128,16 @@ function initializeMiniCartSteppers(panel) {
 
     qtyContainer.dataset.stepperInit = 'true';
 
-    // Extract item UID from testid
     const entryTestId = itemEl.getAttribute('data-testid') || '';
     const itemUid = entryTestId.replace('cart-list-item-entry-', '');
 
     const qtyNumberEl = qtyContainer.querySelector('.dropin-cart-item__quantity__number');
     const currentQty = parseInt(qtyNumberEl?.textContent?.trim() || '1', 10);
 
-    // Replace static text with an editable input stepper
     qtyContainer.innerHTML = `
       <div class="minicart-quantity-stepper">
         <button type="button" class="minicart-qty-btn decrease-quantity" data-action="dec" ${currentQty <= 1 ? 'disabled' : ''} aria-label="Decrease quantity"><span>Decrease quantity</span></button>
-        <input type="number" name="quantity" aria-label="Item Quantity" class="minicart-qty-input" value="${currentQty}" min="1" aria-label="Quantity" />
+        <input type="number" name="quantity" class="minicart-qty-input" value="${currentQty}" min="1" aria-label="Item Quantity" />
         <button type="button" class="minicart-qty-btn increase-quantity" data-action="inc" aria-label="Increase quantity"><span>Increase quantity</span></button>
       </div>
     `;
@@ -126,7 +158,6 @@ function initializeMiniCartSteppers(panel) {
       }
     };
 
-    // Button Click Events
     decBtn?.addEventListener('click', (e) => {
       e.preventDefault();
       const qty = parseInt(input.value || '1', 10);
@@ -139,7 +170,6 @@ function initializeMiniCartSteppers(panel) {
       handleQtyChange(qty + 1);
     });
 
-    // Direct Input Edit Events
     input?.addEventListener('change', (e) => {
       handleQtyChange(e.target.value);
     });
@@ -315,7 +345,6 @@ export default async function decorate(block) {
         minicartPanel.prepend(closeBtn);
       }
 
-      // Observe DOM updates on minicartPanel to initialize quantity steppers with inputs
       const observer = new MutationObserver(() => {
         initializeMiniCartSteppers(minicartPanel);
       });
@@ -337,8 +366,13 @@ export default async function decorate(block) {
 
   cartButton.addEventListener('click', () => toggleMiniCart(!minicartPanel.classList.contains('nav-tools-panel--show')));
 
-  events.on('cart/data', (data) => {
-    if (data) loadMiniCartFragment();
+  events.on('cart/data', async (data) => {
+    if (data) {
+      await loadMiniCartFragment();
+      requestAnimationFrame(() => {
+        refreshMiniCartSteppers(minicartPanel, data);
+      });
+    }
     let qtyBadge = cartButton.querySelector('.my-cart-counter-qty');
     if (data?.totalQuantity > 0) {
       if (!qtyBadge) {

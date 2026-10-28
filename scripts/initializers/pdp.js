@@ -24,6 +24,30 @@ export const THUMBNAIL_SIZES = {
   height: 100,
 };
 
+function isComplexCatalogProduct(product) {
+  return product?.__typename === 'ComplexProductView'
+    || (Array.isArray(product?.options) && product.options.length > 0);
+}
+
+/** Strip quantity/options from the URL; keep itemUid for cart edit flows. */
+function stripEphemeralPdpParamsFromUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
+  ['quantity', 'optionsUIDs'].forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  });
+  if (!changed) return;
+  const qs = url.searchParams.toString();
+  window.history.replaceState(
+    {},
+    '',
+    `${url.pathname}${qs ? `?${qs}` : ''}${url.hash}`,
+  );
+}
+
 /**
  * Extracts the main product image URL from JSON-LD or meta tags
  * @returns {string|null} The image URL or null if not found
@@ -78,16 +102,19 @@ await initializeDropin(async () => {
   preloadPDPAssets();
 
   const sku = getProductSku();
-  const optionsUIDs = getOptionsUIDsFromUrl();
+  const optionsUIDsFromUrl = getOptionsUIDsFromUrl();
 
   if (!sku && !IS_UE) {
     return loadErrorPage();
   }
 
   const [product, labels] = await Promise.all([
-    fetchProductData(sku, { optionsUIDs, skipTransform: true }).then(preloadImageMiddleware),
+    fetchProductData(sku, { optionsUIDs: optionsUIDsFromUrl, skipTransform: true })
+      .then(preloadImageMiddleware),
     fetchPlaceholders('placeholders/pdp.json'),
   ]);
+
+  const optionsUIDs = isComplexCatalogProduct(product) ? optionsUIDsFromUrl : undefined;
 
   const langDefinitions = {
     default: {
@@ -98,17 +125,25 @@ await initializeDropin(async () => {
   const models = {
     ProductDetails: {
       initialData: { ...product },
+      transform: (raw, model) => ({
+        ...model,
+        inputOptions: Array.isArray(raw?.inputOptions) ? raw.inputOptions : [],
+      }),
     },
   };
 
-  return initializers.mountImmediately(initialize, {
+  const mounted = await initializers.mountImmediately(initialize, {
     sku,
     optionsUIDs,
+    preselectFirstOption: true,
     langDefinitions,
     models,
     acdl: true,
-    persistURLParams: true,
+    persistURLParams: false,
   });
+
+  stripEphemeralPdpParamsFromUrl();
+  return mounted;
 })();
 
 async function preloadImageMiddleware(data) {

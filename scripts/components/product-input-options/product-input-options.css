@@ -1,0 +1,69 @@
+.product-details .product-input-options--empty,
+.commerce-mini-pdp .product-input-options--empty {
+  display: none;
+}
+
+.product-details .product-input-options__form,
+.commerce-mini-pdp .product-input-options__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.product-details .product-input-options__field,
+.commerce-mini-pdp .product-input-options__field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-details .product-input-options__field span,
+.commerce-mini-pdp .product-input-options__field span {
+  color: var(--color-text-color, #000);
+  font-family: var(--type-base-font-family);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.product-details .product-input-options__control,
+.commerce-mini-pdp .product-input-options__control {
+  background-color: var(--color-neutral-50, #fff);
+  border: 1px solid #dadada;
+  border-radius: 0;
+  box-sizing: border-box;
+  color: var(--color-text-color, #000);
+  font-family: var(--type-base-font-family);
+  font-size: 1.4rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.product-details .product-input-options__control:focus,
+.commerce-mini-pdp .product-input-options__control:focus {
+  border-color: var(--color-dark-blue);
+  outline: none;
+}
+
+.product-details .product-input-options__select,
+.commerce-mini-pdp .product-input-options__select {
+  appearance: auto;
+  cursor: pointer;
+  padding-right: 40px;
+}
+
+.product-details .product-input-options__field textarea.product-input-options__control,
+.commerce-mini-pdp .product-input-options__field textarea.product-input-options__control {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  min-height: 96px;
+  padding: var(--spacing-xsmall, 8px) 12px;
+  resize: vertical;
+  text-transform: none;
+}

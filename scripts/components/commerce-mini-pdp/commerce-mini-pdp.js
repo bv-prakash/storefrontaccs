@@ -35,6 +35,11 @@ import {
 } from '../../commerce.js';
 import { loadCSS } from '../../aem.js';
 import { showNotification } from '../notification.js';
+import {
+  buildAddToCartPayload,
+  mountProductInputOptions,
+  resetConfigurationForSimpleProduct,
+} from '../product-input-options/product-input-options.js';
 
 const MINI_PDP_SCOPE = 'modal';
 
@@ -122,10 +127,15 @@ async function mountMiniPdpProduct(sku, optionsUIDs, placeholders, product) {
     scope: MINI_PDP_SCOPE,
     sku,
     optionsUIDs,
+    preselectFirstOption: true,
     langDefinitions,
     models: {
       ProductDetails: {
         initialData: { ...product },
+        transform: (raw, model) => ({
+          ...model,
+          inputOptions: Array.isArray(raw?.inputOptions) ? raw.inputOptions : [],
+        }),
         fallbackData: (parent, refinedData) => ({
           ...parent,
           ...refinedData,
@@ -146,6 +156,7 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
   await Promise.all([
     loadCSS(`${codeBase}/blocks/product-details/product-details.css`),
     loadCSS(`${codeBase}/scripts/components/commerce-mini-pdp/commerce-mini-pdp.css`),
+    loadCSS(`${codeBase}/scripts/components/product-input-options/product-input-options.css`),
   ]);
 
   const placeholders = await fetchPlaceholders();
@@ -210,6 +221,7 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
           </div>
           <div class="product-details__price mini-pdp__price"></div>
           <div class="product-details__configuration mini-pdp__configuration">
+            <div class="product-details__input-options mini-pdp__input-options"></div>
             <div class="product-details__options mini-pdp__options"></div>
             <div class="product-details__buttons mini-pdp__buttons">
               <div class="product-details__quantity mini-pdp__quantity"></div>
@@ -231,6 +243,7 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
     const $sku = fragment.querySelector('.product-details__sku');
     const $stock = fragment.querySelector('.product-details__stock');
     const $price = fragment.querySelector('.mini-pdp__price');
+    const $inputOptions = fragment.querySelector('.mini-pdp__input-options');
     const $options = fragment.querySelector('.mini-pdp__options');
     const $quantity = fragment.querySelector('.mini-pdp__quantity');
     const $primaryButton = fragment.querySelector('.mini-pdp__primary-button');
@@ -238,6 +251,8 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
     const $redirectButton = fragment.querySelector('.mini-pdp__buttons__redirect-to-pdp');
 
     miniPDPContainer.appendChild(fragment);
+
+    mountProductInputOptions($inputOptions, { scope: MINI_PDP_SCOPE });
 
     renderSkuDetails(product, $sku);
     renderStockStatus(product, $stock);
@@ -321,13 +336,18 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
 
             const values = getProductConfigurationValues({ scope: MINI_PDP_SCOPE });
             const valid = isProductConfigurationValid({ scope: MINI_PDP_SCOPE });
+            const productData = events.lastPayload('pdp/data', { scope: MINI_PDP_SCOPE });
 
             if (!valid) {
-              throw new Error('Please select all required options');
+              throw new Error(
+                placeholders?.Global?.SelectProductOptions
+                  || 'Please select all required options before adding to cart.',
+              );
             }
 
             if (isQuickView) {
-              await Cart.addProductsToCart([{ ...values }]);
+              const cartLine = buildAddToCartPayload(values, productData);
+              await Cart.addProductsToCart([cartLine]);
               showNotification({
                 type: 'success',
                 message: `${product.name} added to your cart.`,
@@ -337,9 +357,11 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
               onClose?.();
             } else {
               const freshCartItem = await getFreshCartItem(ctx.cartItem.uid) || ctx.cartItem;
-              const updateData = { ...values, uid: freshCartItem.uid };
-              const updateResponse = await Cart.updateProductsFromCart([updateData]);
-              events.emit('cart/updated', updateResponse);
+              const updateData = {
+                ...buildAddToCartPayload(values, productData),
+                uid: freshCartItem.uid,
+              };
+              await Cart.updateProductsFromCart([updateData]);
               onSuccess?.(updateData);
               onClose?.();
             }
@@ -367,7 +389,8 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
             }));
           }
         },
-        disabled: isLoading || isOutOfStock,
+        disabled: isLoading || isOutOfStock
+          || !isProductConfigurationValid({ scope: MINI_PDP_SCOPE }),
       })($primaryButton),
 
       UI.render(Button, {
@@ -388,31 +411,31 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
       })($redirectButton),
     ]);
 
+    const syncPrimaryButton = () => {
+      primaryButton.setProps((prev) => ({
+        ...prev,
+        disabled: isOutOfStock || isLoading
+          || !isProductConfigurationValid({ scope: MINI_PDP_SCOPE }),
+      }));
+    };
+
     events.on(
       'pdp/data',
       (data) => {
         if (!data) return;
         isOutOfStock = data?.inStock === false;
-        primaryButton.setProps((prev) => ({
-          ...prev,
-          disabled: isOutOfStock || isLoading,
-        }));
+        resetConfigurationForSimpleProduct(data, MINI_PDP_SCOPE);
+        syncPrimaryButton();
         renderSkuDetails(data, $sku);
         renderStockStatus(data, $stock);
       },
       { eager: true, scope: MINI_PDP_SCOPE },
     );
 
-    events.on(
-      'pdp/valid',
-      (valid) => {
-        primaryButton.setProps((prev) => ({
-          ...prev,
-          disabled: !valid || isLoading || isOutOfStock,
-        }));
-      },
-      { eager: true, scope: MINI_PDP_SCOPE },
-    );
+    events.on('pdp/valid', syncPrimaryButton, {
+      eager: true,
+      scope: MINI_PDP_SCOPE,
+    });
 
     return miniPDPContainer;
   } catch (error) {

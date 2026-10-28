@@ -136,7 +136,10 @@
 
 .block.product-list-page .product-discovery-product-actions__add-to-cart button svg,
 .block.product-list-page .product-discovery-product-actions__wishlist-toggle button svg,
-.block.product-list-page .product-discovery-product-actions__compare button span {
+.block.product-list-page .product-discovery-product-actions__compare button span,
+.block.product-list-page .product-discovery-product-actions__add-to-cart a svg,
+.block.product-list-page .product-discovery-product-actions__wishlist-toggle a svg,
+.block.product-list-page .product-discovery-product-actions__compare a span  {
     position: absolute;
     width: 1px;
     height: 1px;
