@@ -12,6 +12,7 @@
 
 - **Quick view** on the product list: icon on the product image opens a modal with gallery, title, SKU/stock, price, configurable options, quantity, add to cart, cancel, and link to full PDP—aligned with the **product-details** experience.
 - **`commerce-mini-pdp`** component mounts Adobe Commerce PDP drop-ins with `scope: 'modal'` (separate from the main PDP page initializer).
+- **Product-type parity with main PDP:** gift card and downloadable drop-in containers, `product-input-options` (customizable / text options), `grouped-product-options`, and `buildCartLinesForAddToCart` for grouped multi-line add-to-cart.
 - **Shared modal** (`blocks/modal/`): dark header with title + close; `size: 'wide'` for quick view and cart edit.
 - **Cart edit** reuses the same component for configurable line items.
 - PLP loads mini-PDP via **dynamic import on click** so category pages do not load `initializers/pdp.js` (which expects a product SKU in the URL).
@@ -42,17 +43,19 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 | Area | What changed |
 | --- | --- |
 | **New component** | `scripts/components/commerce-mini-pdp/` — PDP drop-ins in an isolated `scope: 'modal'` |
+| **PDP helpers** | `product-input-options/`, `grouped-product-options/` shared with `blocks/product-details/` |
 | **PLP integration** | Quick-view control on product image; lazy `import()` of mini-PDP and modal on click |
 | **Modal shell** | Unified `blocks/modal/` header (title + close), dialog sizes (`compact` / `default` / `wide`) |
-| **Styling** | `product-details.css` (layout + configurable swatches), `commerce-mini-pdp.css`, PLP quick-view button styles |
-| **Cart** | Configurable line-item edit uses the same mini-PDP module |
+| **Styling** | `product-details.css` (swatches, gift card, downloadable, grouped), `commerce-mini-pdp.css`, PLP quick-view button |
+| **Cart** | Configurable line-item edit; add-to-cart uses same payload rules as main PDP |
 
 ### 2.1 Component
 
 - Fetches product via Catalog Service GraphQL; mounts `initialize` with `scope: 'modal'`.
-- Renders ProductGallery (responsive), ProductHeader, SKU/stock meta, ProductPrice, ProductOptions (swatch image slot), ProductQuantity, add/update cart actions.
-- Quick view input: `{ sku, urlKey?, image? }`. Cart input: cart line with `uid`.
-- Loads `blocks/product-details/product-details.css` + `commerce-mini-pdp.css`.
+- Renders ProductGallery (responsive), ProductHeader, SKU/stock meta, ProductPrice, ProductGiftCardOptions, ProductDownloadableOptions, ProductOptions (swatch image slot), ProductQuantity, add/update cart actions.
+- Mounts `product-input-options` and `grouped-product-options` with `scope: 'modal'`.
+- Quick view input: `{ sku, urlKey?, image? }` (only `sku` is required). Cart input: cart line with `uid`.
+- Loads `product-details.css`, `commerce-mini-pdp.css`, `product-input-options.css`, `grouped-product-options.css`.
 
 ### 2.2 PLP integration
 
@@ -81,6 +84,9 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 | `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` | Mount PDP API, render gallery/options/cart actions |
 | `scripts/components/commerce-mini-pdp/commerce-mini-pdp.css` | Mini-PDP-specific layout overrides |
 | `scripts/components/commerce-mini-pdp/README.md` | Developer reference |
+| `scripts/components/product-input-options/` | Customizable options + `buildCartLinesForAddToCart` |
+| `scripts/components/grouped-product-options/` | Grouped product UI and cart lines |
+| `blocks/product-details/product-details.js` | Main PDP parity (same helpers and drop-ins) |
 
 ### Shared modal
 
@@ -94,7 +100,7 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 
 | File | Role |
 | --- | --- |
-| `blocks/product-details/product-details.css` | Swatch/option styles for `.commerce-mini-pdp .product-details__options` |
+| `blocks/product-details/product-details.css` | Swatches, gift card, downloadable, grouped; shared with mini-PDP |
 
 ### Optional placeholder
 
@@ -145,7 +151,9 @@ Cart edit: `commerce-cart.js` — `createMiniPDP(cartItem, …)` with `UpdatePro
 | `npm run lint` | ☐ |
 | PLP loads without PDP error page (no SKU on URL) | ☐ |
 | Quick view: configurable options + add to cart | ☐ |
+| Quick view: downloadable / bundle / grouped / gift card (catalog SKUs) | ☐ |
 | Cart edit modal (if enabled) | ☐ |
+| Minicart qty updates after quick view add (no reload) | ☐ |
 | Modal header title + close consistent with other modals | ☐ |
 
 Local: `npm run lint` · `npx @adobe/aem-cli up` · test PLP and cart edit.

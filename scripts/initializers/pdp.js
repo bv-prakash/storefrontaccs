@@ -67,8 +67,7 @@ function extractMainImageUrl() {
     }
 
     return getMetadata('og:image') || getMetadata('image');
-  } catch (error) {
-    console.debug('Failed to parse JSON-LD:', error);
+  } catch {
     return getMetadata('og:image') || getMetadata('image');
   }
 }

@@ -24,6 +24,8 @@ import ProductPrice from '@dropins/storefront-pdp/containers/ProductPrice.js';
 import ProductOptions from '@dropins/storefront-pdp/containers/ProductOptions.js';
 import ProductQuantity from '@dropins/storefront-pdp/containers/ProductQuantity.js';
 import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js';
+import ProductGiftCardOptions from '@dropins/storefront-pdp/containers/ProductGiftCardOptions.js';
+import ProductDownloadableOptions from '@dropins/storefront-pdp/containers/ProductDownloadableOptions.js';
 
 import '../../initializers/cart.js';
 
@@ -36,10 +38,11 @@ import {
 import { loadCSS } from '../../aem.js';
 import { showNotification } from '../notification.js';
 import {
-  buildAddToCartPayload,
+  buildCartLinesForAddToCart,
   mountProductInputOptions,
   resetConfigurationForSimpleProduct,
 } from '../product-input-options/product-input-options.js';
+import { mountGroupedProductOptions } from '../grouped-product-options/grouped-product-options.js';
 
 const MINI_PDP_SCOPE = 'modal';
 
@@ -88,12 +91,18 @@ function imageSlotConfig(ctx) {
   return {
     alias: data.sku,
     imageProps: defaultImageProps,
-
     params: {
       width: defaultImageProps.width,
       height: defaultImageProps.height,
     },
   };
+}
+
+function renderSwatchImage(swatchCtx) {
+  tryRenderAemAssetsImage(swatchCtx, {
+    ...imageSlotConfig(swatchCtx),
+    wrapper: document.createElement('span'),
+  });
 }
 
 async function getFreshCartItem(cartItemUid) {
@@ -113,14 +122,10 @@ function resolveMiniPdpContext(input) {
   return {
     mode: 'quickView',
     sku: input?.sku,
-    urlKey: input?.urlKey,
-    imageFallback: input?.image,
   };
 }
 
 async function mountMiniPdpProduct(sku, optionsUIDs, placeholders, product) {
-  setEndpoint(CS_FETCH_GRAPHQL);
-
   const langDefinitions = { default: placeholders };
 
   await initializers.mountImmediately(initialize, {
@@ -157,6 +162,7 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
     loadCSS(`${codeBase}/blocks/product-details/product-details.css`),
     loadCSS(`${codeBase}/scripts/components/commerce-mini-pdp/commerce-mini-pdp.css`),
     loadCSS(`${codeBase}/scripts/components/product-input-options/product-input-options.css`),
+    loadCSS(`${codeBase}/scripts/components/grouped-product-options/grouped-product-options.css`),
   ]);
 
   const placeholders = await fetchPlaceholders();
@@ -220,8 +226,11 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
             <div class="product-details__stock"></div>
           </div>
           <div class="product-details__price mini-pdp__price"></div>
+          <div class="product-details__gift-card-options mini-pdp__gift-card-options"></div>
+          <div class="product-details__downloadable-options mini-pdp__downloadable-options"></div>
           <div class="product-details__configuration mini-pdp__configuration">
             <div class="product-details__input-options mini-pdp__input-options"></div>
+            <div class="product-details__grouped-options pdp-grouped-products mini-pdp__grouped-options"></div>
             <div class="product-details__options mini-pdp__options"></div>
             <div class="product-details__buttons mini-pdp__buttons">
               <div class="product-details__quantity mini-pdp__quantity"></div>
@@ -243,7 +252,10 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
     const $sku = fragment.querySelector('.product-details__sku');
     const $stock = fragment.querySelector('.product-details__stock');
     const $price = fragment.querySelector('.mini-pdp__price');
+    const $giftCardOptions = fragment.querySelector('.mini-pdp__gift-card-options');
+    const $downloadableOptions = fragment.querySelector('.mini-pdp__downloadable-options');
     const $inputOptions = fragment.querySelector('.mini-pdp__input-options');
+    const $groupedOptions = fragment.querySelector('.mini-pdp__grouped-options');
     const $options = fragment.querySelector('.mini-pdp__options');
     const $quantity = fragment.querySelector('.mini-pdp__quantity');
     const $primaryButton = fragment.querySelector('.mini-pdp__primary-button');
@@ -253,6 +265,11 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
     miniPDPContainer.appendChild(fragment);
 
     mountProductInputOptions($inputOptions, { scope: MINI_PDP_SCOPE });
+    mountGroupedProductOptions($groupedOptions, {
+      scope: MINI_PDP_SCOPE,
+      optionsContainer: $options,
+      quantityContainer: $quantity,
+    });
 
     renderSkuDetails(product, $sku);
     renderStockStatus(product, $stock);
@@ -284,6 +301,8 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
       _header,
       _priceInstance,
       _optionsInstance,
+      _giftCardOptions,
+      _downloadableOptions,
       _quantityInstance,
       primaryButton,
       _cancelButton,
@@ -308,15 +327,11 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
       pdpRender.render(ProductOptions, {
         hideSelectedValue: false,
         scope: MINI_PDP_SCOPE,
-        slots: {
-          SwatchImage: (swatchCtx) => {
-            tryRenderAemAssetsImage(swatchCtx, {
-              ...imageSlotConfig(swatchCtx),
-              wrapper: document.createElement('span'),
-            });
-          },
-        },
+        slots: { SwatchImage: renderSwatchImage },
       })($options),
+
+      pdpRender.render(ProductGiftCardOptions, { scope: MINI_PDP_SCOPE })($giftCardOptions),
+      pdpRender.render(ProductDownloadableOptions, { scope: MINI_PDP_SCOPE })($downloadableOptions),
 
       pdpRender.render(ProductQuantity, { scope: MINI_PDP_SCOPE })($quantity),
 
@@ -345,9 +360,14 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
               );
             }
 
+            const cartLines = buildCartLinesForAddToCart(
+              values,
+              productData,
+              MINI_PDP_SCOPE,
+            );
+
             if (isQuickView) {
-              const cartLine = buildAddToCartPayload(values, productData);
-              await Cart.addProductsToCart([cartLine]);
+              await Cart.addProductsToCart(cartLines);
               showNotification({
                 type: 'success',
                 message: `${product.name} added to your cart.`,
@@ -358,7 +378,7 @@ export default async function createMiniPDP(input, onSuccess, onClose) {
             } else {
               const freshCartItem = await getFreshCartItem(ctx.cartItem.uid) || ctx.cartItem;
               const updateData = {
-                ...buildAddToCartPayload(values, productData),
+                ...cartLines[0],
                 uid: freshCartItem.uid,
               };
               await Cart.updateProductsFromCart([updateData]);

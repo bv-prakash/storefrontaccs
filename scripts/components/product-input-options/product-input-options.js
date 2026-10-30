@@ -4,6 +4,10 @@ import {
   setProductConfigurationValues,
   setProductConfigurationValid,
 } from '@dropins/storefront-pdp/api.js';
+import {
+  buildGroupedCartLines,
+  isGroupedProduct,
+} from '../grouped-product-options/grouped-product-options.js';
 
 const SUPPORTED_TYPES = new Set([
   'textfield',
@@ -15,14 +19,25 @@ const SUPPORTED_TYPES = new Set([
   'number',
 ]);
 
-function findAcCustomizableAttribute(attributes) {
+function findAcAttribute(attributes, id) {
   return attributes?.find(
-    (item) => item.id === 'ac_customizable_options'
-      || item.name === 'ac_customizable_options',
+    (item) => item.id === id || item.name === id,
   );
 }
 
-export function parseAcCustomizableOptions(attributes) {
+function findAcCustomizableAttribute(attributes) {
+  return findAcAttribute(attributes, 'ac_customizable_options');
+}
+
+function hasAcDownloadable(attributes) {
+  return Boolean(findAcAttribute(attributes, 'ac_downloadable'));
+}
+
+function hasAcGiftCard(attributes) {
+  return Boolean(findAcAttribute(attributes, 'ac_giftcard'));
+}
+
+function parseAcCustomizableOptions(attributes) {
   const attr = findAcCustomizableAttribute(attributes);
   if (!attr?.value) return [];
 
@@ -50,7 +65,7 @@ export function parseAcCustomizableOptions(attributes) {
     .filter((group) => group.values.length > 0);
 }
 
-export function hasAcCustomizableOptions(attributes) {
+function hasAcCustomizableOptions(attributes) {
   return parseAcCustomizableOptions(attributes).length > 0;
 }
 
@@ -105,10 +120,13 @@ function updateGroupSelection(group, valueId, scopeOpt) {
 }
 
 export function resetConfigurationForSimpleProduct(productData, scope) {
-  if (!productData || productData.options?.length
-    || hasAcCustomizableOptions(productData.attributes)) {
-    return;
-  }
+  if (!productData) return;
+  if (isGroupedProduct(productData)) return;
+  if (productData.options?.length || productData.isBundle) return;
+  if (hasAcCustomizableOptions(productData.attributes)) return;
+  if (hasAcDownloadable(productData.attributes)) return;
+  if (hasAcGiftCard(productData.attributes)) return;
+
   const scopeOpt = scope ? { scope } : undefined;
   setProductConfigurationValues((prev) => {
     const next = {
@@ -122,19 +140,34 @@ export function resetConfigurationForSimpleProduct(productData, scope) {
   }, scopeOpt);
 }
 
-export function buildAddToCartPayload(values, productData) {
+function resolveCartSku(values, productData) {
+  if (productData?.isBundle) {
+    return productData?.sku || values.sku;
+  }
+  return productData?.variantSku || values.sku;
+}
+
+function shouldAttachOptionsUIDs(values, productData) {
+  const uids = (values.optionsUIDs ?? []).filter(Boolean);
+  if (!uids.length) return false;
+  if (isGroupedProduct(productData)) return false;
+  if (productData?.options?.length || productData?.isBundle) return true;
+  if (hasAcCustomizableOptions(productData?.attributes)) return true;
+  if (hasAcDownloadable(productData?.attributes)) return true;
+  return false;
+}
+
+function buildAddToCartPayload(values, productData) {
   if (!values?.sku) {
     throw new Error('Product SKU is missing.');
   }
 
   const payload = {
-    sku: productData?.variantSku || values.sku,
+    sku: resolveCartSku(values, productData),
     quantity: values.quantity || 1,
   };
 
-  const hasConfigurableOptions = Boolean(productData?.options?.length);
-  const hasCustomizableOptions = hasAcCustomizableOptions(productData?.attributes);
-  if (hasConfigurableOptions || hasCustomizableOptions) {
+  if (shouldAttachOptionsUIDs(values, productData)) {
     payload.optionsUIDs = (values.optionsUIDs ?? []).filter(Boolean);
   }
 
@@ -146,6 +179,17 @@ export function buildAddToCartPayload(values, productData) {
   }
 
   return payload;
+}
+
+export function buildCartLinesForAddToCart(values, productData, scope) {
+  if (isGroupedProduct(productData)) {
+    const lines = buildGroupedCartLines(productData, scope);
+    if (!lines.length) {
+      throw new Error('Please add at least one item to the group.');
+    }
+    return lines;
+  }
+  return [buildAddToCartPayload(values, productData)];
 }
 
 function createTextField(option, value, onChange) {
