@@ -6,6 +6,18 @@
     padding: 0;
 }
 
+#mini-pdp-modal .product-details__wrapper,
+#mini-pdp-modal .product-details__right-column {
+    max-width: 100%;
+    min-width: 0;
+}
+
+
+#mini-pdp-modal .pdp-downloadable-options__header {   
+    gap: 4px;
+}
+
+
 .commerce-mini-pdp .mini-pdp__alert:empty,
 .commerce-mini-pdp .product-details__alert:empty {
     display: none;

@@ -103,7 +103,9 @@ See `blocks/commerce-cart/commerce-cart.js`.
 └── .product-details__wrapper
     ├── .product-details__left-column (galleries)
     └── .product-details__right-column
-        ├── header, SKU/stock, price, options, quantity, add to cart
+        ├── header, SKU/stock, price
+        ├── gift-card-options, downloadable-options
+        ├── input-options, grouped-options, options, quantity, add to cart
         └── .mini-pdp__footer-actions (Cancel, View details)
 ```
 
@@ -116,9 +118,11 @@ See `blocks/commerce-cart/commerce-cart.js`.
 | PDP API / events | `modal` |
 
 - **ProductGallery** — thumbnails (desktop) / dots (mobile)
+- **ProductGiftCardOptions** / **ProductDownloadableOptions** — same as main PDP
 - **ProductOptions** — `SwatchImage` via `tryRenderAemAssetsImage` (same as product-details)
-- **Cart** — `getProductConfigurationValues({ scope: 'modal' })` and `{ ...values }` for configurables
-- **`pdp/data`** — updates SKU/stock on option change
+- **product-input-options** / **grouped-product-options** — shared helpers with main PDP
+- **Cart** — `buildCartLinesForAddToCart(values, productData, 'modal')` then `addProductsToCart`
+- **`pdp/data`** — updates SKU/stock; `resetConfigurationForSimpleProduct` with modal scope
 
 ---
 
@@ -127,13 +131,15 @@ See `blocks/commerce-cart/commerce-cart.js`.
 | Path | Purpose |
 | --- | --- |
 | `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` | Component |
-| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.css` | Styles |
+| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.css` | Modal layout; downloadable stacked layout |
 | `scripts/components/commerce-mini-pdp/IMPLEMENTATION.md` | Change record |
+| `scripts/components/product-input-options/` | Customizable / input options + cart line builder |
+| `scripts/components/grouped-product-options/` | Grouped product UI |
 | `blocks/product-list-page/product-list-page.js` | Quick view (when enabled) |
 | `blocks/product-list-page/product-list-page.css` | Quick-view button |
 | `blocks/modal/modal.js` | `createModal` |
 | `blocks/commerce-cart/commerce-cart.js` | Cart edit |
-| `blocks/product-details/product-details.css` | Shared PDP / swatch styles |
+| `blocks/product-details/product-details.css` | Shared PDP, swatch, gift card, downloadable styles |
 
 ### Placeholders (optional)
 
@@ -151,7 +157,7 @@ See `blocks/commerce-cart/commerce-cart.js`.
 2. `createMiniPDP({ sku, urlKey, image }, null, onClose)`.
 3. `createModal([content], { title, size: 'wide' })`.
 4. Add control in `SearchResults` → `ProductImage` slot; CSS in `product-list-page.css`.
-5. `npm run lint` and test simple + configurable products.
+5. `npm run lint` and test simple, configurable, downloadable, bundle, grouped, and gift card products in quick view when available in catalog.
 
 ---
 
@@ -177,7 +183,8 @@ Details: [IMPLEMENTATION.md §5](./IMPLEMENTATION.md).
 1. `npm run lint`
 2. PLP: no PDP error page on category URL; quick view works when enabled.
 3. Cart: edit configurable line item when enabled.
-4. Modal header matches other storefront modals.
+4. Quick view add to cart updates minicart quantity without reload.
+5. Modal header matches other storefront modals.
 
 ---
 
@@ -185,3 +192,5 @@ Details: [IMPLEMENTATION.md §5](./IMPLEMENTATION.md).
 
 - [Modal README](../../blocks/modal/README.md)
 - [Product details README](../../blocks/product-details/README.md)
+- [Product input options](../product-input-options/README.md)
+- [Grouped product options](../grouped-product-options/README.md)

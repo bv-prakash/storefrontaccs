@@ -5,6 +5,11 @@
   flex-direction: column;
 }
 
+.product-details__right-column {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .pdp-header__sku {
   display: none;
 }
@@ -109,6 +114,277 @@
 .product-details .product-details__input-options:not(.product-input-options--empty),
 .commerce-mini-pdp .product-details__input-options:not(.product-input-options--empty) {
   width: 100%;
+}
+
+.product-details .product-details__downloadable-options,
+.commerce-mini-pdp .product-details__downloadable-options {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .product-details__gift-card-options:empty,
+.product-details .product-details__downloadable-options:empty,
+.commerce-mini-pdp .product-details__gift-card-options:empty,
+.commerce-mini-pdp .product-details__downloadable-options:empty {
+  display: none;
+}
+
+.product-details .pdp-gift-card-options,
+.commerce-mini-pdp .pdp-gift-card-options {
+  margin-bottom: 20px;
+}
+
+.product-details .pdp-gift-card-options__grid,
+.commerce-mini-pdp .pdp-gift-card-options__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media only screen and (min-width: 600px) {
+  .product-details .pdp-gift-card-options__grid,
+  .commerce-mini-pdp .pdp-gift-card-options__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.product-details .pdp-gift-card-options__option-field label,
+.commerce-mini-pdp .pdp-gift-card-options__option-field label {
+  color: var(--color-text-color, #000);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.product-details .pdp-gift-card-options__option-field input,
+.product-details .pdp-gift-card-options__option-field textarea,
+.commerce-mini-pdp .pdp-gift-card-options__option-field input,
+.commerce-mini-pdp .pdp-gift-card-options__option-field textarea {
+  border: 1px solid #dadada;
+  border-radius: 0;
+  box-sizing: border-box;
+  font-size: 1.4rem;
+  min-height: 44px;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.product-details .pdp-gift-card-options__option-field input:focus,
+.product-details .pdp-gift-card-options__option-field textarea:focus,
+.commerce-mini-pdp .pdp-gift-card-options__option-field input:focus,
+.commerce-mini-pdp .pdp-gift-card-options__option-field textarea:focus {
+  border-color: var(--color-dark-blue);
+  outline: none;
+}
+
+.product-details .pdp-downloadable-options,
+.commerce-mini-pdp .pdp-downloadable-options {
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+
+.product-details .pdp-downloadable-options__field,
+.commerce-mini-pdp .pdp-downloadable-options__field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__field__label,
+.commerce-mini-pdp .pdp-downloadable-options__field__label {
+  color: var(--color-text-color, #000);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.product-details .pdp-downloadable-options__list,
+.commerce-mini-pdp .pdp-downloadable-options__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__item,
+.commerce-mini-pdp .pdp-downloadable-options__item {
+  align-items: stretch;
+  border: 1px solid #dadada;
+  box-sizing: border-box;
+  display: flex;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 12px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__item:hover,
+.commerce-mini-pdp .pdp-downloadable-options__item:hover {
+  border-color: var(--color-dark-blue);
+}
+
+.product-details .pdp-downloadable-options__item--selected,
+.commerce-mini-pdp .pdp-downloadable-options__item--selected {
+  background: rgb(0 48 87 / 6%);
+  border: 2px solid var(--color-dark-blue);
+  padding: 11px;
+}
+
+.product-details .pdp-downloadable-options__clickable,
+.commerce-mini-pdp .pdp-downloadable-options__clickable {
+  appearance: none;
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__clickable:disabled,
+.commerce-mini-pdp .pdp-downloadable-options__clickable:disabled {
+  cursor: default;
+}
+
+.product-details .pdp-downloadable-options__content,
+.commerce-mini-pdp .pdp-downloadable-options__content {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__header,
+.commerce-mini-pdp .pdp-downloadable-options__header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .pdp-downloadable-options__title,
+.commerce-mini-pdp .pdp-downloadable-options__title {
+  color: var(--color-text-color, #000);
+  flex: 1 1 12rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.product-details .pdp-downloadable-options__price,
+.commerce-mini-pdp .pdp-downloadable-options__price,
+.product-details .pdp-downloadable-options__price .dropin-price,
+.commerce-mini-pdp .pdp-downloadable-options__price .dropin-price {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.product-details .pdp-downloadable-options__sample-button,
+.commerce-mini-pdp .pdp-downloadable-options__sample-button {
+  align-self: stretch;
+  background: #fff;
+  border: 1px solid var(--color-dark-blue);
+  box-sizing: border-box;
+  color: var(--color-dark-blue);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  min-height: 40px;
+  padding: 8px 16px;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  width: auto;
+  border-radius: 0;
+}
+
+.product-details .pdp-downloadable-options__sample-button:hover,
+.commerce-mini-pdp .pdp-downloadable-options__sample-button:hover {
+  background: var(--color-dark-blue);
+  color: #fff;
+}
+
+@media only screen and (max-width: 767px) {
+  .product-details .pdp-downloadable-options__header,
+  .commerce-mini-pdp .pdp-downloadable-options__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .product-details .pdp-downloadable-options__title,
+  .commerce-mini-pdp .pdp-downloadable-options__title {
+    flex: none;
+    width: 100%;
+  }
+
+  .product-details .pdp-downloadable-options__price,
+  .commerce-mini-pdp .pdp-downloadable-options__price,
+  .product-details .pdp-downloadable-options__price .dropin-price,
+  .commerce-mini-pdp .pdp-downloadable-options__price .dropin-price {
+    white-space: normal;
+  }
+
+  .product-details .pdp-downloadable-options__sample-button,
+  .commerce-mini-pdp .pdp-downloadable-options__sample-button {
+    white-space: normal;
+  }
+}
+
+@media only screen and (min-width: 768px) {
+  .product-details .pdp-downloadable-options__item:not(.pdp-downloadable-options__item--sample) {
+    align-items: center;
+    flex-direction: row;
+    gap: 16px;
+    padding: 12px 16px;
+  }
+
+  .product-details .pdp-downloadable-options__item--selected:not(.pdp-downloadable-options__item--sample) {
+    padding: 11px 15px;
+  }
+
+  .product-details .pdp-downloadable-options__clickable {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+  }
+
+  .product-details .pdp-downloadable-options__sample-button {
+    align-self: center;
+    max-width: 12rem;
+    white-space: nowrap;
+    width: auto;
+  }
 }
 
 .product-details .product-details__options .pdp-swatches,

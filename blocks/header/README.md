@@ -22,7 +22,7 @@ No localStorage keys are used directly by this block. Authentication and cart st
 
 #### Event Listeners
 
-- `events.on('cart/data', callback)` - Updates cart item counter and preloads mini cart fragment when cart data changes (eager loading enabled)
+- `events.on('cart/data', callback)` — Updates cart badge count, preloads mini cart fragment, and syncs custom minicart quantity stepper inputs with the latest line quantities (eager loading enabled)
 - `events.on('authenticated', callback)` - Handled in `renderAuthCombine.js` and `renderAuthDropdown.js` for authentication state changes
 
 #### Event Emitters

@@ -57,6 +57,7 @@ A visibility filter `{ attribute: 'visibility', in: ['Search', 'Catalog, Search'
 3. **Filter change**: User toggles facets; dropin calls `search()` with updated filter; block updates result count and URL.
 4. **Pagination**: User changes page; dropin calls `search()` with new page; block scrolls to top and URL is updated.
 5. **Add to cart / wishlist**: Product cards include add-to-cart and wishlist actions; cart and wishlist behavior are handled by their respective dropins. For simple products, the add-to-cart button is disabled when `product.inStock` is falsy. Complex products always link to the PDP where stock is validated by the PDP drop-in.
+6. **Quick view** (when enabled): Opens [commerce-mini-pdp](../../scripts/components/commerce-mini-pdp/README.md) in a wide modal. Supports the same product types and add-to-cart rules as the main PDP (configurable, customizable, downloadable, gift card, bundle, grouped). Loaded via dynamic `import()` on click only.
 
 ### Error Handling
 

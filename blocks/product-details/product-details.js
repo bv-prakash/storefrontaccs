@@ -14,7 +14,6 @@ import { render as wishlistRender } from '@dropins/storefront-wishlist/render.js
 import { WishlistToggle } from '@dropins/storefront-wishlist/containers/WishlistToggle.js';
 import { WishlistAlert } from '@dropins/storefront-wishlist/containers/WishlistAlert.js';
 
-// Containers
 import ProductHeader from '@dropins/storefront-pdp/containers/ProductHeader.js';
 import ProductPrice from '@dropins/storefront-pdp/containers/ProductPrice.js';
 import ProductShortDescription from '@dropins/storefront-pdp/containers/ProductShortDescription.js';
@@ -26,7 +25,6 @@ import ProductGallery from '@dropins/storefront-pdp/containers/ProductGallery.js
 import ProductGiftCardOptions from '@dropins/storefront-pdp/containers/ProductGiftCardOptions.js';
 import ProductDownloadableOptions from '@dropins/storefront-pdp/containers/ProductDownloadableOptions.js';
 
-// Relative Lib Imports (2 levels up)
 import {
   rootLink,
   setJsonLd,
@@ -42,12 +40,12 @@ import {
   renderProductReviewTeaser,
 } from '../../scripts/components/product-reviews/product-reviews.js';
 import {
-  buildAddToCartPayload,
+  buildCartLinesForAddToCart,
   mountProductInputOptions,
   resetConfigurationForSimpleProduct,
 } from '../../scripts/components/product-input-options/product-input-options.js';
+import { mountGroupedProductOptions } from '../../scripts/components/grouped-product-options/grouped-product-options.js';
 
-// Initializers
 import { IMAGES_SIZES, THUMBNAIL_SIZES } from '../../scripts/initializers/pdp.js';
 import '../../scripts/initializers/cart.js';
 import '../../scripts/initializers/wishlist.js';
@@ -75,8 +73,7 @@ function isProductPrerendered() {
   try {
     const jsonLd = JSON.parse(jsonLdScript.textContent);
     return jsonLd?.['@type'] === 'Product';
-  } catch (error) {
-    console.debug('Failed to parse JSON-LD:', error);
+  } catch {
     return false;
   }
 }
@@ -209,6 +206,7 @@ export default async function decorate(block) {
         <div class="product-details__downloadable-options"></div>
         <div class="product-details__input-options"></div>
         <div class="product-details__configuration">
+          <div class="product-details__grouped-options pdp-grouped-products"></div>
           <div class="product-details__options"></div>
           <div class="product-details__buttons">
             <div class="product-details__quantity"></div>
@@ -314,6 +312,7 @@ export default async function decorate(block) {
   const $reviewTeaser = fragment.querySelector('.product-details__review-teaser');
   const $reviewsSection = fragment.querySelector('.product-details__reviews');
   const $shortDescription = fragment.querySelector('.product-details__short-description');
+  const $groupedOptions = fragment.querySelector('.product-details__grouped-options');
   const $options = fragment.querySelector('.product-details__options');
   const $quantity = fragment.querySelector('.product-details__quantity');
   const $giftCardOptions = fragment.querySelector('.product-details__gift-card-options');
@@ -329,7 +328,12 @@ export default async function decorate(block) {
 
   await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-reviews/product-reviews.css`);
   await loadCSS(`${window.hlx.codeBasePath}/scripts/components/product-input-options/product-input-options.css`);
+  await loadCSS(`${window.hlx.codeBasePath}/scripts/components/grouped-product-options/grouped-product-options.css`);
   mountProductInputOptions($inputOptions);
+  mountGroupedProductOptions($groupedOptions, {
+    optionsContainer: $options,
+    quantityContainer: $quantity,
+  });
 
   const reviewLabels = {
     beFirstReviewer: labels.Global?.BeFirstReviewer || 'Be the first reviewer',
@@ -513,14 +517,14 @@ export default async function decorate(block) {
           );
         }
 
-        const cartLine = buildAddToCartPayload(values, productData);
+        const cartLines = buildCartLinesForAddToCart(values, productData);
 
         if (isUpdateMode) {
           const { updateProductsFromCart } = await import(
             '@dropins/storefront-cart/api.js'
           );
 
-          await updateProductsFromCart([{ ...cartLine, uid: itemUidFromUrl }]);
+          await updateProductsFromCart([{ ...cartLines[0], uid: itemUidFromUrl }]);
 
           const updatedSku = values?.sku;
           if (updatedSku) {
@@ -539,7 +543,7 @@ export default async function decorate(block) {
         const { addProductsToCart } = await import(
           '@dropins/storefront-cart/api.js'
         );
-        await addProductsToCart([cartLine]);
+        await addProductsToCart(cartLines);
         showNotification({
           type: 'success',
           message: 'You added product to your shopping cart.',

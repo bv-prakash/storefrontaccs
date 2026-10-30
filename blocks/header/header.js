@@ -114,11 +114,6 @@ function syncMiniCartQuantitiesFromData(panel, cartData) {
   });
 }
 
-function refreshMiniCartSteppers(panel, cartData) {
-  syncMiniCartQuantitiesFromData(panel, cartData);
-  initializeMiniCartSteppers(panel);
-}
-
 function initializeMiniCartSteppers(panel) {
   const items = panel.querySelectorAll('.dropin-cart-item');
 
@@ -370,7 +365,8 @@ export default async function decorate(block) {
     if (data) {
       await loadMiniCartFragment();
       requestAnimationFrame(() => {
-        refreshMiniCartSteppers(minicartPanel, data);
+        syncMiniCartQuantitiesFromData(minicartPanel, data);
+        initializeMiniCartSteppers(minicartPanel);
       });
     }
     let qtyBadge = cartButton.querySelector('.my-cart-counter-qty');
