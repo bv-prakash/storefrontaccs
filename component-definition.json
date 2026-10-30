@@ -429,8 +429,7 @@
           "model": "commerce-gift-options",
           "plugins": {
             "da": {
-              "rows": 1,
-              "columns": 2
+              "type": "key-value-block"
             }
           }
         },

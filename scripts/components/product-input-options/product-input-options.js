@@ -1,3 +1,4 @@
+import * as Cart from '@dropins/storefront-cart/api.js';
 import { events } from '@dropins/tools/event-bus.js';
 import {
   getProductConfigurationValues,
@@ -8,6 +9,12 @@ import {
   buildGroupedCartLines,
   isGroupedProduct,
 } from '../grouped-product-options/grouped-product-options.js';
+import {
+  getCartLineEnteredOptions,
+  getCartLineSelectedOptionsUIDs,
+  getCartLineUid,
+  waitForCartLineRemoved,
+} from '../commerce-mini-pdp/cart-line.js';
 
 const SUPPORTED_TYPES = new Set([
   'textfield',
@@ -122,7 +129,7 @@ function updateGroupSelection(group, valueId, scopeOpt) {
 export function resetConfigurationForSimpleProduct(productData, scope) {
   if (!productData) return;
   if (isGroupedProduct(productData)) return;
-  if (productData.options?.length || productData.isBundle) return;
+  if (productData?.options?.length || productData?.isBundle) return;
   if (hasAcCustomizableOptions(productData.attributes)) return;
   if (hasAcDownloadable(productData.attributes)) return;
   if (hasAcGiftCard(productData.attributes)) return;
@@ -158,6 +165,9 @@ function shouldAttachOptionsUIDs(values, productData) {
 }
 
 function buildAddToCartPayload(values, productData) {
+  if (!productData) {
+    throw new Error('Product configuration is not loaded yet. Please wait and try again.');
+  }
   if (!values?.sku) {
     throw new Error('Product SKU is missing.');
   }
@@ -182,6 +192,9 @@ function buildAddToCartPayload(values, productData) {
 }
 
 export function buildCartLinesForAddToCart(values, productData, scope) {
+  if (!productData) {
+    throw new Error('Product configuration is not loaded yet. Please wait and try again.');
+  }
   if (isGroupedProduct(productData)) {
     const lines = buildGroupedCartLines(productData, scope);
     if (!lines.length) {
@@ -190,6 +203,389 @@ export function buildCartLinesForAddToCart(values, productData, scope) {
     return lines;
   }
   return [buildAddToCartPayload(values, productData)];
+}
+
+function normalizeOptionUidSet(uids) {
+  return [...new Set((uids || []).filter(Boolean))].sort().join('|');
+}
+
+function collectVariantOptionValueIds(productData) {
+  const ids = new Set();
+  (productData?.options ?? []).forEach((option) => {
+    (option.values ?? []).forEach((value) => {
+      if (value?.id) ids.add(String(value.id));
+      if (value?.uid) ids.add(String(value.uid));
+    });
+  });
+  return ids;
+}
+
+function optionValueMatchesUid(value, uid) {
+  if (!value || uid == null) return false;
+  const needle = String(uid);
+  return [value.id, value.uid, value.sku]
+    .filter((entry) => entry != null && String(entry).trim() !== '')
+    .some((entry) => String(entry) === needle);
+}
+
+function findVariantOptionValue(uid, productData) {
+  const needle = String(uid);
+  return (productData?.options ?? [])
+    .flatMap((option) => option.values ?? [])
+    .find((value) => optionValueMatchesUid(value, needle));
+}
+
+function findCustomOptionValue(uid, productData) {
+  const needle = String(uid);
+  return parseAcCustomizableOptions(productData?.attributes)
+    .flatMap((group) => group.values ?? [])
+    .find((value) => value.id === needle || String(value.id) === needle);
+}
+
+/**
+ * Map a configuration value to the UID string the cart GraphQL API expects.
+ * When the cart line already stores a matching UID, reuse that exact string so
+ * drop-in in-place updates do not treat the line as remove-and-re-add.
+ */
+function resolveOptionValueApiUid(uid, productData, cartLine = null) {
+  if (uid == null || uid === '') return null;
+  const needle = String(uid);
+  const cartUids = cartLine ? getCartLineSelectedOptionsUIDs(cartLine) : [];
+
+  const variantValue = findVariantOptionValue(needle, productData);
+  if (variantValue) {
+    const cartMatch = cartUids.find((cartUid) => optionValueMatchesUid(variantValue, cartUid));
+    if (cartMatch) return String(cartMatch);
+    return String(variantValue.uid ?? variantValue.id ?? needle);
+  }
+
+  const customValue = findCustomOptionValue(needle, productData);
+  if (customValue) {
+    const cartMatch = cartUids.find(
+      (cartUid) => cartUid === customValue.id || String(cartUid) === String(customValue.id),
+    );
+    if (cartMatch) return String(cartMatch);
+    return String(customValue.id);
+  }
+
+  const cartExact = cartUids.find((cartUid) => String(cartUid) === needle);
+  return cartExact ? String(cartExact) : needle;
+}
+
+function canonicalizeOptionsUIDs(uids, productData, cartLine = null) {
+  return [...new Set(
+    (uids ?? [])
+      .map((uid) => resolveOptionValueApiUid(uid, productData, cartLine))
+      .filter(Boolean),
+  )];
+}
+
+function optionUidSetsEquivalent(cartUids, formUids, productData, cartLine = null) {
+  const cart = canonicalizeOptionsUIDs(cartUids, productData, cartLine);
+  const form = canonicalizeOptionsUIDs(formUids, productData, cartLine);
+  return normalizeOptionUidSet(cart) === normalizeOptionUidSet(form);
+}
+
+/** Public alias for Quick View / cart edit / cart display comparisons. */
+export function areOptionUidSetsEquivalent(cartUids, formUids, productData, cartLine = null) {
+  return optionUidSetsEquivalent(cartUids, formUids, productData, cartLine);
+}
+
+/**
+ * Maps cart or GraphQL option UIDs to PDP configuration IDs (swatch / picker values).
+ * @param {string[]} uids
+ * @param {object} productData
+ * @returns {string[]}
+ */
+export function mapOptionsUIDsForPdpConfiguration(uids, productData, cartLine = null) {
+  const cartUids = cartLine ? getCartLineSelectedOptionsUIDs(cartLine) : [];
+
+  return [...new Set(
+    (uids ?? []).map((uid) => {
+      const needle = String(uid);
+      let variantValue = findVariantOptionValue(needle, productData);
+      if (!variantValue && cartUids.length) {
+        const matchedCartUid = cartUids.find(
+          (cartUid) => findVariantOptionValue(String(cartUid), productData),
+        );
+        if (matchedCartUid) {
+          variantValue = findVariantOptionValue(String(matchedCartUid), productData);
+        }
+      }
+      if (variantValue) {
+        return String(variantValue.id ?? variantValue.uid ?? needle);
+      }
+      const customValue = findCustomOptionValue(needle, productData);
+      if (customValue?.id) return String(customValue.id);
+      return needle;
+    }).filter(Boolean),
+  )];
+}
+
+function mergeVariantOptionUids(formUids, cartUids, productData, cartLine = null) {
+  const options = productData?.options ?? [];
+  if (!options.length) {
+    return [];
+  }
+
+  const picked = [];
+  options.forEach((option) => {
+    const values = option.values ?? [];
+    const pickFrom = (list) => list.find(
+      (uid) => values.some((value) => optionValueMatchesUid(value, uid)),
+    );
+    const fromForm = pickFrom(formUids ?? []);
+    const fromCart = pickFrom(cartUids ?? []);
+    const chosen = fromForm ?? fromCart;
+    if (chosen) {
+      picked.push(resolveOptionValueApiUid(chosen, productData, cartLine));
+    }
+  });
+  return picked.filter(Boolean);
+}
+
+function cartLineSatisfiesVariantOptions(cartLine, productData) {
+  const options = productData?.options ?? [];
+  if (!options.length) {
+    return true;
+  }
+  const cartUids = getCartLineSelectedOptionsUIDs(cartLine);
+  if (!cartUids.length) {
+    return false;
+  }
+  return options.every((option) => (option.values ?? []).some(
+    (value) => cartUids.some((uid) => optionValueMatchesUid(value, uid)),
+  ));
+}
+
+export function filterVariantOptionsUIDs(uids, productData) {
+  const all = (uids ?? []).filter(Boolean);
+  const variantIds = collectVariantOptionValueIds(productData);
+  if (!variantIds.size) return all;
+  return all.filter((uid) => variantIds.has(String(uid)));
+}
+
+export function isVariantOptionsComplete(productData, values) {
+  const options = productData?.options ?? [];
+  if (!options.length) {
+    return true;
+  }
+  const selected = new Set(filterVariantOptionsUIDs(values?.optionsUIDs, productData));
+  return options.every((option) => (option.values ?? []).some(
+    (value) => [value?.id, value?.uid].filter(Boolean).some((id) => selected.has(String(id))),
+  ));
+}
+
+function isVariantSelectionSatisfied(productData, values, cartLine) {
+  if (isVariantOptionsComplete(productData, values)) {
+    return true;
+  }
+  if (!cartLine || !cartLineSatisfiesVariantOptions(cartLine, productData)) {
+    return false;
+  }
+
+  const nextVariantUids = filterVariantOptionsUIDs(values?.optionsUIDs, productData);
+  if (!nextVariantUids.length) {
+    return true;
+  }
+
+  const cartAllUids = getCartLineSelectedOptionsUIDs(cartLine);
+  const cartVariantUids = filterVariantOptionsUIDs(cartAllUids, productData);
+  const cartUids = cartVariantUids.length ? cartVariantUids : cartAllUids;
+
+  return optionUidSetsEquivalent(nextVariantUids, cartUids, productData, cartLine);
+}
+
+export function isCartEditConfigurationReady(productData, values, cartLine = null) {
+  if (!productData) {
+    return false;
+  }
+  if (!isVariantSelectionSatisfied(productData, values, cartLine)) {
+    return false;
+  }
+
+  const inputOptions = sortInputOptions(productData?.inputOptions ?? []).filter(
+    (option) => SUPPORTED_TYPES.has((option.type || 'textfield').toLowerCase())
+      || option.type == null,
+  );
+  if (inputOptions.length) {
+    let entered = values?.enteredOptions ?? [];
+    if (!entered.length && cartLine) {
+      entered = getCartLineEnteredOptions(cartLine, productData);
+    }
+    if (!validateInputOptions(inputOptions, entered)) {
+      return false;
+    }
+  }
+
+  const customGroups = parseAcCustomizableOptions(productData?.attributes);
+  if (customGroups.length) {
+    const formUids = (values?.optionsUIDs ?? []).filter(Boolean);
+    const cartUids = cartLine ? getCartLineSelectedOptionsUIDs(cartLine) : [];
+    const optionUids = formUids.length
+      ? [...formUids, ...cartUids.filter((uid) => !formUids.includes(uid))]
+      : cartUids;
+    if (!validateCustomGroups(customGroups, optionUids)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function getCartLineCustomizableOptionsUIDs(cartLine, productData) {
+  const groups = parseAcCustomizableOptions(productData?.attributes);
+  const custom = cartLine?.customizableOptions;
+  if (!groups.length || !custom || typeof custom !== 'object') {
+    return [];
+  }
+
+  const uids = [];
+  groups.forEach((group) => {
+    const raw = custom[group.label] ?? custom[group.id];
+    if (raw == null || String(raw).trim() === '') return;
+    const needle = String(raw).trim();
+    const match = group.values.find(
+      (value) => value.id === needle
+        || value.label === needle
+        || String(value.label).toLowerCase() === needle.toLowerCase(),
+    );
+    if (match?.id) uids.push(match.id);
+  });
+  return uids;
+}
+
+function normalizeEnteredOptions(entered) {
+  return (entered ?? [])
+    .filter((entry) => entry?.uid && String(entry.value ?? '').trim() !== '')
+    .map((entry) => `${entry.uid}:${String(entry.value).trim()}`)
+    .sort()
+    .join('|');
+}
+
+function mergeCartEditConfigurationValues(values, cartLine, productData) {
+  const base = { ...(values ?? {}) };
+  const cartOptionUids = getCartLineSelectedOptionsUIDs(cartLine);
+  const formUids = (base.optionsUIDs ?? []).filter(Boolean);
+  const variantIds = collectVariantOptionValueIds(productData);
+
+  if (cartOptionUids.length || formUids.length) {
+    const formVariant = filterVariantOptionsUIDs(formUids, productData);
+    const formExtra = formUids.filter((uid) => !variantIds.has(String(uid)));
+    const cartExtra = cartOptionUids.filter((uid) => !variantIds.has(String(uid)));
+
+    let nextVariant = mergeVariantOptionUids(formUids, cartOptionUids, productData, cartLine);
+    if (isVariantOptionsComplete(productData, { optionsUIDs: formVariant })) {
+      nextVariant = canonicalizeOptionsUIDs(formVariant, productData, cartLine);
+    }
+
+    const nextExtra = formExtra.length
+      ? canonicalizeOptionsUIDs(formExtra, productData, cartLine)
+      : canonicalizeOptionsUIDs(cartExtra, productData, cartLine);
+
+    const merged = [...nextVariant, ...new Set(nextExtra)];
+    base.optionsUIDs = merged.length ? merged : undefined;
+  }
+
+  base.sku = base.sku
+    || productData?.variantSku
+    || productData?.sku
+    || cartLine?.sku;
+  base.quantity = base.quantity ?? cartLine?.quantity ?? 1;
+
+  if (!base.enteredOptions?.length) {
+    const fromCart = getCartLineEnteredOptions(cartLine, productData);
+    if (fromCart.length) {
+      base.enteredOptions = fromCart;
+    }
+  }
+
+  return base;
+}
+
+export function buildCartLineUpdatePayload(cartLine, values, productData) {
+  if (!productData) {
+    throw new Error('Product configuration is not loaded yet. Please wait and try again.');
+  }
+
+  const uid = getCartLineUid(cartLine);
+  if (!uid) {
+    throw new Error('Cart line item is not available');
+  }
+
+  const mergedValues = mergeCartEditConfigurationValues(values, cartLine, productData);
+  const quantity = mergedValues.quantity ?? cartLine.quantity ?? 1;
+
+  const cartOptionUids = getCartLineSelectedOptionsUIDs(cartLine);
+  const formOptionUids = (mergedValues.optionsUIDs ?? []).filter(Boolean);
+  const cartEntered = getCartLineEnteredOptions(cartLine, productData);
+  const rawFormEntered = (values?.enteredOptions ?? []).filter(
+    (entry) => entry?.uid && String(entry.value ?? '').trim() !== '',
+  );
+
+  const optionsChanged = (cartOptionUids.length || formOptionUids.length)
+    ? !optionUidSetsEquivalent(cartOptionUids, formOptionUids, productData, cartLine)
+    : false;
+  const enteredChanged = rawFormEntered.length > 0
+    && normalizeEnteredOptions(cartEntered) !== normalizeEnteredOptions(rawFormEntered);
+
+  if (!optionsChanged && !enteredChanged) {
+    return { uid, quantity };
+  }
+
+  mergedValues.quantity = quantity;
+  mergedValues.sku = mergedValues.sku
+    || productData?.variantSku
+    || productData?.sku
+    || cartLine?.sku;
+  mergedValues.optionsUIDs = canonicalizeOptionsUIDs(
+    mergedValues.optionsUIDs ?? formOptionUids,
+    productData,
+    cartLine,
+  );
+
+  return {
+    ...buildAddToCartPayload(mergedValues, productData),
+    uid,
+  };
+}
+
+export function isCartLineReconfigureUpdate(updateData) {
+  if (!updateData) return false;
+  return Boolean(updateData.optionsUIDs?.length)
+    || Boolean(updateData.enteredOptions?.length);
+}
+
+/**
+ * Reconfigure: remove the old line first, then add the new configuration (Quick View payload).
+ * Avoids cart/minicart briefly showing old and new lines at the same time.
+ * @param {object} updateData Output of buildCartLineUpdatePayload
+ * @returns {Promise<object|null>}
+ */
+export async function executeCartLineUpdate(updateData) {
+  const lineUid = updateData?.uid;
+  if (!lineUid) {
+    throw new Error('Cart line item is not available');
+  }
+
+  if (!isCartLineReconfigureUpdate(updateData)) {
+    return Cart.updateProductsFromCart([{
+      uid: lineUid,
+      quantity: updateData.quantity ?? 1,
+    }]);
+  }
+
+  const { uid: _removedLineUid, ...addPayload } = updateData;
+
+  await Cart.updateProductsFromCart([{ uid: lineUid, quantity: 0 }]);
+  await waitForCartLineRemoved(lineUid);
+
+  const addedCart = await Cart.addProductsToCart([addPayload]);
+  if (!addedCart) {
+    throw new Error('Unable to add the updated product configuration to your cart.');
+  }
+
+  return addedCart;
 }
 
 function createTextField(option, value, onChange) {
@@ -265,7 +661,7 @@ function createDropdownField(group, selectedValueId, onChange) {
 export function mountProductInputOptions(container, options = {}) {
   if (!container) return () => {};
 
-  const { scope } = options;
+  const { scope, onUserChange } = options;
   const scopeOpt = scope ? { scope } : undefined;
   const eventScopeOpt = scope ? { eager: true, scope } : { eager: true };
 
@@ -284,7 +680,36 @@ export function mountProductInputOptions(container, options = {}) {
     setProductConfigurationValid(() => inputOk && customOk, scopeOpt);
   };
 
+  let lastProduct = null;
+
+  const syncControlsFromValues = () => {
+    if (!lastProduct || !container.querySelector('.product-input-options__form')) {
+      return;
+    }
+    const { enteredOptions = [], optionsUIDs = [] } = getProductConfigurationValues(scopeOpt) ?? {};
+
+    customGroups.forEach((group) => {
+      const select = container.querySelector(
+        `[data-custom-option-id="${CSS.escape(String(group.id))}"]`,
+      );
+      if (select) {
+        select.value = getSelectedValueIdForGroup(group, optionsUIDs) || '';
+      }
+    });
+
+    inputOptions.forEach((option) => {
+      const control = container.querySelector(
+        `[data-input-option-id="${CSS.escape(String(option.id))}"]`,
+      );
+      if (control) {
+        control.value = getEnteredValue(enteredOptions, option.id);
+      }
+    });
+    syncValidity();
+  };
+
   const render = (product) => {
+    lastProduct = product;
     inputOptions = sortInputOptions(product?.inputOptions ?? []).filter(
       (option) => SUPPORTED_TYPES.has((option.type || 'textfield').toLowerCase())
         || option.type == null,
@@ -306,24 +731,33 @@ export function mountProductInputOptions(container, options = {}) {
 
     customGroups.forEach((group) => {
       const selected = getSelectedValueIdForGroup(group, optionsUIDs);
-      form.append(createDropdownField(group, selected, (valueId) => {
+      const field = createDropdownField(group, selected, (valueId) => {
+        onUserChange?.();
         updateGroupSelection(group, valueId, scopeOpt);
         syncValidity();
-      }));
+      });
+      field.querySelector('select')?.setAttribute('data-custom-option-id', String(group.id));
+      form.append(field);
     });
 
     inputOptions.forEach((option) => {
-      form.append(createTextField(
+      const field = createTextField(
         option,
         getEnteredValue(enteredOptions, option.id),
         (uid, value) => {
+          onUserChange?.();
           setProductConfigurationValues((prev) => ({
             ...prev,
             enteredOptions: mergeEnteredOption(prev?.enteredOptions, uid, value),
           }), scopeOpt);
           syncValidity();
         },
-      ));
+      );
+      field.querySelector('.product-input-options__control')?.setAttribute(
+        'data-input-option-id',
+        String(option.id),
+      );
+      form.append(field);
     });
 
     container.append(form);
@@ -334,7 +768,10 @@ export function mountProductInputOptions(container, options = {}) {
     if (product) render(product);
   }, eventScopeOpt);
 
-  const valuesListener = events.on('pdp/values', syncValidity, eventScopeOpt);
+  const valuesListener = events.on('pdp/values', () => {
+    syncControlsFromValues();
+    syncValidity();
+  }, eventScopeOpt);
 
   return () => {
     dataListener?.off();

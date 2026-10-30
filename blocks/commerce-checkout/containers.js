@@ -60,7 +60,12 @@ import {
   transformCartAddressToFormValues,
 } from '@dropins/storefront-checkout/lib/utils.js';
 
-import { showModal, swatchImageSlot } from './utils.js';
+import {
+  buildOrderGiftOptionsProps,
+  ensureCartReady,
+  renderGiftOptionsSwatchImage,
+} from '../../scripts/gift-options-ui.js';
+import { showModal } from './utils.js';
 
 // External dependencies
 import {
@@ -443,12 +448,14 @@ export const renderCartGiftOptions = (ctx) => {
     item: ctx.item,
     view: 'product',
     dataSource: 'cart',
-    isEditable: false,
+    isEditable: true,
+    readOnlyFormOrderView: 'primary',
+    initialLoading: false,
     handleItemsLoading: ctx.handleItemsLoading,
     handleItemsError: ctx.handleItemsError,
     onItemUpdate: ctx.onItemUpdate,
     slots: {
-      SwatchImage: swatchImageSlot,
+      SwatchImage: renderGiftOptionsSwatchImage,
     },
   })(giftOptions);
 
@@ -792,12 +799,11 @@ export const renderAddressForm = async (container, formRef, data, addressType) =
  */
 export const renderGiftOptions = async (container) => renderContainer(
   CONTAINERS.GIFT_OPTIONS,
-  async () => CartProvider.render(GiftOptions, {
-    view: 'order',
-    dataSource: 'cart',
-    isEditable: false,
-    slots: {
-      SwatchImage: swatchImageSlot,
-    },
-  })(container),
+  async () => {
+    await ensureCartReady();
+    return CartProvider.render(
+      GiftOptions,
+      buildOrderGiftOptionsProps(),
+    )(container);
+  },
 );

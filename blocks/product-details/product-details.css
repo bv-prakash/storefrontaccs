@@ -132,49 +132,103 @@
 
 .product-details .pdp-gift-card-options,
 .commerce-mini-pdp .pdp-gift-card-options {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 20px;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
 }
 
 .product-details .pdp-gift-card-options__grid,
 .commerce-mini-pdp .pdp-gift-card-options__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.product-details .pdp-gift-card-options__row,
+.commerce-mini-pdp .pdp-gift-card-options__row {
   display: grid;
   gap: 16px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
 }
 
 @media only screen and (min-width: 600px) {
-  .product-details .pdp-gift-card-options__grid,
-  .commerce-mini-pdp .pdp-gift-card-options__grid {
+  .product-details .pdp-gift-card-options__row,
+  .commerce-mini-pdp .pdp-gift-card-options__row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+.product-details .pdp-gift-card-options__option-field,
+.commerce-mini-pdp .pdp-gift-card-options__option-field {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+}
+
+.product-details .pdp-gift-card-options__option-field--full-width,
+.commerce-mini-pdp .pdp-gift-card-options__option-field--full-width {
+  grid-column: 1 / -1;
+}
+
 .product-details .pdp-gift-card-options__option-field label,
-.commerce-mini-pdp .pdp-gift-card-options__option-field label {
+.product-details .pdp-gift-card-options__option-field .dropin-field__label,
+.product-details .pdp-gift-card-options__label,
+.commerce-mini-pdp .pdp-gift-card-options__option-field label,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-field__label,
+.commerce-mini-pdp .pdp-gift-card-options__label {
   color: var(--color-text-color, #000);
+  font-family: var(--type-base-font-family);
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  line-height: 1.3;
   text-transform: uppercase;
 }
 
 .product-details .pdp-gift-card-options__option-field input,
 .product-details .pdp-gift-card-options__option-field textarea,
+.product-details .pdp-gift-card-options__option-field .dropin-input__input,
+.product-details .pdp-gift-card-options__option-field .dropin-text-area__input,
 .commerce-mini-pdp .pdp-gift-card-options__option-field input,
-.commerce-mini-pdp .pdp-gift-card-options__option-field textarea {
+.commerce-mini-pdp .pdp-gift-card-options__option-field textarea,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-input__input,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-text-area__input {
   border: 1px solid #dadada;
   border-radius: 0;
   box-sizing: border-box;
+  color: var(--color-text-color, #000);
+  font-family: var(--type-base-font-family);
   font-size: 1.4rem;
+  font-weight: 400;
   min-height: 44px;
   padding: 8px 12px;
   width: 100%;
 }
 
+.product-details .pdp-gift-card-options__option-field textarea,
+.product-details .pdp-gift-card-options__option-field .dropin-text-area__input,
+.commerce-mini-pdp .pdp-gift-card-options__option-field textarea,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-text-area__input {
+  line-height: 1.5;
+  min-height: 96px;
+  resize: vertical;
+}
+
 .product-details .pdp-gift-card-options__option-field input:focus,
 .product-details .pdp-gift-card-options__option-field textarea:focus,
+.product-details .pdp-gift-card-options__option-field .dropin-input__input:focus,
+.product-details .pdp-gift-card-options__option-field .dropin-text-area__input:focus,
 .commerce-mini-pdp .pdp-gift-card-options__option-field input:focus,
-.commerce-mini-pdp .pdp-gift-card-options__option-field textarea:focus {
+.commerce-mini-pdp .pdp-gift-card-options__option-field textarea:focus,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-input__input:focus,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-text-area__input:focus {
   border-color: var(--color-dark-blue);
   outline: none;
 }
@@ -581,25 +635,34 @@
   opacity: 0.45;
 }
 
-/* Dropdown-style options */
+/* Dropdown-style options (configurable + gift card amount) */
 .product-details .product-details__options .dropin-picker,
-.commerce-mini-pdp .product-details__options .dropin-picker {
+.commerce-mini-pdp .product-details__options .dropin-picker,
+.product-details .pdp-gift-card-options__option-field .dropin-picker,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-picker {
   max-width: 100%;
   width: 100%;
 }
 
 .product-details .product-details__options .dropin-picker__select,
-.commerce-mini-pdp .product-details__options .dropin-picker__select {
+.commerce-mini-pdp .product-details__options .dropin-picker__select,
+.product-details .pdp-gift-card-options__option-field .dropin-picker__select,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-picker__select {
   border: 1px solid #dadada;
   border-radius: 0;
+  box-sizing: border-box;
+  font-family: var(--type-base-font-family);
   font-size: 1.4rem;
   font-weight: 700;
   min-height: 44px;
   padding: 8px 40px 8px 12px;
+  width: 100%;
 }
 
 .product-details .product-details__options .dropin-picker__select:focus,
-.commerce-mini-pdp .product-details__options .dropin-picker__select:focus {
+.commerce-mini-pdp .product-details__options .dropin-picker__select:focus,
+.product-details .pdp-gift-card-options__option-field .dropin-picker__select:focus,
+.commerce-mini-pdp .pdp-gift-card-options__option-field .dropin-picker__select:focus {
   border-color: var(--color-dark-blue);
   outline: none;
 }

@@ -90,4 +90,5 @@ Add to cart calls `buildCartLinesForAddToCart` then `addProductsToCart(cartLines
 
 - [Product input options](../../scripts/components/product-input-options/README.md)
 - [Grouped product options](../../scripts/components/grouped-product-options/README.md)
-- [Commerce mini-PDP](../../scripts/components/commerce-mini-pdp/README.md)
+- [Commerce mini-PDP](../../scripts/components/commerce-mini-pdp/README.md) — quick view and cart edit (same input-options / grouped helpers)
+- [Commerce cart](../commerce-cart/README.md) — cart line edit and configuration display

@@ -1,3 +1,71 @@
+.commerce-gift-options__mount[hidden] {
+  display: none;
+}
+
 .commerce-gift-options {
-    margin-bottom: var(--spacing-small);
+  margin-bottom: var(--spacing-small, 16px);
+}
+
+.commerce-gift-options__mount.cart-gift-options-view .dropin-card {
+  background: var(--color-neutral-50, #f0f0f0);
+  border: 0;
+  border-radius: 0;
+  margin-top: 0;
+  padding: 20px;
+}
+
+.commerce-gift-options__mount.cart-gift-options-view .dropin-card__content {
+  padding: 0;
+}
+
+.commerce-gift-options__mount.cart-gift-options-view .dropin-accordion-section__title {
+  color: var(--color-text-color, #000);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.9rem;
+}
+
+.commerce-gift-options__mount.cart-gift-options-view .dropin-checkbox__description,
+.commerce-gift-options__mount.cart-gift-options-view .dropin-checkbox__label {
+  color: var(--color-text-color, #000);
+  font-size: 1.6rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.commerce-gift-options__mount.cart-gift-options-view .cart-gift-options-view__top {
+  margin: 0;
+}
+
+.commerce-gift-options__mount.cart-gift-options-view
+  .dropin-accordion-section__content-container
+  .cart-gift-options-view__top {
+  border-top: 1px solid #aaa;
+  margin-top: 20px;
+  padding: 20px 0 0;
+}
+
+.commerce-gift-options__mount .dropin-text-swatch__label,
+.commerce-gift-options__mount .dropin-image-swatch__label {
+  border: 1px solid #dadada;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.commerce-gift-options__mount
+  .dropin-text-swatch__container:has(.dropin-text-swatch--selected)
+  .dropin-text-swatch__label,
+.commerce-gift-options__mount
+  .dropin-image-swatch__container:has(.dropin-image-swatch--selected)
+  .dropin-image-swatch__label {
+  background: var(--color-dark-blue, #003057);
+  border-color: var(--color-dark-blue, #003057);
+  color: #fff;
+}
+
+@media only screen and (min-width: 768px) {
+  .commerce-gift-options__mount.cart-gift-options-view .dropin-accordion-section__title {
+    font-size: 1.8rem;
+  }
 }
