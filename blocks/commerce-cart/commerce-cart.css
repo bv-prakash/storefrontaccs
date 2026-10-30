@@ -38,7 +38,6 @@
     margin-top: 24px;
 }
 
-.cart-item-edit-link .dropin-button,
 .cart__action--wishlist-toggle .dropin-button {
     padding: 0;
     font: var(--type-body-1-strong-font);
@@ -171,6 +170,30 @@
     line-height: 1.3;
 }
 
+.cart-line-item-extras {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 12px;
+    width: 100%;
+}
+
+.cart-line-item__gift-options {
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    width: 100%;
+}
+
+.cart-line-item-extras--gift-card {
+    margin-top: 8px;
+}
+
+.cart-cart-summary-table__item-configurations .cart-line-item__gift-options {
+    margin-top: 16px;
+    max-width: 100%;
+}
+
 .cart-cart-summary-table__item-configurations {
     list-style: none;
     margin: 0;
@@ -181,13 +204,45 @@
 }
 
 .cart-cart-summary-table__item-configuration {
-    font-size: 1.2rem;
-    color: #555;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    font-size: 1.4rem;
+    color: #000;
+    gap: 4px 8px;
+    line-height: 1.4;
 }
 
 .cart-cart-summary-table__item-configuration-label {
-    font-weight: 600;
+    color: #000;
+    flex: 0 0 auto;
+    font-size: 1.4rem;
+    font-weight: 400;
+    letter-spacing: normal;
+    min-width: 0;
+    text-transform: none;
 }
+
+.cart-cart-summary-table__item-configuration-line {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 400;
+    line-height: 1.4;
+    color: #000;
+}
+
+/* Gift card cart lines — To/From/Message match PDP option typography */
+.cart-cart-summary-table__item-details:has(.cart-line-item-extras--gift-card)
+    .cart-cart-summary-table__item-configurations {
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.cart-cart-summary-table__item-details:has(.cart-line-item-extras--gift-card)
+    .cart-cart-summary-table__item-configuration {
+    flex-wrap: wrap;
+}
+
 
 .cart-cart-summary-table__item-uom {
     font-size: 1.2rem;
@@ -317,7 +372,8 @@
     justify-content: center;
 }
 
-.cart-cart-summary-table__item-remove-button {
+.cart-cart-summary-table__item-remove-button,
+.cart-cart-summary-table__item-edit-button {
     background: none;
     border: none;
     cursor: pointer;
@@ -335,6 +391,10 @@
 
 .cart-cart-summary-table__item-remove-button:hover {
     color: #c00;
+}
+
+.cart-cart-summary-table__item-edit-button:hover {
+    color: var(--color-dark-blue, #003057);
 }
 
 .cart-quantity-stepper .cart-qty-btn span {
@@ -412,6 +472,22 @@
 
 .cart-gift-options-view .dropin-card__content {
     padding: 0;
+}
+
+.cart-line-item__gift-options.cart-gift-options-view .dropin-card {
+    background: var(--color-neutral-50, #f0f0f0);
+    border: 0;
+    border-radius: 0;
+    padding: 16px;
+}
+
+.cart-line-item__gift-options.cart-gift-options-view .dropin-card__content {
+    padding: 0;
+}
+
+.cart-line-item__gift-options .dropin-accordion-section__title {
+    font-size: 1.4rem;
+    font-weight: 700;
 }
 
 .cart-order-summary__heading {
@@ -752,4 +828,10 @@
     .cart-estimate-shipping__price {
         font-size: 18px;
     }
+}
+
+.cart-cart-summary-table__item-actions .cart-item-edit-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

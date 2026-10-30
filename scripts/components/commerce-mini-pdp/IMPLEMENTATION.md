@@ -14,7 +14,9 @@
 - **`commerce-mini-pdp`** component mounts Adobe Commerce PDP drop-ins with `scope: 'modal'` (separate from the main PDP page initializer).
 - **Product-type parity with main PDP:** gift card and downloadable drop-in containers, `product-input-options` (customizable / text options), `grouped-product-options`, and `buildCartLinesForAddToCart` for grouped multi-line add-to-cart.
 - **Shared modal** (`blocks/modal/`): dark header with title + close; `size: 'wide'` for quick view and cart edit.
-- **Cart edit** reuses the same component for configurable line items.
+- **Cart / minicart edit** reuses the same component (`openCartItemEditModal`) for configurable, bundle, customizable, and related line types; selected options render on cart and minicart via `mountCartLineConfigurationDetails`.
+- **Cart line updates:** quantity-only in-place updates; variant/option changes use remove-then-add (`executeCartLineUpdate`) with event-driven cart sync (`waitForCartLineRemoved` / `waitForCartRefreshAfterUpdate`).
+- **Performance:** modal dispose unsubscribes PDP listeners; config display uses signature diff + one rAF-coalesced `cart/data` refresh; minicart edit slot skips redundant DOM rebuilds.
 - PLP loads mini-PDP via **dynamic import on click** so category pages do not load `initializers/pdp.js` (which expects a product SKU in the URL).
 
 **How to use**
@@ -47,7 +49,10 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 | **PLP integration** | Quick-view control on product image; lazy `import()` of mini-PDP and modal on click |
 | **Modal shell** | Unified `blocks/modal/` header (title + close), dialog sizes (`compact` / `default` / `wide`) |
 | **Styling** | `product-details.css` (swatches, gift card, downloadable, grouped), `commerce-mini-pdp.css`, PLP quick-view button |
-| **Cart** | Configurable line-item edit; add-to-cart uses same payload rules as main PDP |
+| **Cart / minicart** | Edit modal, inline config display, minicart edit/remove actions |
+| **cart-line.js** | Display merge, edit catalog fetch, config signatures, cart wait helpers |
+| **gift-options-ui.js** | `mountCartLineConfigurationDetails` for cart + minicart slots |
+| **product-input-options** | `buildCartLineUpdatePayload`, `executeCartLineUpdate`, reconfigure detection |
 
 ### 2.1 Component
 
@@ -62,9 +67,19 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 - `ProductImage` slot: image link + quick-view button (`.product-discovery-product-actions__quick-view`).
 - `openQuickView(product)` → dynamic import mini-PDP + modal → `createModal(..., { title, size: 'wide' })`.
 
-### 2.3 Cart integration
+### 2.3 Cart and minicart integration
 
-- `commerce-cart.js`: `createMiniPDP(cartItem, onSuccess, onClose)` inside `createModal` with update title.
+- **`commerce-cart.js`:** `Configurations` slot → `mountCartLineConfigurationDetails`; `Actions` slot → `createCartItemEditButton` → `openCartItemEditModal`.
+- **`commerce-mini-cart.js`:** `ProductAttributes` slot → configuration attributes; `ItemRemoveAction` → `appendMinicartEditAction` (undo vs edit+remove).
+- **Edit flow:** `fetchCatalogProductForCartEdit` → mini-PDP with cart snapshot prefill → `buildCartLineUpdatePayload` / `executeCartLineUpdate` → `waitForCartRefreshAfterUpdate` → close modal and refresh UI.
+- **Display:** `resolveCartLineForDisplay` + `getCartLineSelectionSummary`; minicart uses drop-in attribute DOM shape.
+
+### 2.4 Performance and lifecycle
+
+- **`disposeMiniPdpRoot` / `closeCartItemEditModal`:** unsubscribes `pdp/*` and product-input / grouped-option mounts when the edit modal closes.
+- **Config mounting:** no per-line permanent `cart/data` handlers; shared listener + `requestAnimationFrame`; skip `replaceWith` when display signature unchanged.
+- **Edit prefill:** cart values applied until initial prefill completes — avoids fighting `ProductOptions` on every variant fetch.
+- **Minicart actions:** re-render only when line uid or remove loading state changes.
 
 ---
 
@@ -81,10 +96,14 @@ Shoppers can open a modal from the category/search product grid to preview a pro
 
 | File | Role |
 | --- | --- |
-| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` | Mount PDP API, render gallery/options/cart actions |
+| `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` | Mount PDP API, edit modal API, minicart edit slot |
+| `scripts/components/commerce-mini-pdp/cart-line.js` | Line display, edit resolution, cart sync waits |
 | `scripts/components/commerce-mini-pdp/commerce-mini-pdp.css` | Mini-PDP-specific layout overrides |
 | `scripts/components/commerce-mini-pdp/README.md` | Developer reference |
-| `scripts/components/product-input-options/` | Customizable options + `buildCartLinesForAddToCart` |
+| `scripts/gift-options-ui.js` | Cart/minicart configuration slot mounting |
+| `scripts/components/product-input-options/` | Customizable options, cart update payload, reconfigure |
+| `blocks/commerce-cart/commerce-cart.js` | Configurations + edit actions |
+| `blocks/commerce-mini-cart/commerce-mini-cart.js` | ProductAttributes + ItemRemoveAction |
 | `scripts/components/grouped-product-options/` | Grouped product UI and cart lines |
 | `blocks/product-details/product-details.js` | Main PDP parity (same helpers and drop-ins) |
 
@@ -142,7 +161,7 @@ const modal = await createModal([miniPDPContent], {
 modal.showModal();
 ```
 
-Cart edit: `commerce-cart.js` — `createMiniPDP(cartItem, …)` with `UpdateProductInCart` modal title.
+Cart edit: `openCartItemEditModal(cartItem, { placeholders, onUpdated, onError })` — see `createCartItemEditButton` in `commerce-mini-pdp.js`.
 
 ### 4.4 Validation checklist
 
@@ -152,8 +171,11 @@ Cart edit: `commerce-cart.js` — `createMiniPDP(cartItem, …)` with `UpdatePro
 | PLP loads without PDP error page (no SKU on URL) | ☐ |
 | Quick view: configurable options + add to cart | ☐ |
 | Quick view: downloadable / bundle / grouped / gift card (catalog SKUs) | ☐ |
-| Cart edit modal (if enabled) | ☐ |
+| Cart edit modal (if enabled); options visible on cart line | ☐ |
+| Edit variant change: single updated line, not empty cart | ☐ |
+| Minicart: edit + config lines; update message on save | ☐ |
 | Minicart qty updates after quick view add (no reload) | ☐ |
+| Repeated edit open/close: no listener leak (DevTools) | ☐ |
 | Modal header title + close consistent with other modals | ☐ |
 
 Local: `npm run lint` · `npx @adobe/aem-cli up` · test PLP and cart edit.
@@ -174,7 +196,7 @@ Run `npm run lint`; test PLP and cart edit.
 ### 5.2 Remove entire commerce-mini-pdp
 
 1. Complete §5.1.
-2. **`blocks/commerce-cart/commerce-cart.js`** — Remove `createMiniPDP` import and edit-modal handler (or link to full PDP).
+2. **`blocks/commerce-cart/commerce-cart.js`** and **`blocks/commerce-mini-cart/commerce-mini-cart.js`** — Remove edit buttons, configuration slots, and mini-PDP imports (or link to full PDP).
 3. Delete **`scripts/components/commerce-mini-pdp/`** (JS, CSS, README, this file).
 4. Optional: remove `.commerce-mini-pdp` selectors from `product-details.css` if unused.
 5. Keep **`blocks/modal/`** if store switcher, checkout, or other flows use it.

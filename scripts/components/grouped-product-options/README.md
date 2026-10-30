@@ -19,7 +19,7 @@ Treated as grouped when the transformed product has **one** option group, **`mul
 | --- | --- |
 | `isGroupedProduct(productData)` | Grouped vs bundle/configurable heuristic |
 | `buildGroupedCartLines(productData, scope?)` | Cart lines for grouped add-to-cart |
-| `mountGroupedProductOptions(container, { scope?, optionsContainer?, quantityContainer? })` | Mount UI and wire events |
+| `mountGroupedProductOptions(container, { scope?, optionsContainer?, quantityContainer? })` | Mount UI and wire events; returns unsubscribe (mini-PDP calls this on modal dispose) |
 
 ## Files
 
@@ -32,3 +32,4 @@ Treated as grouped when the transformed product has **one** option group, **`mul
 
 - [Product input options](../product-input-options/README.md) — `buildCartLinesForAddToCart`
 - [Product details block](../../../blocks/product-details/README.md)
+- [Commerce mini-PDP](../commerce-mini-pdp/README.md) — cart edit and quick view (`scope: 'modal'`)

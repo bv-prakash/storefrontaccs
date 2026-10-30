@@ -5,7 +5,16 @@ import { events } from '@dropins/tools/event-bus.js';
 import '../../scripts/initializers/cart.js';
 
 import { readBlockConfig } from '../../scripts/aem.js';
-import { fetchPlaceholders, rootLink, getProductLink } from '../../scripts/commerce.js';
+import {
+  fetchPlaceholders,
+  rootLink,
+  getProductLinkFromCartItem,
+} from '../../scripts/commerce.js';
+import {
+  mountCartLineConfigurationDetails,
+  ensureCartReady,
+} from '../../scripts/gift-options-ui.js';
+import { appendMinicartEditAction } from '../../scripts/components/commerce-mini-pdp/commerce-mini-pdp.js';
 
 export default async function decorate(block) {
   const {
@@ -13,9 +22,12 @@ export default async function decorate(block) {
     'cart-url': cartURL = '',
     'checkout-url': checkoutURL = '',
     'undo-remove-item': undo = 'false',
+    'enable-updating-product': enableUpdatingProduct = 'false',
   } = readBlockConfig(block);
 
   const placeholders = await fetchPlaceholders();
+
+  await ensureCartReady();
 
   const MESSAGES = {
     ADDED: placeholders?.Global?.MiniCartAddedMessage,
@@ -52,12 +64,10 @@ export default async function decorate(block) {
 
   if (undo === 'true') {
     block.addEventListener('click', (e) => {
-      const isRemoveButton = e.target.closest('[class*="remove"]')
-        || e.target.closest('[data-testid*="remove"]')
-        || e.target.closest('[class*="undo"]')
+      const isUndoControl = e.target.closest('[class*="undo"]')
         || e.target.closest('[data-testid*="undo"]');
 
-      if (isRemoveButton) {
+      if (isUndoControl) {
         e.stopPropagation();
       }
     });
@@ -65,13 +75,34 @@ export default async function decorate(block) {
 
   block.innerHTML = '';
 
-  const createProductLink = (product) => getProductLink(product.url.urlKey, product.topLevelSku);
+  const lineExtrasOptions = {
+    placeholders,
+    enableUpdatingProduct,
+    undo,
+    onUpdated: () => showMessage(MESSAGES.UPDATED),
+  };
+
+  const createProductLink = (item) => getProductLinkFromCartItem(item);
   await provider.render(MiniCart, {
     routeEmptyCartCTA: startShoppingURL ? () => rootLink(startShoppingURL) : undefined,
     routeCart: cartURL ? () => rootLink(cartURL) : undefined,
     routeCheckout: checkoutURL ? () => rootLink(checkoutURL) : undefined,
     routeProduct: createProductLink,
     undo: undo === 'true',
+    enableItemRemoval: true,
+    enableQuantityUpdate: { removeOnZero: true },
+    slots: {
+      ProductAttributes: (ctx) => {
+        mountCartLineConfigurationDetails(ctx, {
+          variant: 'attributes',
+          className: 'dropin-cart-item__attributes',
+          lineClass: 'dropin-cart-item__attribute-line',
+        });
+      },
+      ItemRemoveAction: (ctx) => {
+        appendMinicartEditAction(ctx, lineExtrasOptions);
+      },
+    },
   })(block);
 
   const productsContainer = block.querySelector('.cart-mini-cart__products');

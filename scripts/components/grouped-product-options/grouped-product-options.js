@@ -114,9 +114,9 @@ function syncGroupedValidity(scope, productData) {
 export function buildGroupedCartLines(productData, scope) {
   if (!isGroupedProduct(productData)) return [];
 
-  const parentSku = productData.sku;
+  const parentSku = productData?.sku;
   const map = getQuantitiesMap(scope);
-  const items = productData.options[0].items ?? [];
+  const items = productData?.options?.[0]?.items ?? [];
 
   return items
     .map((item) => {
@@ -176,7 +176,7 @@ export function mountGroupedProductOptions(container, options = {}) {
 
     const heading = document.createElement('p');
     heading.className = 'pdp-grouped-products__heading';
-    heading.textContent = productData.options[0].label || 'Items in this set';
+    heading.textContent = productData?.options?.[0]?.label || 'Items in this set';
 
     const list = document.createElement('ul');
     list.className = 'pdp-grouped-products__list';

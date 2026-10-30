@@ -345,10 +345,9 @@ export async function loadCommerceLazy() {
   trackHistory();
 }
 
-/**
- * Initializes commerce configuration
- */
-export async function initializeCommerce() {
+let commerceInitPromise;
+
+async function runInitializeCommerce() {
   // Normalize trailing slashes so a path like "/fr" resolves the "/fr/" store
   // configuration (the default matcher uses startsWith and would miss it).
   const normalizePath = (p) => (p === '/' ? '/' : p.replace(/\/+$/, '') || '/');
@@ -384,6 +383,16 @@ export async function initializeCommerce() {
   initProductReviewsApi();
 
   return initializeDropins();
+}
+
+/**
+ * Initializes commerce configuration (runs once per page load).
+ */
+export async function initializeCommerce() {
+  if (!commerceInitPromise) {
+    commerceInitPromise = runInitializeCommerce();
+  }
+  return commerceInitPromise;
 }
 
 /**
@@ -929,6 +938,26 @@ export function getProductLink(urlKey, sku) {
   const sanitizedUrlKey = urlKey ? sanitizeName(urlKey) : '';
   const sanitizedSku = sku ? sanitizeName(sku) : '';
   return rootLink(`/products/${sanitizedUrlKey}/${sanitizedSku}`);
+}
+
+/**
+ * Builds a PDP URL from a cart line item (CartSummaryTable / MiniCart routeProduct shape).
+ * @param {object|null|undefined} item Cart line from the cart drop-in
+ * @returns {string}
+ */
+export function getProductLinkFromCartItem(item) {
+  if (!item) {
+    return rootLink('#');
+  }
+  const urlKey = item.url?.urlKey
+    ?? item.product?.url?.urlKey
+    ?? item.urlKey
+    ?? item.product?.urlKey;
+  const sku = item.topLevelSku
+    ?? item.sku
+    ?? item.product?.topLevelSku
+    ?? item.product?.sku;
+  return getProductLink(urlKey, sku);
 }
 
 export function getCategoryLink(urlKey, cateId) {

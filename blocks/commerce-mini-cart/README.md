@@ -44,13 +44,22 @@ No events are emitted by this block. -->
 - **Configurable Products**: When configurable products are present and editing is enabled, shows edit buttons
 - **Undo Mode**: When undo is enabled, prevents mini cart from closing during remove operations
 
+### Drop-in slots (custom)
+
+| Slot | Integration |
+| --- | --- |
+| **ProductAttributes** | `mountCartLineConfigurationDetails` (`variant: 'attributes'`) — `div.dropin-cart-item__attributes` with `span` lines (`Label: value`) |
+| **ItemRemoveAction** | `appendMinicartEditAction` — edit pencil (+ trash when `undo-remove-item` is false); prepends edit only when undo mode keeps drop-in remove/undo |
+
+Minicart edit actions skip redundant Preact re-mounts when line uid and loading state are unchanged. Styling for edit/remove placement lives in `commerce-mini-cart.css`.
+
 ### User Interaction Flows
 
-1. **Cart Display**: Block renders mini cart with product thumbnails and basic information
-2. **Product Editing**: Clicking edit button opens mini-PDP modal for configurable product updates
+1. **Cart Display**: Block renders mini cart with product thumbnails, selected options under SKU, and actions
+2. **Product Editing**: Edit opens `openCartItemEditModal` (same mini-PDP as full cart); successful update triggers `cart/product/updated` message
 3. **Cart Updates**: Real-time notifications show when products are added or updated
 4. **Navigation**: Users can navigate to cart page, checkout, or start shopping
-5. **Undo Operations**: When enabled, users can undo item removal operations
+5. **Undo Operations**: When enabled, users can undo item removal operations; edit is prepended without replacing the remove control
 
 ### Error Handling
 
@@ -59,3 +68,9 @@ No events are emitted by this block. -->
 - **Configuration Errors**: If `readBlockConfig()` fails, uses default configuration values
 - **Render Errors**: If container rendering fails, the block content remains empty
 - **Fallback Behavior**: Always falls back to default configuration values for missing or invalid settings
+
+## Related
+
+- [Commerce mini-PDP](../../scripts/components/commerce-mini-pdp/README.md) — `appendMinicartEditAction`, edit modal
+- [Commerce cart](../commerce-cart/README.md) — full cart configuration slot and edit button
+- [Commerce gift options](../commerce-gift-options/README.md) — shared `gift-options-ui.js`

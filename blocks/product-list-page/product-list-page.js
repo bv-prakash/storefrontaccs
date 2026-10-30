@@ -713,6 +713,7 @@ export default async function decorate(block) {
 
       const miniPDPContent = await createMiniPDP(
         {
+          mode: 'quickView',
           sku: product.sku,
           urlKey: product.urlKey,
           image: product.images?.[0]?.url,

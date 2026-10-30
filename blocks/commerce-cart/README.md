@@ -49,11 +49,21 @@ No localStorage keys are used by this block. -->
 - **Configurable Products**: When configurable products are present and editing is enabled, shows edit buttons
 - **Gift Options**: Shows gift options section when cart is not empty
 
+### Drop-in slots (custom)
+
+| Slot | Integration |
+| --- | --- |
+| **Configurations** | `mountCartLineConfigurationDetails` from `scripts/gift-options-ui.js` — inline option text (e.g. `Size: Queen`) under the line; merges slot item with `cart/data` cache |
+| **Actions** | `createCartItemEditButton` from `scripts/components/commerce-mini-pdp/commerce-mini-pdp.js` when `shouldOfferCartItemEdit` passes; opens `openCartItemEditModal` |
+| **Quantity** | Custom stepper (when quantity update enabled) |
+
+Configuration DOM updates are signature-based (no flicker on drop-in re-render). Cart label refresh uses one shared `cart/data` listener coalesced with `requestAnimationFrame` (not per-line listeners).
+
 ### User Interaction Flows
 
 1. **Cart Display**: Block renders cart items, order summary, and gift options based on current cart state
 2. **Item Management**: Users can update quantities, remove items, and edit configurable products
-3. **Product Editing**: Clicking edit button opens mini-PDP modal for configurable product updates
+3. **Product Editing**: Edit opens the wide modal via `openCartItemEditModal` (mini-PDP cart mode); variant changes remove the old line and add the new configuration
 4. **Wishlist Integration**: Users can move items to/from wishlist with confirmation notifications
 5. **Checkout Flow**: Users can proceed to checkout via configured checkout URL
 6. **Empty Cart Handling**: When cart is empty, shows start shopping CTA and hides order summary
@@ -65,3 +75,9 @@ No localStorage keys are used by this block. -->
 - **Configuration Errors**: If `readBlockConfig()` fails, uses default configuration values
 - **Render Errors**: If container rendering fails, the affected section remains empty
 - **Fallback Behavior**: Always falls back to default configuration values for missing or invalid settings
+
+## Related
+
+- [Commerce mini-PDP](../../scripts/components/commerce-mini-pdp/README.md) — cart edit modal and `cart-line.js`
+- [Product input options](../../scripts/components/product-input-options/README.md) — update payload and reconfigure flow
+- [Commerce gift options](../commerce-gift-options/README.md) — `gift-options-ui.js` helpers

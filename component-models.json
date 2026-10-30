@@ -321,6 +321,59 @@
     ]
   },
   {
+    "id": "commerce-gift-options",
+    "fields": [
+      {
+        "component": "select",
+        "name": "data-source",
+        "label": "Data source",
+        "value": "cart",
+        "options": [
+          {
+            "name": "Cart (gift wrap & message)",
+            "value": "cart"
+          },
+          {
+            "name": "Order (read-only confirmation)",
+            "value": "order"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "editable",
+        "label": "Editable",
+        "value": "true",
+        "options": [
+          {
+            "name": "Yes",
+            "value": "true"
+          },
+          {
+            "name": "No",
+            "value": "false"
+          }
+        ]
+      },
+      {
+        "component": "select",
+        "name": "read-only-view",
+        "label": "Read-only layout",
+        "value": "primary",
+        "options": [
+          {
+            "name": "Primary",
+            "value": "primary"
+          },
+          {
+            "name": "Secondary",
+            "value": "secondary"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "commerce-mini-cart",
     "fields": [
       {
